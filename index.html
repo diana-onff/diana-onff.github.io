@@ -554,11 +554,14 @@
   <div class="card">
     <h4 class="ch" data-i18n="adm.repo">Repository</h4>
     <div class="fgrid">
-      <label class="fld"><span data-i18n="adm.owner">Eigenaar / repo</span>
-        <input id="admRepo" type="text" autocomplete="off" spellcheck="false" placeholder="diana-onff/diana-source"></label>
+      <label class="fld"><span data-i18n="adm.owner">App-repo (publiek)</span>
+        <input id="admRepo" type="text" autocomplete="off" spellcheck="false" placeholder="diana-onff/diana-onff.github.io"></label>
       <label class="fld"><span data-i18n="adm.branch">Hoofdbranch</span>
         <input id="admBranch" type="text" autocomplete="off" spellcheck="false" placeholder="main"></label>
     </div>
+    <label class="fld"><span data-i18n="adm.srcrepo">Bron-repo (privé)</span>
+      <input id="admSrc" type="text" autocomplete="off" spellcheck="false" placeholder="diana-onff/diana-source"></label>
+    <p class="hint" data-i18n="adm.srchint">Het KMZ gaat naar de private bron-repo, de app en de data staan in de publieke. Laat je dit veld leeg, dan gaat alles naar de app-repo — dat is de oude opzet.</p>
     <label class="fld"><span data-i18n="adm.token">Toegangstoken</span>
       <input id="admToken" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…"></label>
     <label class="chk"><input type="checkbox" id="admRemember"> <span data-i18n="adm.remember">Token op dit toestel onthouden</span></label>
@@ -569,12 +572,12 @@
 
   <div class="card">
     <h4 class="ch" data-i18n="adm.upload">Bestand uploaden</h4>
-    <label class="fld"><span data-i18n="adm.target">Doelmap in de repo</span>
-      <input id="admPath" type="text" autocomplete="off" spellcheck="false" placeholder="source/"></label>
+    <label class="fld"><span data-i18n="adm.target">Wachtruimte in de bron-repo</span>
+      <input id="admPath" type="text" autocomplete="off" spellcheck="false" placeholder="incoming/"></label>
     <input type="file" id="admFile" style="margin:6px 0 10px">
     <div class="steps" id="admSteps" hidden></div>
-    <button class="btn amber" id="admSend" disabled data-i18n="adm.send">Uploaden en pull request openen</button>
-    <p class="hint" data-i18n="adm.uploadhint">Het bestand komt op een nieuwe branch en wordt een pull request. De workflows zetten het om en tonen het verschillenrapport en een preview. Publiceren blijft jouw klik.</p>
+    <button class="btn amber" id="admSend" disabled data-i18n="adm.send">Uploaden en omzetten</button>
+    <p class="hint" data-i18n="adm.uploadhint">Het bestand komt in de wachtruimte van de bron-repo. Daarna draait de omzetting en komt het resultaat als pull request met preview te staan. Pas jouw publicatie zet het live en verplaatst het bronbestand naar source/.</p>
   </div>
 
   <div class="card">
@@ -835,7 +838,7 @@ const APP_VERSION = '1.5.1';
    de datum van die build. Blijft de plaatshouder staan, dan draai je een kopie
    die nooit door de bouwstap is gegaan — lokaal, of rechtstreeks uit de repo.
    Dat is precies wat je wil weten als iemand een probleem meldt. */
-const BUILD = '0fc9fb0 · 08/09/2026';
+const BUILD = 'c8a4d78 · 08/09/2026';
 const BUILD_TXT = BUILD.startsWith('__') ? 'dev' : BUILD;
 
 /* ---------- startscherm ----------
@@ -923,7 +926,7 @@ const STR = {
   "adm.title": "Beheer",
   "adm.sub": "Nieuwe bronbestanden naar de repository sturen",
   "adm.repo": "Repository",
-  "adm.owner": "Eigenaar / repo",
+  "adm.owner": "App-repo (publiek)",
   "adm.branch": "Hoofdbranch",
   "adm.token": "Toegangstoken",
   "adm.remember": "Token op dit toestel onthouden",
@@ -933,16 +936,26 @@ const STR = {
   "adm.needboth": "Vul eerst de repository en het token in",
   "adm.noperm": "Dit token mag niet schrijven in deze repository",
   "adm.upload": "Bestand uploaden",
-  "adm.target": "Doelmap in de repo",
-  "adm.send": "Uploaden en pull request openen",
-  "adm.uploadhint": "Het bestand komt op een nieuwe branch en wordt een pull request. De workflows zetten het om en tonen het verschillenrapport en een preview. Publiceren blijft jouw klik.",
+  "adm.target": "Wachtruimte in de bron-repo",
+  "adm.send": "Uploaden en omzetten",
+  "adm.uploadhint": "Het bestand komt in de wachtruimte van de bron-repo. Daarna draait de omzetting en komt het resultaat als pull request met preview te staan. Pas jouw publicatie zet het live en verplaatst het bronbestand naar source/.",
   "adm.s1": "Basisbranch ophalen",
   "adm.s2": "Bestand inlezen",
   "adm.s3": "Bestand naar GitHub sturen",
   "adm.s4": "Boomstructuur bijwerken",
   "adm.s5": "Commit maken",
-  "adm.s6": "Branch aanmaken",
-  "adm.s7": "Pull request openen",
+  "adm.s6": "Naar de wachtruimte schrijven",
+  "adm.s7": "Omzetting starten",
+  "adm.s8": "Wachten op de omzetting",
+  "adm.s9": "Pull request openen",
+  "adm.srcrepo": "Bron-repo (privé)",
+  "adm.srchint": "Het KMZ gaat naar de private bron-repo, de app en de data staan in de publieke. Laat je dit veld leeg, dan gaat alles naar de app-repo — dat is de oude opzet.",
+  "adm.building": "de omzetting draait — reken op een minuut of twee",
+  "adm.buildslow": "de omzetting duurt langer dan verwacht — kijk in Actions wat er aan de hand is",
+  "adm.resumed": "Er stond nog een omzetting open — hervat",
+  "adm.promoted": "bronbestand naar source/ verplaatst",
+  "adm.promotefail": "Gepubliceerd, maar het bronbestand staat nog in de wachtruimte",
+  "adm.discarded": "bronbestand uit de wachtruimte verwijderd",
   "adm.openpr": "Pull request openen",
   "adm.done": "Pull request aangemaakt",
   "adm.failed": "Uploaden mislukt",
@@ -954,7 +967,7 @@ const STR = {
   "adm.prmerge": "Publiceren",
   "adm.prreject": "Afwijzen",
   "adm.prrefresh": "Verversen",
-  "adm.prhint": "Bekijk eerst de preview. Publiceren voegt de pull request samen met de hoofdbranch en zet de nieuwe gegevens live. Afwijzen sluit de pull request en verwijdert de branch — het bronbestand komt dan nergens terecht.",
+  "adm.prhint": "Bekijk eerst de preview. Publiceren voegt de pull request samen en zet de nieuwe gegevens live; het bronbestand verhuist dan van de wachtruimte naar source/. Afwijzen sluit de pull request en gooit het bronbestand weg.",
   "adm.prpreview": "Preview openen",
   "adm.prwaiting": "de workflows draaien nog",
   "adm.prready": "klaar om te publiceren",
@@ -1198,7 +1211,7 @@ const STR = {
   "adm.title": "Administration",
   "adm.sub": "Send new source files to the repository",
   "adm.repo": "Repository",
-  "adm.owner": "Owner / repo",
+  "adm.owner": "App repo (public)",
   "adm.branch": "Main branch",
   "adm.token": "Access token",
   "adm.remember": "Remember the token on this device",
@@ -1208,16 +1221,26 @@ const STR = {
   "adm.needboth": "Fill in the repository and the token first",
   "adm.noperm": "This token cannot write to this repository",
   "adm.upload": "Upload a file",
-  "adm.target": "Target folder in the repo",
-  "adm.send": "Upload and open a pull request",
-  "adm.uploadhint": "The file lands on a new branch and becomes a pull request. The workflows convert it and show the diff report and a preview. Publishing stays your click.",
+  "adm.target": "Staging folder in the source repo",
+  "adm.send": "Upload and convert",
+  "adm.uploadhint": "The file lands in the source repo's staging folder. The conversion then runs and the result appears as a pull request with a preview. Only your publish takes it live and moves the source file to source/.",
   "adm.s1": "Reading the base branch",
   "adm.s2": "Reading the file",
   "adm.s3": "Sending the file to GitHub",
   "adm.s4": "Updating the tree",
   "adm.s5": "Creating the commit",
-  "adm.s6": "Creating the branch",
-  "adm.s7": "Opening the pull request",
+  "adm.s6": "Writing to the staging folder",
+  "adm.s7": "Starting the conversion",
+  "adm.s8": "Waiting for the conversion",
+  "adm.s9": "Opening the pull request",
+  "adm.srcrepo": "Source repo (private)",
+  "adm.srchint": "The KMZ goes to the private source repo; the app and the data live in the public one. Leave this empty and everything goes to the app repo — the old arrangement.",
+  "adm.building": "the conversion is running — expect a minute or two",
+  "adm.buildslow": "the conversion is taking longer than expected — check Actions to see what is going on",
+  "adm.resumed": "A conversion was still open — resumed",
+  "adm.promoted": "source file moved to source/",
+  "adm.promotefail": "Published, but the source file is still in the staging folder",
+  "adm.discarded": "source file removed from the staging folder",
   "adm.openpr": "Open pull request",
   "adm.done": "Pull request created",
   "adm.failed": "Upload failed",
@@ -1229,7 +1252,7 @@ const STR = {
   "adm.prmerge": "Publish",
   "adm.prreject": "Reject",
   "adm.prrefresh": "Refresh",
-  "adm.prhint": "Look at the preview first. Publishing merges the pull request into the main branch and takes the new data live. Rejecting closes the pull request and deletes the branch — the source file then ends up nowhere.",
+  "adm.prhint": "Look at the preview first. Publishing merges the pull request and takes the new data live; the source file then moves from staging to source/. Rejecting closes the pull request and discards the source file.",
   "adm.prpreview": "Open the preview",
   "adm.prwaiting": "the workflows are still running",
   "adm.prready": "ready to publish",
@@ -1473,7 +1496,7 @@ const STR = {
   "adm.title": "Administration",
   "adm.sub": "Envoyer de nouveaux fichiers source",
   "adm.repo": "Dépôt",
-  "adm.owner": "Propriétaire / dépôt",
+  "adm.owner": "Dépôt de l'app (public)",
   "adm.branch": "Branche principale",
   "adm.token": "Jeton d’accès",
   "adm.remember": "Mémoriser le jeton sur cet appareil",
@@ -1483,16 +1506,26 @@ const STR = {
   "adm.needboth": "Renseignez d’abord le dépôt et le jeton",
   "adm.noperm": "Ce jeton ne peut pas écrire dans ce dépôt",
   "adm.upload": "Téléverser un fichier",
-  "adm.target": "Dossier cible",
-  "adm.send": "Téléverser et ouvrir une pull request",
-  "adm.uploadhint": "Le fichier arrive sur une nouvelle branche et devient une pull request. Les workflows le convertissent et affichent le rapport et un aperçu. Publier reste votre clic.",
+  "adm.target": "Salle d'attente dans le dépôt source",
+  "adm.send": "Téléverser et convertir",
+  "adm.uploadhint": "Le fichier arrive dans la salle d'attente du dépôt source. La conversion se lance et le résultat apparaît en pull request avec un aperçu. Seule votre publication le met en ligne et déplace le fichier vers source/.",
   "adm.s1": "Lecture de la branche de base",
   "adm.s2": "Lecture du fichier",
   "adm.s3": "Envoi du fichier à GitHub",
   "adm.s4": "Mise à jour de l’arbre",
   "adm.s5": "Création du commit",
-  "adm.s6": "Création de la branche",
-  "adm.s7": "Ouverture de la pull request",
+  "adm.s6": "Écriture dans la salle d'attente",
+  "adm.s7": "Lancement de la conversion",
+  "adm.s8": "Attente de la conversion",
+  "adm.s9": "Ouverture de la pull request",
+  "adm.srcrepo": "Dépôt source (privé)",
+  "adm.srchint": "Le KMZ va dans le dépôt source privé ; l'app et les données restent dans le dépôt public. Laissez vide et tout ira dans le dépôt de l'app — l'ancienne organisation.",
+  "adm.building": "la conversion est en cours — comptez une à deux minutes",
+  "adm.buildslow": "la conversion dure plus longtemps que prévu — regardez dans Actions",
+  "adm.resumed": "Une conversion était encore ouverte — reprise",
+  "adm.promoted": "fichier source déplacé vers source/",
+  "adm.promotefail": "Publié, mais le fichier source est encore dans la salle d'attente",
+  "adm.discarded": "fichier source retiré de la salle d'attente",
   "adm.openpr": "Ouvrir la pull request",
   "adm.done": "Pull request créée",
   "adm.failed": "Échec du téléversement",
@@ -1731,7 +1764,7 @@ const STR = {
   "adm.title": "Verwaltung",
   "adm.sub": "Neue Quelldateien ins Repository senden",
   "adm.repo": "Repository",
-  "adm.owner": "Eigentümer / Repo",
+  "adm.owner": "App-Repository (öffentlich)",
   "adm.branch": "Hauptbranch",
   "adm.token": "Zugriffstoken",
   "adm.remember": "Token auf diesem Gerät merken",
@@ -1741,16 +1774,26 @@ const STR = {
   "adm.needboth": "Erst Repository und Token eintragen",
   "adm.noperm": "Dieses Token darf hier nicht schreiben",
   "adm.upload": "Datei hochladen",
-  "adm.target": "Zielordner im Repo",
-  "adm.send": "Hochladen und Pull Request öffnen",
-  "adm.uploadhint": "Die Datei landet auf einem neuen Branch und wird ein Pull Request. Die Workflows konvertieren sie und zeigen Bericht und Vorschau. Veröffentlichen bleibt Ihr Klick.",
+  "adm.target": "Warteraum im Quell-Repository",
+  "adm.send": "Hochladen und umwandeln",
+  "adm.uploadhint": "Die Datei landet im Warteraum des Quell-Repositorys. Danach läuft die Umwandlung und das Ergebnis erscheint als Pull Request mit Vorschau. Erst deine Veröffentlichung schaltet es live und verschiebt die Quelldatei nach source/.",
   "adm.s1": "Basisbranch lesen",
   "adm.s2": "Datei einlesen",
   "adm.s3": "Datei an GitHub senden",
   "adm.s4": "Baum aktualisieren",
   "adm.s5": "Commit erstellen",
-  "adm.s6": "Branch anlegen",
-  "adm.s7": "Pull Request öffnen",
+  "adm.s6": "In den Warteraum schreiben",
+  "adm.s7": "Umwandlung starten",
+  "adm.s8": "Auf die Umwandlung warten",
+  "adm.s9": "Pull Request öffnen",
+  "adm.srcrepo": "Quell-Repository (privat)",
+  "adm.srchint": "Das KMZ geht in das private Quell-Repository; App und Daten liegen im öffentlichen. Bleibt das Feld leer, geht alles ins App-Repository — die alte Anordnung.",
+  "adm.building": "die Umwandlung läuft — rechne mit ein bis zwei Minuten",
+  "adm.buildslow": "die Umwandlung dauert länger als erwartet — schau in Actions nach",
+  "adm.resumed": "Es war noch eine Umwandlung offen — fortgesetzt",
+  "adm.promoted": "Quelldatei nach source/ verschoben",
+  "adm.promotefail": "Veröffentlicht, aber die Quelldatei liegt noch im Warteraum",
+  "adm.discarded": "Quelldatei aus dem Warteraum entfernt",
   "adm.openpr": "Pull Request öffnen",
   "adm.done": "Pull Request erstellt",
   "adm.failed": "Upload fehlgeschlagen",
@@ -1989,7 +2032,7 @@ const STR = {
   "adm.title": "Administration",
   "adm.sub": "Send nye kildefiler til repositoriet",
   "adm.repo": "Repository",
-  "adm.owner": "Ejer / repo",
+  "adm.owner": "App-repository (offentligt)",
   "adm.branch": "Hovedbranch",
   "adm.token": "Adgangstoken",
   "adm.remember": "Husk token på denne enhed",
@@ -1999,16 +2042,26 @@ const STR = {
   "adm.needboth": "Udfyld først repository og token",
   "adm.noperm": "Dette token kan ikke skrive her",
   "adm.upload": "Upload en fil",
-  "adm.target": "Målmappe i repoet",
-  "adm.send": "Upload og åbn en pull request",
-  "adm.uploadhint": "Filen lander på en ny branch og bliver en pull request. Workflows konverterer den og viser rapport og forhåndsvisning. Udgivelse er stadig dit klik.",
+  "adm.target": "Venterum i kilde-repositoryet",
+  "adm.send": "Upload og konvertér",
+  "adm.uploadhint": "Filen lander i kilde-repositoryets venterum. Derefter kører konverteringen, og resultatet vises som en pull request med forhåndsvisning. Først din udgivelse gør det live og flytter kildefilen til source/.",
   "adm.s1": "Læser basisbranch",
   "adm.s2": "Læser filen",
   "adm.s3": "Sender filen til GitHub",
   "adm.s4": "Opdaterer træet",
   "adm.s5": "Opretter commit",
-  "adm.s6": "Opretter branch",
-  "adm.s7": "Åbner pull request",
+  "adm.s6": "Skriver til venterummet",
+  "adm.s7": "Starter konverteringen",
+  "adm.s8": "Venter på konverteringen",
+  "adm.s9": "Åbner pull request",
+  "adm.srcrepo": "Kilde-repository (privat)",
+  "adm.srchint": "KMZ-filen ryger i det private kilde-repository; appen og data ligger i det offentlige. Lad feltet stå tomt, så går alt til app-repositoryet — den gamle opsætning.",
+  "adm.building": "konverteringen kører — regn med et minut eller to",
+  "adm.buildslow": "konverteringen tager længere end ventet — kig i Actions",
+  "adm.resumed": "En konvertering stod stadig åben — genoptaget",
+  "adm.promoted": "kildefil flyttet til source/",
+  "adm.promotefail": "Udgivet, men kildefilen ligger stadig i venterummet",
+  "adm.discarded": "kildefil fjernet fra venterummet",
   "adm.openpr": "Åbn pull request",
   "adm.done": "Pull request oprettet",
   "adm.failed": "Upload mislykkedes",
@@ -2247,7 +2300,7 @@ const STR = {
   "adm.title": "Amministrazione",
   "adm.sub": "Invia nuovi file sorgente al repository",
   "adm.repo": "Repository",
-  "adm.owner": "Proprietario / repo",
+  "adm.owner": "Repository dell'app (pubblico)",
   "adm.branch": "Branch principale",
   "adm.token": "Token di accesso",
   "adm.remember": "Ricorda il token su questo dispositivo",
@@ -2257,16 +2310,26 @@ const STR = {
   "adm.needboth": "Inserisci prima repository e token",
   "adm.noperm": "Questo token non può scrivere qui",
   "adm.upload": "Carica un file",
-  "adm.target": "Cartella di destinazione",
-  "adm.send": "Carica e apri una pull request",
-  "adm.uploadhint": "Il file finisce su un nuovo branch e diventa una pull request. I workflow lo convertono e mostrano il report e un’anteprima. Pubblicare resta il tuo clic.",
+  "adm.target": "Sala d'attesa nel repository sorgente",
+  "adm.send": "Carica e converti",
+  "adm.uploadhint": "Il file finisce nella sala d'attesa del repository sorgente. Poi parte la conversione e il risultato compare come pull request con anteprima. Solo la tua pubblicazione lo mette online e sposta il file in source/.",
   "adm.s1": "Lettura del branch base",
   "adm.s2": "Lettura del file",
   "adm.s3": "Invio del file a GitHub",
   "adm.s4": "Aggiornamento dell’albero",
   "adm.s5": "Creazione del commit",
-  "adm.s6": "Creazione del branch",
-  "adm.s7": "Apertura della pull request",
+  "adm.s6": "Scrittura nella sala d'attesa",
+  "adm.s7": "Avvio della conversione",
+  "adm.s8": "Attesa della conversione",
+  "adm.s9": "Apertura della pull request",
+  "adm.srcrepo": "Repository sorgente (privato)",
+  "adm.srchint": "Il KMZ va nel repository sorgente privato; app e dati stanno in quello pubblico. Lascia vuoto e tutto va nel repository dell'app — la vecchia disposizione.",
+  "adm.building": "la conversione è in corso — ci vuole un minuto o due",
+  "adm.buildslow": "la conversione sta durando più del previsto — controlla in Actions",
+  "adm.resumed": "C'era ancora una conversione aperta — ripresa",
+  "adm.promoted": "file sorgente spostato in source/",
+  "adm.promotefail": "Pubblicato, ma il file sorgente è ancora nella sala d'attesa",
+  "adm.discarded": "file sorgente rimosso dalla sala d'attesa",
   "adm.openpr": "Apri la pull request",
   "adm.done": "Pull request creata",
   "adm.failed": "Caricamento non riuscito",
@@ -2505,7 +2568,7 @@ const STR = {
   "adm.title": "Administración",
   "adm.sub": "Enviar nuevos archivos fuente al repositorio",
   "adm.repo": "Repositorio",
-  "adm.owner": "Propietario / repo",
+  "adm.owner": "Repositorio de la app (público)",
   "adm.branch": "Rama principal",
   "adm.token": "Token de acceso",
   "adm.remember": "Recordar el token en este dispositivo",
@@ -2515,16 +2578,26 @@ const STR = {
   "adm.needboth": "Rellena antes el repositorio y el token",
   "adm.noperm": "Este token no puede escribir aquí",
   "adm.upload": "Subir un archivo",
-  "adm.target": "Carpeta de destino",
-  "adm.send": "Subir y abrir una pull request",
-  "adm.uploadhint": "El archivo va a una rama nueva y se convierte en pull request. Los workflows lo convierten y muestran el informe y una vista previa. Publicar sigue siendo tu clic.",
+  "adm.target": "Sala de espera en el repositorio fuente",
+  "adm.send": "Subir y convertir",
+  "adm.uploadhint": "El archivo llega a la sala de espera del repositorio fuente. Después se ejecuta la conversión y el resultado aparece como pull request con vista previa. Solo tu publicación lo pone en línea y mueve el archivo a source/.",
   "adm.s1": "Leyendo la rama base",
   "adm.s2": "Leyendo el archivo",
   "adm.s3": "Enviando el archivo a GitHub",
   "adm.s4": "Actualizando el árbol",
   "adm.s5": "Creando el commit",
-  "adm.s6": "Creando la rama",
-  "adm.s7": "Abriendo la pull request",
+  "adm.s6": "Escribiendo en la sala de espera",
+  "adm.s7": "Iniciando la conversión",
+  "adm.s8": "Esperando la conversión",
+  "adm.s9": "Abriendo la pull request",
+  "adm.srcrepo": "Repositorio fuente (privado)",
+  "adm.srchint": "El KMZ va al repositorio fuente privado; la app y los datos están en el público. Déjalo vacío y todo irá al repositorio de la app — la disposición antigua.",
+  "adm.building": "la conversión está en marcha — tarda un minuto o dos",
+  "adm.buildslow": "la conversión tarda más de lo esperado — mira en Actions",
+  "adm.resumed": "Quedaba una conversión abierta — reanudada",
+  "adm.promoted": "archivo fuente movido a source/",
+  "adm.promotefail": "Publicado, pero el archivo fuente sigue en la sala de espera",
+  "adm.discarded": "archivo fuente retirado de la sala de espera",
   "adm.openpr": "Abrir la pull request",
   "adm.done": "Pull request creada",
   "adm.failed": "Error al subir",
@@ -4350,11 +4423,17 @@ function applyHomeView(){
 const GH = 'https://api.github.com';
 
 const adm = {
-  repo:   recall('adm.repo'),
+  repo:   recall('adm.repo'),                     // publieke app-repo: workflows, data, site
+  src:    recall('adm.src'),                      // private bron-repo: de KMZ-bestanden
   branch: recall('adm.branch') || 'main',
-  path:   recall('adm.path') || 'source/',
+  path:   recall('adm.path') || 'incoming/',
   token:  recall('adm.token'),
 };
+
+/* Twee repositories, één token. Blijft het bronveld leeg, dan is alles één repo —
+   dat is de opzet van vóór de verhuizing, en die moet blijven werken zolang er
+   nog installaties zijn die zo staan. */
+function bronRepo(){ return adm.src || adm.repo; }
 
 /* Het beheerscherm is niet zichtbaar tenzij je het opzoekt: ?admin=1 in de
    URL, of vijf keer op het logo tikken. Geen beveiliging — een drempel. */
@@ -4362,11 +4441,13 @@ function unlockAdmin(){
   document.body.classList.add('admin');
   setTimeout(() => { loadMeta(); toonPr().catch(()=>{}); }, 0);
   $('admRepo').value   = adm.repo;
+  $('admSrc').value    = adm.src;
   $('admBranch').value = adm.branch;
   $('admPath').value   = adm.path;
   $('admToken').value  = adm.token;
   $('admRemember').checked = !!adm.token;
   buildEmbed();
+  hervatUpload().catch(()=>{});
 }
 if(new URLSearchParams(location.search).get('admin') === '1' || recall('adm.repo')) unlockAdmin();
 (function(){
@@ -4377,11 +4458,14 @@ if(new URLSearchParams(location.search).get('admin') === '1' || recall('adm.repo
   });
 })();
 
-['admRepo','admBranch','admPath'].forEach(id => $(id).addEventListener('input', () => {
-  adm.repo   = $('admRepo').value.trim().replace(/^https?:\/\/github\.com\//,'').replace(/\.git$/,'');
+const kaal = v => v.trim().replace(/^https?:\/\/github\.com\//,'').replace(/\.git$/,'').replace(/\/$/,'');
+['admRepo','admSrc','admBranch','admPath'].forEach(id => $(id).addEventListener('input', () => {
+  adm.repo   = kaal($('admRepo').value);
+  adm.src    = kaal($('admSrc').value);
   adm.branch = $('admBranch').value.trim() || 'main';
-  adm.path   = $('admPath').value.trim() || 'source/';
-  remember('adm.repo', adm.repo); remember('adm.branch', adm.branch); remember('adm.path', adm.path);
+  adm.path   = $('admPath').value.trim() || 'incoming/';
+  remember('adm.repo', adm.repo); remember('adm.src', adm.src);
+  remember('adm.branch', adm.branch); remember('adm.path', adm.path);
   buildEmbed();
 }));
 $('admToken').addEventListener('input', () => {
@@ -4413,17 +4497,37 @@ async function gh(path, opts){
   return data;
 }
 
+/* Zelfde aanroep, maar het bestand zelf in plaats van de JSON-beschrijving ervan.
+   Alleen voor kleine tekstbestanden: de contents-API weigert boven één megabyte. */
+async function ghRuw(path){
+  const r = await fetch(GH + path, {headers:{
+    'Accept':'application/vnd.github.raw',
+    'X-GitHub-Api-Version':'2022-11-28',
+    'Authorization':'Bearer ' + adm.token,
+  }});
+  if(!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.text();
+}
+
 $('admTest').onclick = async () => {
   const fb = $('admFb');
   if(!adm.repo || !adm.token){ fb.textContent = t('adm.needboth'); fb.className='fb bad'; return; }
   fb.textContent = t('adm.testing'); fb.className = 'fb';
   try{
-    const repo = await gh(`/repos/${adm.repo}`);
-    const ref  = await gh(`/repos/${adm.repo}/git/ref/heads/${adm.branch}`);
-    const can  = repo.permissions && (repo.permissions.push || repo.permissions.admin);
-    fb.innerHTML = `✓ ${repo.full_name} · ${adm.branch} @ ${ref.object.sha.slice(0,7)}` +
-                   (can ? '' : `<br>⚠ ${t('adm.noperm')}`);
-    fb.className = 'fb ' + (can ? 'good' : 'bad');
+    // Allebei de repositories nakijken, niet alleen de eerste: een token dat de
+    // publieke repo mag maar de private niet, faalt anders pas halverwege een
+    // upload van twintig megabyte.
+    const uit = [];
+    let alles = true;
+    for(const naam of [adm.repo, ...(adm.src && adm.src !== adm.repo ? [adm.src] : [])]){
+      const repo = await gh(`/repos/${naam}`);
+      const ref  = await gh(`/repos/${naam}/git/ref/heads/${adm.branch}`);
+      const can  = repo.permissions && (repo.permissions.push || repo.permissions.admin);
+      if(!can) alles = false;
+      uit.push(`${can ? '✓' : '⚠'} ${repo.full_name} · ${adm.branch} @ ${ref.object.sha.slice(0,7)}`);
+    }
+    fb.innerHTML = uit.join('<br>') + (alles ? '' : `<br>⚠ ${t('adm.noperm')}`);
+    fb.className = 'fb ' + (alles ? 'good' : 'bad');
     $('admSend').disabled = !($('admFile').files && $('admFile').files.length);
   }catch(err){
     fb.textContent = '✗ ' + err.message; fb.className = 'fb bad';
@@ -4444,58 +4548,119 @@ function toBase64(buf){
   return btoa(bin);
 }
 
-const STEPS = ['adm.s1','adm.s2','adm.s3','adm.s4','adm.s5','adm.s6','adm.s7'];
-function drawSteps(at, err){
+const STEPS = ['adm.s1','adm.s2','adm.s3','adm.s4','adm.s5','adm.s6','adm.s7','adm.s8','adm.s9'];
+function drawSteps(at, err, toelichting){
   $('admSteps').hidden = false;
   $('admSteps').innerHTML = STEPS.map((k,i) => {
     const cls = err && i===at ? 'err' : i < at ? 'done' : i === at ? 'now' : '';
     const mk  = err && i===at ? '✗' : i < at ? '✓' : i === at ? '…' : '·';
-    return `<div class="step ${cls}"><span class="mk">${mk}</span><span>${t(k)}</span></div>`;
+    const bij = (!err && i === at && toelichting) ? ` <span class="hint">— ${toelichting}</span>` : '';
+    return `<div class="step ${cls}"><span class="mk">${mk}</span><span>${t(k)}${bij}</span></div>`;
   }).join('') + (err ? `<div class="step err"><span class="mk">!</span><span>${err}</span></div>` : '');
+}
+
+/* De upload in het kort:
+ *
+ *   1-6  het KMZ komt in incoming/ op main van de BRON-repo. Een wachtruimte,
+ *        geen bron: de nachtelijke build kijkt er nooit in, dus een bestand dat
+ *        hier belandt kan nooit vanzelf gepubliceerd worden.
+ *   7    de omzetting starten in de APP-repo, met een branchnaam als opdracht.
+ *   8    wachten tot die branch bestaat — dat is het teken dat de build klaar is.
+ *   9    er een pull request van maken.
+ *
+ * Waarom de app die pull request opent en niet de workflow: een pull request die
+ * met het ingebouwde GITHUB_TOKEN gemaakt wordt, start géén workflows. De preview
+ * zou dan nooit gebouwd worden. Met het token van de beheerder gebeurt dat wel.
+ */
+const WACHT_MAX = 40;      // 40 × 6 s = vier minuten voor we het opgeven
+const WACHT_MS  = 6000;
+
+function bewaarBezig(gegevens){ remember('adm.bezig', gegevens ? JSON.stringify(gegevens) : ''); }
+function huidigBezig(){ try{ return JSON.parse(recall('adm.bezig') || 'null'); }catch{ return null; } }
+
+const slaap = ms => new Promise(r => setTimeout(r, ms));
+
+/* Wacht tot de build zijn branch neergezet heeft. De workflow commit desnoods
+   leeg, juist zodat deze branch er altijd komt — anders zou "geen wijzigingen"
+   hier niet te onderscheiden zijn van "build mislukt". */
+async function wachtOpBranch(branch, vanaf){
+  for(let poging = vanaf || 0; poging < WACHT_MAX; poging++){
+    try{
+      await gh(`/repos/${adm.repo}/git/ref/heads/${branch}`);
+      return true;
+    }catch{}
+    drawSteps(7, null, `${t('adm.building')} (${poging + 1}/${WACHT_MAX})`);
+    await slaap(WACHT_MS);
+  }
+  return false;
+}
+
+async function opentPr(branch, bestand){
+  let rapport = '';
+  try{
+    rapport = await ghRuw(`/repos/${adm.repo}/contents/report.md?ref=${encodeURIComponent(branch)}`);
+  }catch{}
+  return gh(`/repos/${adm.repo}/pulls`, {
+    method:'POST', body: JSON.stringify({
+      title:`Nieuwe ONFF-release: ${bestand}`, head: branch, base: adm.branch,
+      body:`Omgezet uit \`incoming/${bestand}\` in de bron-repo, gestart vanuit het beheerscherm van Diana.\n\n`
+         + `Kijk naar de preview vóór je merget. Publiceer je, dan verhuist het bronbestand van \`incoming/\` naar \`source/\`.\n\n`
+         + (rapport ? `---\n\n${rapport}` : '')})});
 }
 
 $('admSend').onclick = async () => {
   const file = $('admFile').files[0];
   if(!file) return;
   $('admSend').disabled = true;
-  const path = (adm.path.replace(/^\/|\/$/g,'') + '/' + file.name).replace(/^\//,'');
-  const stamp = new Date().toISOString().slice(0,16).replace(/[-:T]/g,'');
-  const branch = `diana-upload-${stamp}`;
+  const bron   = bronRepo();
+  const path   = (adm.path.replace(/^\/|\/$/g,'') + '/' + file.name).replace(/^\//,'');
+  const stamp  = new Date().toISOString().slice(0,16).replace(/[-:T]/g,'');
+  const branch = `diana-data-${stamp}`;
   let step = 0;
   try{
     drawSteps(step);                                            // 1 basis ophalen
-    const ref = await gh(`/repos/${adm.repo}/git/ref/heads/${adm.branch}`);
+    const ref = await gh(`/repos/${bron}/git/ref/heads/${adm.branch}`);
     const baseSha = ref.object.sha;
 
     drawSteps(++step);                                          // 2 bestand inlezen
     const b64 = toBase64(await file.arrayBuffer());
 
     drawSteps(++step);                                          // 3 blob
-    const blob = await gh(`/repos/${adm.repo}/git/blobs`, {
+    const blob = await gh(`/repos/${bron}/git/blobs`, {
       method:'POST', body: JSON.stringify({content:b64, encoding:'base64'})});
 
     drawSteps(++step);                                          // 4 boom
-    const baseCommit = await gh(`/repos/${adm.repo}/git/commits/${baseSha}`);
-    const tree = await gh(`/repos/${adm.repo}/git/trees`, {
+    const baseCommit = await gh(`/repos/${bron}/git/commits/${baseSha}`);
+    const tree = await gh(`/repos/${bron}/git/trees`, {
       method:'POST', body: JSON.stringify({base_tree: baseCommit.tree.sha,
         tree:[{path, mode:'100644', type:'blob', sha: blob.sha}]})});
 
     drawSteps(++step);                                          // 5 commit
-    const commit = await gh(`/repos/${adm.repo}/git/commits`, {
+    const commit = await gh(`/repos/${bron}/git/commits`, {
       method:'POST', body: JSON.stringify({
-        message:`data: ${file.name} toegevoegd via Diana`, tree: tree.sha, parents:[baseSha]})});
+        message:`bron: ${file.name} in de wachtruimte gezet via Diana`,
+        tree: tree.sha, parents:[baseSha]})});
 
-    drawSteps(++step);                                          // 6 branch
-    await gh(`/repos/${adm.repo}/git/refs`, {
-      method:'POST', body: JSON.stringify({ref:`refs/heads/${branch}`, sha: commit.sha})});
+    drawSteps(++step);                                          // 6 wachtruimte bijwerken
+    await gh(`/repos/${bron}/git/refs/heads/${adm.branch}`, {
+      method:'PATCH', body: JSON.stringify({sha: commit.sha})});
 
-    drawSteps(++step);                                          // 7 pull request
-    const pr = await gh(`/repos/${adm.repo}/pulls`, {
-      method:'POST', body: JSON.stringify({
-        title:`Nieuwe bronrelease: ${file.name}`, head: branch, base: adm.branch,
-        body:`Geüpload via het beheerscherm van Diana.\n\nBestand: \`${path}\` (${(file.size/1e6).toFixed(1)} MB)\n\nDe workflows zetten de data om en plaatsen hieronder het verschillenrapport en een preview-link. Kijk daarnaar vóór je merget.`})});
+    drawSteps(++step);                                          // 7 omzetting starten
+    await gh(`/repos/${adm.repo}/actions/workflows/build-data.yml/dispatches`, {
+      method:'POST', body: JSON.stringify({ref: adm.branch, inputs:{branch}})});
+    // Vanaf hier is er werk op gang dat de app overleeft. Wie de app sluit terwijl
+    // de build draait, vindt hem bij de volgende keer openen terug via hervatUpload().
+    bewaarBezig({branch, file: file.name, at: new Date().toISOString()});
+
+    drawSteps(++step);                                          // 8 wachten op de branch
+    const er = await wachtOpBranch(branch);
+    if(!er){ drawSteps(7, t('adm.buildslow')); showStatus('out', t('adm.failed'), t('adm.buildslow')); return; }
+
+    drawSteps(++step);                                          // 9 pull request
+    const pr = await opentPr(branch, file.name);
 
     drawSteps(STEPS.length);
+    bewaarBezig(null);
     $('admSteps').innerHTML += `<div class="step done"><span class="mk">→</span>
       <a href="${pr.html_url}" target="_blank" rel="noopener">${t('adm.openpr')} #${pr.number}</a></div>`;
     showStatus('in', t('adm.done'), `#${pr.number} · ${file.name}`);
@@ -4508,6 +4673,32 @@ $('admSend').onclick = async () => {
     $('admSend').disabled = false;
   }
 };
+
+/* Sloot je de app terwijl de omzetting liep, dan pikt dit de draad weer op: de
+   branch bestaat intussen wel, alleen de pull request is er nooit van gemaakt. */
+async function hervatUpload(){
+  const bezig = huidigBezig();
+  if(!bezig || !adm.repo || !adm.token) return;
+  if(huidigePr()){ bewaarBezig(null); return; }   // er is al een pull request
+  try{
+    // Misschien is er al een pull request voor deze branch — dan alleen oppikken.
+    const bestaand = await gh(`/repos/${adm.repo}/pulls?state=open&head=${adm.repo.split('/')[0]}:${encodeURIComponent(bezig.branch)}`);
+    if(bestaand && bestaand.length){
+      bewaarPr(bestaand[0], bezig.file); bewaarBezig(null);
+      showStatus('in', t('adm.resumed'), `#${bestaand[0].number}`);
+      toonPr().catch(()=>{});
+      return;
+    }
+    await gh(`/repos/${adm.repo}/git/ref/heads/${bezig.branch}`);   // bestaat de branch al?
+    const pr = await opentPr(bezig.branch, bezig.file);
+    bewaarPr(pr, bezig.file); bewaarBezig(null);
+    showStatus('in', t('adm.resumed'), `#${pr.number}`);
+    toonPr().catch(()=>{});
+  }catch{
+    // Branch bestaat nog niet: de build loopt waarschijnlijk nog. Laat het staan,
+    // een volgende keer openen probeert het opnieuw.
+  }
+}
 
 /* ================================================================== *
  * De openstaande upload opvolgen — zonder naar github.com te gaan
@@ -4567,11 +4758,20 @@ async function toonPr(){
   // Al samengevoegd of gesloten terwijl de app dicht was: dan is er niets meer
   // op te volgen en verdwijnt de kaart vanzelf.
   if(pr.state !== 'open'){
-    $('admPrHead').textContent = pr.merged ? t('adm.prmerged') : t('adm.prclosed');
+    // Buiten de app afgehandeld — op github.com, of op een ander toestel. Dan is
+    // het bronbestand nog niet van zijn plaats gekomen; dat gebeurt hier alsnog,
+    // zodat de wachtruimte niet stilletjes vol blijft staan.
+    let bijschrift = '';
+    try{
+      if(await verplaatsBron(opgeslagen.file, !!pr.merged)){
+        bijschrift = ' · ' + t(pr.merged ? 'adm.promoted' : 'adm.discarded');
+      }
+    }catch{}
+    $('admPrHead').textContent = (pr.merged ? t('adm.prmerged') : t('adm.prclosed')) + bijschrift;
     $('admPrHead').className = 'fb good';
     $('admPrChecks').innerHTML = '';
     $('admPrMerge').disabled = true;
-    bewaarPr(null); stopPrPoll();
+    bewaarPr(null); bewaarBezig(null); stopPrPoll();
     return;
   }
 
@@ -4611,22 +4811,23 @@ async function toonPr(){
     ? `<a href="${url}" target="_blank" rel="noopener">🗺️ ${t('adm.prpreview')}</a>`
     : `<span class="hint">${bezig ? t('adm.prwaiting') : mislukt ? t('adm.prfailed') : ''}</span>`;
 
-  // Het verschillenrapport zoals de workflow het onder de pull request zette.
+  // Het verschillenrapport. Bij een upload uit de wachtruimte staat het in de
+  // tekst van de pull request zelf; bij een pull request die iemand met de hand
+  // opende, plakt de workflow het er als opmerking onder. Allebei tonen.
+  const schoon = s => s
+    .replace('<!-- diana-datarapport -->','')
+    .replace(/<\/?(details|summary|sub)>/g,'')
+    .replace(/\*\*/g,'')
+    .trim();
   try{
+    const box = $('admPrReport');
+    let tekst = '';
     const opmerkingen = await gh(`/repos/${adm.repo}/issues/${pr.number}/comments`);
     const rapport = (opmerkingen || []).filter(c => (c.body||'').startsWith('<!-- diana-datarapport -->')).pop();
-    const box = $('admPrReport');
-    if(rapport){
-      box.hidden = false;
-      box.textContent = rapport.body
-        .replace('<!-- diana-datarapport -->','')
-        .replace(/<\/?(details|summary|sub)>/g,'')
-        .replace(/\*\*/g,'')
-        .trim();
-    }else{
-      box.hidden = false;
-      box.textContent = t('adm.prnoreport');
-    }
+    if(rapport) tekst = schoon(rapport.body);
+    else if(pr.body && pr.body.includes('---')) tekst = schoon(pr.body.split('---').slice(1).join('---'));
+    box.hidden = false;
+    box.textContent = tekst || t('adm.prnoreport');
   }catch{}
 
   // Publiceren mag pas als alles groen is. Mergen terwijl de build nog loopt is
@@ -4639,6 +4840,51 @@ async function toonPr(){
 
 $('admPrRefresh').onclick = () => toonPr().catch(err => showStatus('out', err.message, ''));
 
+/* ---------- de wachtruimte opruimen ----------
+ *
+ * Na jouw beslissing moet het bronbestand nog van zijn plaats: bij publiceren van
+ * incoming/ naar source/, bij afwijzen de vuilnisbak in. Dat gebeurt hier, in de
+ * app, met jouw eigen token — en niet in een workflow. Dat scheelt een tweede
+ * schrijftoken in de publieke repo, en dat token is precies het ding dat je daar
+ * liever niet hebt staan.
+ *
+ * Het bestand zelf reist niet mee: git kent het al onder zijn hash, dus we
+ * schrijven alleen een nieuwe boom die naar diezelfde hash wijst. Twintig
+ * megabyte verhuizen kost zo één handvol kleine aanroepen.
+ *
+ * De prijs van deze keuze: sluit je de app meteen na het publiceren, dan blijft
+ * het bestand in incoming/ staan. Vervelend, niet gevaarlijk — de nachtelijke
+ * build kijkt daar nooit. De volgende upload of opruiming zet het recht.
+ */
+async function verplaatsBron(bestand, naarSource){
+  if(!bestand) return false;
+  const bron = bronRepo();
+  const vanaf = `${adm.path.replace(/^\/|\/$/g,'')}/${bestand}`;
+  const naar  = `source/${bestand}`;
+
+  const ref  = await gh(`/repos/${bron}/git/ref/heads/${adm.branch}`);
+  const base = ref.object.sha;
+  const baseCommit = await gh(`/repos/${bron}/git/commits/${base}`);
+  const boom = await gh(`/repos/${bron}/git/trees/${baseCommit.tree.sha}?recursive=1`);
+  const item = (boom.tree || []).find(x => x.path === vanaf);
+  if(!item) return false;                      // al opgeruimd, niets te doen
+
+  const wijzigingen = [{path: vanaf, mode:'100644', type:'blob', sha: null}];
+  if(naarSource) wijzigingen.unshift({path: naar, mode:'100644', type:'blob', sha: item.sha});
+
+  const tree = await gh(`/repos/${bron}/git/trees`, {
+    method:'POST', body: JSON.stringify({base_tree: baseCommit.tree.sha, tree: wijzigingen})});
+  const commit = await gh(`/repos/${bron}/git/commits`, {
+    method:'POST', body: JSON.stringify({
+      message: naarSource
+        ? `bron: ${bestand} goedgekeurd en naar source/ verplaatst`
+        : `bron: ${bestand} afgewezen en uit de wachtruimte verwijderd`,
+      tree: tree.sha, parents:[base]})});
+  await gh(`/repos/${bron}/git/refs/heads/${adm.branch}`, {
+    method:'PATCH', body: JSON.stringify({sha: commit.sha})});
+  return true;
+}
+
 $('admPrMerge').onclick = async () => {
   const opgeslagen = huidigePr();
   if(!opgeslagen) return;
@@ -4650,8 +4896,18 @@ $('admPrMerge').onclick = async () => {
         commit_title:`Nieuwe bronrelease samengevoegd via Diana (#${opgeslagen.number})`})});
     // Branch opruimen mag mislukken — de merge is wat telt.
     try{ await gh(`/repos/${adm.repo}/git/refs/heads/${opgeslagen.branch}`, {method:'DELETE'}); }catch{}
-    showStatus('in', t('adm.prmerged'), `#${opgeslagen.number}`);
-    bewaarPr(null); stopPrPoll();
+
+    // Nu pas promoveert het bronbestand. De volgorde is met opzet: eerst is de
+    // data live, dan pas heet het bestand een bron. Andersom zou een mislukte
+    // merge een KMZ in source/ achterlaten dat nooit gepubliceerd is.
+    let bijschrift = `#${opgeslagen.number}`;
+    try{
+      if(await verplaatsBron(opgeslagen.file, true)) bijschrift += ` · ${t('adm.promoted')}`;
+      showStatus('in', t('adm.prmerged'), bijschrift);
+    }catch(err){
+      showStatus('out', t('adm.promotefail'), err.message);
+    }
+    bewaarPr(null); bewaarBezig(null); stopPrPoll();
     $('admPrCard').hidden = true;
   }catch(err){
     showStatus('out', t('adm.failed'), err.message);
@@ -4667,8 +4923,15 @@ $('admPrClose').onclick = async () => {
     await gh(`/repos/${adm.repo}/pulls/${opgeslagen.number}`, {
       method:'PATCH', body: JSON.stringify({state:'closed'})});
     try{ await gh(`/repos/${adm.repo}/git/refs/heads/${opgeslagen.branch}`, {method:'DELETE'}); }catch{}
-    showStatus('in', t('adm.prclosed'), `#${opgeslagen.number}`);
-    bewaarPr(null); stopPrPoll();
+
+    // Afwijzen betekent ook: het bronbestand mag niet blijven liggen. Anders staat
+    // het er over een maand nog, en weet niemand meer waarom.
+    let bijschrift = `#${opgeslagen.number}`;
+    try{
+      if(await verplaatsBron(opgeslagen.file, false)) bijschrift += ` · ${t('adm.discarded')}`;
+    }catch{}
+    showStatus('in', t('adm.prclosed'), bijschrift);
+    bewaarPr(null); bewaarBezig(null); stopPrPoll();
     $('admPrCard').hidden = true;
   }catch(err){
     showStatus('out', t('adm.failed'), err.message);
