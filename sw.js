@@ -13,7 +13,7 @@
  * Kaarttegels krijgen een eigen cache met een ruwe LRU-limiet, zodat een
  * gedownload gebied blijft staan maar de opslag niet ongelimiteerd groeit.
  */
-const VERSION   = 'diana-8a9f885';
+const VERSION   = 'diana-0fc9fb0';
 const SHELL     = `${VERSION}-shell`;
 const TILES     = `${VERSION}-tiles`;
 const TILE_MAX  = 3000;               // ruwweg 60 MB aan vectortegels
