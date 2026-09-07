@@ -1,0 +1,14 @@
+# Werkmap van kmz2geojson.py — tijdelijk uitgepakte KML, hoort niet in de repo
+.kmz-work/
+
+# Gecompileerde Python — staat er nu wel in (build/__pycache__/), mag weg
+__pycache__/
+*.py[cod]
+
+# Lokale bouwmap van site.sh
+_site/
+
+# Het bron-KMZ hoort niet in deze publieke repo. Het staat in de private
+# bron-repo; de build haalt het daar op en zet het in bron/.
+source/*.kmz
+bron/
