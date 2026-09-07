@@ -30,6 +30,16 @@ on:
   schedule:
     - cron: '0 1 * * *'
   workflow_dispatch:
+    inputs:
+      branch:
+        description: >-
+          Branch waarop het resultaat moet komen. Laat leeg voor een gewone
+          verversing die rechtstreeks naar main gaat. Vult het beheerscherm van
+          Diana hier een naam in, dan bouwt deze workflow met het KMZ uit
+          incoming/ en zet hij het resultaat op die branch — main blijft ongemoeid
+          tot de beheerder de pull request merget.
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -93,13 +103,28 @@ jobs:
       # terug op een source/-map in deze repo. Dat is de oude situatie, en tijdens
       # de overzetting is dat precies het vangnet dat je wil. Wel luid gemeld:
       # stil terugvallen op iets ouds is hoe je een maand met verkeerde data draait.
+      #
+      # incoming/ is de wachtruimte: daar zet het beheerscherm een nieuw KMZ neer
+      # dat nog niemand goedgekeurd heeft. Die map wordt ALLEEN gelezen als er een
+      # branch gevraagd is — dus alleen wanneer een mens op "uploaden" geklikt
+      # heeft. De nachtelijke run kijkt er nooit in, en dat is met opzet: anders
+      # zou een afgewezen bestand de nacht daarna alsnog vanzelf gepubliceerd
+      # worden, langs de bewaking heen.
       - name: Bronmap bepalen
         id: bronmap
+        env:
+          BRANCH: ${{ github.event.inputs.branch }}
         run: |
-          if [ -d bron/source ] && [ -n "$(find bron/source -maxdepth 1 -name '*.kmz' -print -quit)" ]; then
+          heeft() { [ -d "$1" ] && [ -n "$(find "$1" -maxdepth 1 -name '*.kmz' -print -quit)" ]; }
+
+          if [ -n "$BRANCH" ] && heeft bron/incoming; then
+            echo "dir=bron/incoming" >> "$GITHUB_OUTPUT"
+            echo "wacht=1" >> "$GITHUB_OUTPUT"
+            echo "Bron: wachtruimte incoming/ in ${{ vars.SOURCE_REPO }} — resultaat gaat naar branch $BRANCH"
+          elif heeft bron/source; then
             echo "dir=bron/source" >> "$GITHUB_OUTPUT"
             echo "Bron: private repo ${{ vars.SOURCE_REPO }} (map source/)"
-          elif [ -d bron ] && [ -n "$(find bron -maxdepth 1 -name '*.kmz' -print -quit)" ]; then
+          elif heeft bron; then
             echo "dir=bron" >> "$GITHUB_OUTPUT"
             echo "Bron: private repo ${{ vars.SOURCE_REPO }} (wortel)"
           else
@@ -107,6 +132,10 @@ jobs:
             if [ -n "${{ vars.SOURCE_REPO }}" ]; then
               echo "::warning::de private bron-repo leverde geen KMZ op — teruggevallen op source/ in deze repo"
             fi
+          fi
+
+          if [ -n "$BRANCH" ] && [ -z "$(find bron/incoming -maxdepth 1 -name '*.kmz' -print -quit 2>/dev/null)" ]; then
+            echo "::warning::er is een branch gevraagd maar incoming/ is leeg — er wordt gebouwd met het bestand dat al in source/ staat"
           fi
 
       - name: Nieuwste KMZ kiezen
@@ -144,7 +173,12 @@ jobs:
         run: |
           REFS="${ONFF_REFS_CSV:-https://wwff.co/wwff-data/wwff_directory.csv}"
           STRICT=""
-          if [ "${{ github.event_name }}" != "pull_request" ]; then STRICT="--strict"; fi
+          # Streng zijn heeft alleen zin als er niemand meekijkt. Een build voor een
+          # pull request én een build uit de wachtruimte worden allebei door een mens
+          # beoordeeld voor ze ergens terechtkomen.
+          if [ "${{ github.event_name }}" != "pull_request" ] && [ -z "${{ github.event.inputs.branch }}" ]; then
+            STRICT="--strict"
+          fi
           # De uitvoercontrole hierna moet weten of dit een onbewaakte run was:
           # alleen dan is een onbereikbare directory een reden om te stoppen.
           echo "DIANA_STRICT=${STRICT:-nee}" >> "$GITHUB_ENV"
@@ -244,9 +278,33 @@ jobs:
             echo "Commentaar geplaatst."
           fi
 
+      # ------------------------------------ wachtruimte: resultaat op een eigen branch
+      # Hier gaat niets naar main. Het beheerscherm maakt van deze branch een pull
+      # request, jij kijkt naar de preview, en pas jouw merge zet het live.
+      #
+      # --allow-empty is dragend: levert een nieuwe release exact dezelfde data op,
+      # dan is er niets te committen en zou er geen branch zijn om een pull request
+      # van te maken. Dan blijft de app hangen op "wachten op de omzetting" zonder
+      # dat er iets mis is. Een lege commit zegt eerlijk: gedraaid, niets gewijzigd.
+      - name: Resultaat op de gevraagde branch zetten
+        if: github.event.inputs.branch != '' && steps.kmz.outputs.found == '1'
+        env:
+          DOEL: ${{ github.event.inputs.branch }}
+        run: |
+          git config user.name  "diana-bot"
+          git config user.email "diana-bot@users.noreply.github.com"
+          git add data report.md
+          if [ "${{ steps.diff.outputs.changed }}" = "1" ]; then
+            git commit -q -m "data: omgezet uit $(basename "${{ steps.kmz.outputs.path }}")"
+          else
+            git commit -q --allow-empty -m "data: $(basename "${{ steps.kmz.outputs.path }}") levert geen wijzigingen op"
+          fi
+          git push -q origin "HEAD:refs/heads/$DOEL"
+          echo "Branch $DOEL klaar."
+
       # ------------------------------------------- nachtelijk: rechtstreeks naar main
       - name: Naar main committen
-        if: github.event_name != 'pull_request' && steps.diff.outputs.changed == '1'
+        if: github.event_name != 'pull_request' && github.event.inputs.branch == '' && steps.diff.outputs.changed == '1'
         run: |
           git config user.name  "diana-bot"
           git config user.email "diana-bot@users.noreply.github.com"
@@ -290,8 +348,11 @@ jobs:
   # melding: dat ziet er anders eeuwig hetzelfde uit als "niets te verversen".
   melden:
     needs: bouwen
+    # Niet bij een build uit de wachtruimte: daar zit een mens voor het scherm die
+    # de mislukking meteen ziet. Een issue openen zou alleen ruis zijn.
     if: >-
       always() && github.event_name != 'pull_request' &&
+      github.event.inputs.branch == '' &&
       (needs.bouwen.result != 'success' || needs.bouwen.outputs.kmz_found != '1')
     runs-on: ubuntu-latest
     permissions:
