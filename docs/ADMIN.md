@@ -56,55 +56,89 @@ that browser session.
 
 ### Connecting to a repository
 
+Diana works with **two** repositories, because the source KMZ and the
+published app do not belong in the same place:
+
 | Field | What goes in it |
 |---|---|
-| Repository | `owner/repo`, e.g. `diana-onff/diana-source` (a full URL is normalised down to this form) |
-| Main branch | usually `main` |
-| Target path | where the uploaded file should land, e.g. `source/` |
+| App repo (public) | `owner/repo`, e.g. `diana-onff/diana-onff.github.io` — the app, the data and the workflows |
+| Source repo (private) | e.g. `diana-onff/diana-source` — the ONFF KMZ files, and nothing else |
+| Main branch | usually `main`, and the same name in both |
+| Staging folder | where an uploaded file waits for approval — `incoming/` |
 | Access token | a GitHub **fine-grained personal access token** |
 | "Remember the token on this device" | see the security note below — unticked by default |
 
-Click **Test the connection** before uploading anything. It fetches the
-repository and the branch reference and reports back the current commit and
-branch, and warns you if the token doesn't actually have write access —
-better to find that out now than after picking a file.
+Leave the source repo empty and everything goes to the app repo. That is
+the arrangement from before the two-repository split; it still works, but
+it puts the KMZ in a public repository.
+
+Click **Test the connection** before uploading anything. It checks **both**
+repositories and reports the current commit on each, and warns you if the
+token cannot write to one of them — better to find that out now than
+halfway through sending twenty megabytes.
 
 **Creating the token**, if you don't have one yet: on GitHub, go to
 Settings → Developer settings → Personal access tokens → Fine-grained
 tokens → Generate new token, and scope it as narrowly as possible:
 
-- **Repository access:** only the one repository (never "All repositories")
+- **Resource owner:** the organisation, not your personal account
+- **Repository access:** "Only select repositories", and select **both** —
+  the public app repo and the private source repo. Never "All repositories".
 - **Permissions:** Contents — Read and write, Pull requests — Read and
-  write. Nothing else is needed.
+  write, Actions — Read and write. Actions is what lets the panel start the
+  conversion; without it the upload succeeds and then nothing happens.
 - **Expiration:** as short as you're willing to renew — a token that
   expires in 90 days is safer than one that doesn't expire at all.
 
+Note that a fine-grained token applies the same permission set to every
+repository you select. This token can therefore write to the public repo as
+well. That is acceptable for the administrator's own token — you own both
+repositories anyway — but it is the reason this token is not the one stored
+as a secret in the repository. That one (`SOURCE_TOKEN`, used by the build)
+is read-only, and stays read-only.
+
 ### Uploading a file
 
-Pick the file, then **Upload and open a pull request**. Diana shows the
-same seven steps GitHub's Git Data API actually requires, each one ticking
-off as it completes:
+Pick the file, then **Upload and convert**. Diana shows the nine steps this
+actually takes, each ticking off as it completes:
 
-1. Reading the base branch
-2. Reading the file (in your browser, before sending)
-3. Sending the file to GitHub (as a blob)
+1. Reading the base branch (of the source repo)
+2. Reading the file, in your browser, before sending
+3. Sending the file to GitHub as a blob
 4. Updating the tree
 5. Creating the commit
-6. Creating the branch (named `diana-upload-<timestamp>`, so repeated
-   uploads never collide)
-7. Opening the pull request
+6. Writing to the staging folder — `incoming/` on `main` of the source repo
+7. Starting the conversion in the app repo
+8. Waiting for the conversion (a minute or two; the counter tells you where it is)
+9. Opening the pull request
 
-If a step fails, that step turns red with GitHub's own error message next
-to it, and the upload button becomes usable again so you can fix the
-problem (usually the token) and retry — nothing is left half-done, because
-each step only starts once the previous one has actually succeeded.
+If a step fails, that step turns red with GitHub's own error message next to
+it and the upload button becomes usable again, so you can fix the problem —
+usually the token — and retry. Nothing is left half-done, because each step
+only starts once the previous one has actually succeeded.
 
-The result is a normal pull request against your repository, which then
-goes through exactly the same `build-data.yml` → diff comment →
-`pages.yml` → preview comment sequence described in
-[DEVELOPER.md](DEVELOPER.md#3-the-two-github-actions-workflows) — merging
-it is still a deliberate, separate step, whether you got there via the
-Admin panel or by hand.
+Steps 8 and 9 survive you closing the app: the branch is built on GitHub
+regardless, and the next time you open the Admin panel Diana notices the
+unfinished upload and opens the pull request then.
+
+**Why `incoming/` and not `source/` directly.** The nightly build always
+picks the newest KMZ in `source/`. If an uploaded file went straight there,
+then rejecting the change would achieve nothing — the next night's build
+would quietly use that same file anyway and commit the result itself, going
+around the very review this panel exists for. `incoming/` is a waiting room
+that the nightly build never looks at. A file only becomes a source once you
+have published it.
+
+**What publishing does.** Merging the pull request takes the new data live.
+Diana then moves the KMZ from `incoming/` to `source/` in the source repo,
+using your own token — the file itself is not re-uploaded, only the tree
+entry is rewritten, so this is a handful of small API calls rather than
+another twenty megabytes. Rejecting closes the pull request, deletes the
+branch, and removes the file from `incoming/`.
+
+If you close the app in the seconds between merging and the move, the file
+stays in `incoming/`. That is untidy but harmless: nothing reads that folder
+on its own. The next time you open the Admin panel, Diana finishes the move.
 
 ### A plain warning about the token
 
