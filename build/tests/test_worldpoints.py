@@ -31,29 +31,30 @@ with sync_playwright() as p:
     errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)))
     pg.goto(BASE, wait_until="load")
-    pg.wait_for_timeout(3000)   # het echte wwff-world.geojson is ~9 MB, geef het even
+    pg.wait_for_timeout(3000)   # the real wwff-world.geojson is ~9 MB, give it a moment
 
-    print("\n[1] fabrieksinstelling: wereldwijde laag staat aan")
+    print("\n[1] factory setting: the worldwide layer is on")
     default_on = pg.evaluate("() => showWorld")
-    ok(default_on is True, f"showWorld default is true (kreeg {default_on})")
+    ok(default_on is True, f"showWorld default is true (got {default_on})")
     default_filter = pg.evaluate("() => worldFilter")
-    ok(default_filter == "all", f"worldFilter default is 'all' (kreeg '{default_filter}')")
+    ok(default_filter == "all", f"worldFilter default is 'all' (got '{default_filter}')")
 
-    print("\n[2] de wereldwijde puntenlaag is ingeladen en getekend")
+    print("\n[2] the worldwide points layer is loaded and drawn")
     pg.wait_for_function("() => worldLoaded === true", timeout=15000)
     n = pg.evaluate("() => worldPoints.features.length")
-    ok(n > 60000, f"meer dan 60.000 punten geladen (kreeg {n})")
+    ok(n > 60000, f"more than 60.000 points loaded (got {n})")
     has_onff = pg.evaluate("() => worldPoints.features.some(f => f.properties.ref.startsWith('ONFF'))")
-    ok(not has_onff, "geen ONFF-referenties in de wereldwijde laag (dat is de eigen kaartlaag)")
+    ok(not has_onff, "no ONFF references in the worldwide layer (that is our own map layer)")
     src_exists = pg.evaluate("() => !!map.getSource('wwff-world')")
-    ok(src_exists, "MapLibre-bron 'wwff-world' bestaat")
-    # world-cluster-count is een tekstlaag en heeft glyphs nodig — de neptest-stijl
-    # heeft die niet (net zomin als np-label die al langer dezelfde 'if(glyphs)'-wacht heeft).
+    ok(src_exists, "MapLibre source 'wwff-world' exists")
+    # world-cluster-count is a text layer and needs glyphs — the mock test style
+    # does not have those (no more than np-label, which has had the same
+    # 'if(glyphs)' wait for a while now).
     layers_exist = pg.evaluate(
         "() => ['world-clusters','world-point'].every(l => !!map.getLayer(l))")
-    ok(layers_exist, "de cluster- en puntlaag bestaan")
+    ok(layers_exist, "the cluster and point layers exist")
 
-    print("\n[3] filter op één land beperkt de bron")
+    print("\n[3] filtering to one country narrows the source")
     pg.evaluate("""() => {
         const sel = document.getElementById('setWorldCountry');
         const opt = [...sel.options].find(o => o.textContent === 'Netherlands');
@@ -61,68 +62,68 @@ with sync_playwright() as p:
     }""")
     pg.wait_for_timeout(300)
     saved_filter = pg.evaluate("() => worldFilter")
-    ok(saved_filter == "PAFF", f"worldFilter is 'PAFF' na landkeuze (kreeg '{saved_filter}')")
+    ok(saved_filter == "PAFF", f"worldFilter is 'PAFF' after choosing a country (got '{saved_filter}')")
     filtered_n = pg.evaluate("() => worldFilteredData().features.length")
     all_paff = pg.evaluate(
         "() => worldFilteredData().features.every(f => f.properties.ref.toUpperCase().split('-')[0] === 'PAFF')")
-    ok(filtered_n > 0 and all_paff, f"alleen PAFF-referenties in de gefilterde data ({filtered_n} stuks)")
+    ok(filtered_n > 0 and all_paff, f"only PAFF references in the filtered data ({filtered_n} of them)")
 
-    print("\n[4] keuze overleeft herladen")
+    print("\n[4] the choice survives a reload")
     stored = pg.evaluate("() => localStorage.getItem('diana.worldFilter')")
-    ok(stored == "PAFF", f"'PAFF' bewaard in localStorage (kreeg '{stored}')")
+    ok(stored == "PAFF", f"'PAFF' saved in localStorage (got '{stored}')")
     pg.reload(wait_until="load")
     pg.wait_for_timeout(3000)
     pg.wait_for_function("() => worldLoaded === true", timeout=15000)
     after_reload = pg.evaluate("() => worldFilter")
-    ok(after_reload == "PAFF", f"worldFilter nog steeds 'PAFF' na herladen (kreeg '{after_reload}')")
+    ok(after_reload == "PAFF", f"worldFilter still 'PAFF' after a reload (got '{after_reload}')")
     sel_after = pg.evaluate("() => document.getElementById('setWorldCountry').value")
-    ok(sel_after == "PAFF", "landkeuzelijst toont de bewaarde keuze na herladen")
+    ok(sel_after == "PAFF", "the country dropdown shows the saved choice after a reload")
 
-    print("\n[5] terug naar wereldwijd")
+    print("\n[5] back to worldwide")
     pg.evaluate("""() => {
         const sel = document.getElementById('setWorldCountry');
         sel.value = ''; sel.dispatchEvent(new Event('change'));
     }""")
     pg.wait_for_timeout(300)
     back_to_all = pg.evaluate("() => worldFilter")
-    ok(back_to_all == "all", f"worldFilter weer 'all' (kreeg '{back_to_all}')")
+    ok(back_to_all == "all", f"worldFilter is 'all' again (got '{back_to_all}')")
 
-    print("\n[6] de laag kan uit- en aangezet worden via het lagenpaneel")
+    print("\n[6] the layer can be switched off and on from the layers panel")
     pg.evaluate("() => document.querySelector('.opt[data-layer=\"world\"]').click()")
     pg.wait_for_timeout(200)
     off_vis = pg.evaluate("() => map.getLayoutProperty('world-point','visibility')")
-    ok(off_vis == 'none', f"laag verborgen na uitzetten (kreeg '{off_vis}')")
+    ok(off_vis == 'none', f"layer hidden after switching off (got '{off_vis}')")
     pg.evaluate("() => document.querySelector('.opt[data-layer=\"world\"]').click()")
     pg.wait_for_timeout(200)
     on_vis = pg.evaluate("() => map.getLayoutProperty('world-point','visibility')")
-    ok(on_vis == 'visible', f"laag weer zichtbaar na aanzetten (kreeg '{on_vis}')")
+    ok(on_vis == 'visible', f"layer visible again after switching on (got '{on_vis}')")
 
-    print("\n[7] embed zonder ?world=1 laat de laag uit")
+    print("\n[7] an embed without ?world=1 leaves the layer off")
     pg2 = ctx.new_page()
     pg2.on("pageerror", lambda e: errs.append(str(e)))
     pg2.goto(BASE + "?embed=1", wait_until="load")
     pg2.wait_for_timeout(2000)
     embed_off = pg2.evaluate("() => showWorld")
-    ok(embed_off is False, f"showWorld staat uit in een kale embed (kreeg {embed_off})")
-    # Spots zijn juist de uitzondering: die horen er altijd op, ook in een embed.
+    ok(embed_off is False, f"showWorld is off in a bare embed (got {embed_off})")
+    # Spots are precisely the exception: they always belong on it, in an embed too.
     embed_spots = pg2.evaluate("() => showSpots")
-    ok(embed_spots is True, f"showSpots staat wél aan in een embed (kreeg {embed_spots})")
+    ok(embed_spots is True, f"showSpots is on in an embed after all (got {embed_spots})")
     pg2.close()
 
-    print("\n[8] embed mét ?world=1 zet de laag wél aan")
+    print("\n[8] an embed WITH ?world=1 does switch the layer on")
     pg3 = ctx.new_page()
     pg3.on("pageerror", lambda e: errs.append(str(e)))
     pg3.goto(BASE + "?embed=1&world=1", wait_until="load")
     pg3.wait_for_timeout(3000)
     embed_on = pg3.evaluate("() => showWorld")
-    ok(embed_on is True, f"showWorld staat aan met ?world=1 (kreeg {embed_on})")
+    ok(embed_on is True, f"showWorld is on with ?world=1 (got {embed_on})")
     pg3.close()
 
-    print("\n[9] geen JS-fouten")
+    print("\n[9] no JS errors")
     real = [e for e in errs if "Failed to load resource" not in e]
-    ok(not real, "geen page errors: " + (real[0][:160] if real else "ok"))
+    ok(not real, "no page errors: " + (real[0][:160] if real else "ok"))
 
     br.close()
 
-print("\n" + ("ALLES OK" if not fails else f"{len(fails)} PROBLEMEN: " + " | ".join(fails)))
+print("\n" + ("ALL OK" if not fails else f"{len(fails)} PROBLEMS: " + " | ".join(fails)))
 sys.exit(1 if fails else 0)

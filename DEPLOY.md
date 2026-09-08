@@ -1,187 +1,195 @@
-# Diana online zetten — alles binnen GitHub
+# Putting Diana online — everything inside GitHub
 
-Geen Cloudflare, geen externe dienst. Eén repo, GitHub Pages, en één beheerder die
-uploadt. Dit document zegt ook eerlijk wat daarbij openbaar wordt en wat niet.
+No Cloudflare, no external service. One repo, GitHub Pages, and one administrator who
+uploads. This document is also honest about what becomes public in the process and
+what does not.
 
 ---
 
-## 1. Eerst de vraag die er echt toe doet
+## 1. First, the question that really matters
 
-> "Nadeel, publiek. Maar data mag niet zomaar te grabbel?"
+> "Downside: it's public. But the data shouldn't just be up for grabs, should it?"
 
-Er zitten drie verschillende dingen in die vraag, en maar één ervan is een echte keuze.
+There are three different things in that question, and only one of them is a real
+choice.
 
-### De zonegrenzen worden hoe dan ook openbaar
+### The zone boundaries become public either way
 
-Diana is een statische webapp. De browser van elke bezoeker **downloadt
-`onff.geojson`** — dat is hoe de kaart werkt. Wie de app kan openen, kan dat bestand
-opslaan. Dat geldt bij GitHub Pages, bij Cloudflare, bij eender welke hosting, en
-of de repo nu publiek of privé staat.
+Diana is a static web app. Every visitor's browser **downloads `onff.geojson`** —
+that is how the map works. Anyone who can open the app can save that file. That holds
+on GitHub Pages, on Cloudflare, on any hosting whatsoever, and whether the repo is
+public or private.
 
-Met andere woorden: **de app publiceren ís de grenzen publiceren.** Wil ONFF dat niet,
-dan kan Diana als publieke webapp niet bestaan — dan wordt het een besloten app achter
-een login, en dat is een heel ander project.
+In other words: **publishing the app *is* publishing the boundaries.** If ONFF does
+not want that, then Diana cannot exist as a public web app — it would become a closed
+app behind a login, and that is an entirely different project.
 
-Ter geruststelling: die grenzen staan feitelijk al publiek. Het ONFF-blogspot toont ze
-per provincie in ingebedde Google My Maps, zonder login.
+For reassurance: those boundaries are already public in practice. The ONFF blogspot
+shows them province by province in embedded Google My Maps, without a login.
 
-### De repo publiek zetten voegt daar één ding aan toe
+### Making the repo public adds exactly one thing
 
-Namelijk het **oorspronkelijke KMZ-bestand**, als bestand, herdistribueerd op een
-tweede kanaal. ONFF verspreidt dat via de BOS-groups.io, achter een lidmaatschap. Dat
-is geen geheime data — het is grotendeels een WDPA-export, en WDPA is zelf een open
-dataset — maar het is wél Luks werk, verspreid via zijn kanaal.
+Namely the **original KMZ file**, as a file, redistributed through a second channel.
+ONFF distributes it through the BOS groups.io, behind membership. It is not secret
+data — it is largely a WDPA export, and WDPA is itself an open dataset — but it *is*
+Luk's work, distributed through his channel.
 
-**Dat is dus geen technische vraag maar een beleefdheidsvraag, en ze is voor Luk.**
+**So this is not a technical question but a question of courtesy, and it is Luk's to
+answer.**
 
-Wat je hem kan voorleggen, in één zin: *"Diana wordt open source op GitHub. De
-zonegrenzen komen daarmee als databestand online — dat moet, anders werkt de kaart
-niet. Mag het bron-KMZ er ook bij, of houden we dat buiten de publieke repo?"*
+What you can put to him, in one sentence: *"Diana is going open source on GitHub. That
+means the zone boundaries go online as a data file — they have to, otherwise the map
+does not work. May the source KMZ go with it, or do we keep that out of the public
+repo?"*
 
-### En dan zijn er twee wegen
+### And then there are two routes
 
-| | Als Luk akkoord is | Als Luk liever niet |
+| | If Luk agrees | If Luk would rather not |
 |---|---|---|
-| Opzet | **één publieke repo** | **twee repo's**: privé voor de bron, publiek voor de site |
-| KMZ | staat in `source/`, publiek | blijft in de private repo |
-| Complexiteit | laag | één extra repo en één token |
-| Kosten | €0 | €0 (2.000 gratis Action-minuten per maand volstaan ruim) |
+| Setup | **one public repo** | **two repos**: private for the source, public for the site |
+| KMZ | sits in `source/`, public | stays in the private repo |
+| Complexity | low | one extra repo and one token |
+| Cost | €0 | €0 (2,000 free Action minutes a month is plenty) |
 
-Hieronder staat weg 1 volledig uitgewerkt. Weg 2 staat in §5.
+Route 1 is worked out in full below. Route 2 is in §5.
 
 ---
 
-## 2. Weg 1 — één publieke repo (aanbevolen als Luk akkoord is)
+## 2. Route 1 — one public repo (recommended if Luk agrees)
 
-### Instellen, één keer
+### Setting up, once
 
-1. Maak op GitHub een **publieke** repo, bijvoorbeeld `diana`.
-2. Zet alles uit `diana-repo.zip` erin, plus `ONFF 20260101.kmz` in `source/`.
-3. Repo-instellingen → **Pages** → Source: **Deploy from a branch** → branch
-   `gh-pages`, map `/ (root)`. (Die branch bestaat nog niet; hij wordt bij de eerste
-   push aangemaakt. Zet dit dus in nadat de eerste workflow gedraaid heeft.)
-4. Nodig de beheerder uit als **collaborator** met de rol *Write*. Meer heeft hij niet
-   nodig om te uploaden en te mergen.
+1. Create a **public** repo on GitHub in the `diana-onff` organisation, named
+   `diana-onff.github.io`.
+2. Put everything from `diana-repo.zip` into it, plus `ONFF 20260101.kmz` in `source/`.
+3. Repo settings → **Pages** → Source: **Deploy from a branch** → branch `gh-pages`,
+   folder `/ (root)`. (That branch does not exist yet; it is created on the first
+   push. So set this up after the first workflow has run.)
+4. Invite the administrator as a **collaborator** with the *Write* role. That is all
+   he needs to upload and to merge.
 
-Je site staat dan op `https://<gebruiker>.github.io/diana/`.
+Your site is then at `https://diana-onff.github.io/`.
 
-### Wat er automatisch gebeurt
+### What happens automatically
 
-| Wanneer | Wat |
+| When | What |
 |---|---|
-| pull request met een nieuw KMZ | `build-data.yml` zet het om en plakt het verschillenrapport eronder |
-| dezelfde pull request | `pages.yml` publiceert een **preview** op `.../preview/pr-12/` en zet die link eronder |
-| merge naar `main` | de live site wordt bijgewerkt |
-| pull request gesloten | de preview wordt opgeruimd |
+| pull request with a new KMZ | `build-data.yml` converts it and pastes the diff report underneath |
+| the same pull request | `pages.yml` publishes a **preview** at `.../preview/pr-12/` and posts that link underneath |
+| merge to `main` | the live site is updated |
+| pull request closed | the preview is cleaned up |
 
-Die preview is er met opzet. GitHub Pages heeft dat niet standaard — daarom publiceert
-`pages.yml` naar een `gh-pages`-branch in plaats van via de standaard Pages-actie. Zo
-kan de beheerder **naar de echte kaart met de nieuwe data kijken vóór hij merget**, en
-dat is de enige controle die er is.
+That preview is deliberate. GitHub Pages does not offer it out of the box — which is
+why `pages.yml` publishes to a `gh-pages` branch instead of going through the standard
+Pages action. This lets the administrator **look at the real map with the new data
+before he merges**, and that is the only check there is.
 
-### Wat er niet online komt
+### What does not go online
 
-`build/site.sh` stelt de te publiceren map samen uit `web/` en de drie datafiles, en
-laat `source/` er bewust buiten. Het KMZ staat dus wel in de repo-boom (want de Action
-leest het), maar wordt niet als website uitgeleverd.
-
----
-
-## 3. Wat de beheerder doet
-
-De volledige procedure, zonder één commando:
-
-1. Haal de nieuwe `ONFF_YYYYMMDD.kmz` van de BOS-groups.io.
-2. Op github.com naar `source/` → **Add file → Upload files** → sleep het bestand erin
-   → onderaan **Create a new branch for this commit** → **Propose changes**.
-3. Wacht een paar minuten. Onder de pull request verschijnen twee reacties: het
-   verschillenrapport en de preview-link.
-4. Open de preview en kijk naar de kaart.
-5. Klopt het? **Merge.** Dat is publiceren.
-6. Klopt het niet? Sluit de pull request. Of, als er al gemerged is: **Revert** op de
-   merge-commit, en de vorige versie staat er weer.
-
-Eén beheerder volstaat. Wil je er later meer, dan is dat een collaborator toevoegen.
+`build/site.sh` assembles the folder to be published out of `web/` and the three data
+files, and deliberately leaves `source/` out of it. So the KMZ is in the repo tree
+(because the Action reads it), but it is not served as part of the website.
 
 ---
 
-## 4. Grenzen om te kennen
+## 3. What the administrator does
 
-- **Bestandsgrootte in de browser: 25 MiB.** Het KMZ is 17 MB, dus dat past. Groeit het
-  ooit voorbij 25 MiB, dan moet het via git in plaats van via de webinterface.
-- **Pages-site: max 1 GB, en zachte limiet van 10 builds per uur.** Wij zitten op zo'n
-  5 MB per publicatie en enkele builds per maand.
-- **Actions op een publieke repo zijn gratis en onbeperkt.**
-- **De repo-historie bewaart elk KMZ voorgoed.** Bij ongeveer 17 MB per release en een
-  paar releases per jaar duurt het jaren voor dat ergens tegenaan loopt.
+The full procedure, without a single command:
+
+1. Get the new `ONFF_YYYYMMDD.kmz` from the BOS groups.io.
+2. On github.com go to `source/` → **Add file → Upload files** → drag the file in →
+   at the bottom **Create a new branch for this commit** → **Propose changes**.
+3. Wait a few minutes. Two comments appear under the pull request: the diff report and
+   the preview link.
+4. Open the preview and look at the map.
+5. Does it look right? **Merge.** That is publishing.
+6. Does it not? Close the pull request. Or, if it has already been merged: **Revert**
+   on the merge commit, and the previous version is back.
+
+One administrator is enough. If you want more later, that is a matter of adding a
+collaborator.
 
 ---
 
-## 5. Weg 2 — twee repo's, als het KMZ niet publiek mag
+## 4. Limits worth knowing
 
-Ook volledig binnen GitHub.
+- **File size in the browser: 25 MiB.** The KMZ is 17 MB, so it fits. If it ever grows
+  past 25 MiB, it will have to go through git instead of the web interface.
+- **Pages site: 1 GB maximum, and a soft limit of 10 builds per hour.** We are at some
+  5 MB per publication and a handful of builds per month.
+- **Actions on a public repo are free and unlimited.**
+- **The repo history keeps every KMZ forever.** At roughly 17 MB per release and a
+  couple of releases a year, it will be years before that runs into anything.
+
+---
+
+## 5. Route 2 — two repos, if the KMZ may not be public
+
+Also entirely inside GitHub.
 
 ```
-diana-source   (privé)  source/ build/ overrides.json  + de conversie-Action
-      │  duwt data/ en web/ na een merge naar
+diana-onff/diana-source          (private)  source/ build/ overrides.json  + the conversion Action
+      │  pushes data/ and web/ after a merge to
       ▼
-diana          (publiek)  de site + de data   → GitHub Pages
+diana-onff/diana-onff.github.io  (public)   the site + the data   → GitHub Pages
 ```
 
-- De beheerder uploadt in de **private** repo. Alles wat hij ziet — het rapport, de
-  goedkeuring — blijft daar.
-- Een fine-grained token met schrijfrechten op enkel de publieke repo staat als secret
-  in de private repo; de Action duwt daarmee de gebouwde site door.
-- Private Actions-minuten: 2.000 gratis per maand, en één conversie duurt ongeveer een
-  minuut.
-- Wat je inlevert: de preview-URL zit dan in de publieke repo, terwijl de goedkeuring
-  in de private gebeurt. Werkbaar, maar minder rechtlijnig dan weg 1.
+- The administrator uploads in the **private** repo. Everything he sees — the report,
+  the approval — stays there.
+- A fine-grained token with write access to the public repo only sits as a secret in
+  the private repo; the Action uses it to push the built site through.
+- Private Actions minutes: 2,000 free per month, and one conversion takes about a
+  minute.
+- What you give up: the preview URL then lives in the public repo, while the approval
+  happens in the private one. Workable, but less straightforward than route 1.
 
-Begin niet hiermee. Begin met de vraag aan Luk.
-
----
-
-## 6. Als er geen `gh-pages` verschijnt
-
-Die branch wordt door de workflow aangemaakt. Staat hij er niet, dan is de workflow niet
-gedraaid of gestrand. Loop dit af, in deze volgorde:
-
-**a. Staat de map `.github` wel in de repo?**
-Dit is verreweg de vaakste oorzaak. Windows Verkenner verbergt mappen die met een punt
-beginnen, dus wie de uitgepakte bestanden naar de GitHub-webuploader sleept, laat
-`.github/` ongemerkt achter — en dan bestaat er dus geen workflow. Kijk op github.com of
-je `.github/workflows/pages.yml` ziet staan. Zo niet: maak het bestand aan met
-**Add file → Create new file**, typ als naam `.github/workflows/pages.yml` (GitHub maakt
-de mappen vanzelf) en plak de inhoud erin.
-
-**b. Staat er iets in het tabblad Actions?**
-- *Geen enkele run* → de workflow staat er niet, of hij zit op een andere branch dan
-  `main`. Kijk hoe je hoofdbranch heet.
-- *Rode run* → open hem en lees de gefaalde stap.
-
-**c. Rood bij "Publiceren", met 403 of "permission denied"?**
-Dan staat de tokenrechten-instelling nog op alleen-lezen. Settings → Actions → General →
-**Workflow permissions** → *Read and write permissions* → Save. Draai daarna de workflow
-opnieuw met **Run workflow** in het Actions-tabblad.
-
-**d. Nog steeds niets?**
-De workflow heeft ook een handmatige knop. Actions → "Publiceren naar GitHub Pages" →
-**Run workflow**. Dat maakt `gh-pages` aan zonder dat je iets hoeft te pushen.
-
-Pas als `gh-pages` bestaat, verschijnt hij in het menu bij Settings → Pages.
+Do not start here. Start with the question to Luk.
 
 ---
 
-## 7. De allereerste keer
+## 6. If no `gh-pages` appears
 
-1. **Eerst** Settings → Actions → General → Workflow permissions op *Read and write*.
-2. Repo aanmaken, alles erin, KMZ in `source/` — en controleer dat `.github/` mee is.
-3. Actions → "Publiceren naar GitHub Pages" → **Run workflow**. Nu bestaat `gh-pages`.
-4. Settings → Pages → branch `gh-pages`, map `/ (root)` → Save.
-5. Eén pull request maken (bijvoorbeeld een kleine wijziging in `overrides.json`) en
-   controleren dat je twee reacties krijgt: het rapport en de preview-link.
-6. **De live site openen en kijken of de spots en de heatmap laden.** Dat beantwoordt
-   in tien seconden de laatste open vraag uit het plan: hebben we ooit een proxy nodig,
-   of niet?
+That branch is created by the workflow. If it is not there, the workflow has not run
+or has got stuck. Work through this, in this order:
 
-Die laatste stap is meteen de goedkoopste test in het hele project.
+**a. Is the `.github` folder actually in the repo?**
+This is by far the most common cause. Windows Explorer hides folders that start with a
+dot, so anyone who drags the unpacked files into the GitHub web uploader leaves
+`.github/` behind without noticing — and then there is no workflow at all. Check on
+github.com whether you can see `.github/workflows/pages.yml`. If not: create the file
+with **Add file → Create new file**, type `.github/workflows/pages.yml` as the name
+(GitHub creates the folders for you) and paste the contents in.
+
+**b. Is there anything in the Actions tab?**
+- *No runs at all* → the workflow is not there, or it is on a branch other than
+  `main`. Check what your main branch is called.
+- *A red run* → open it and read the failed step.
+
+**c. Red at "Publish", with a 403 or "permission denied"?**
+Then the token permission setting is still read-only. Settings → Actions → General →
+**Workflow permissions** → *Read and write permissions* → Save. After that, run the
+workflow again with **Run workflow** in the Actions tab.
+
+**d. Still nothing?**
+The workflow also has a manual button. Actions → "Publish to GitHub Pages" → **Run
+workflow**. That creates `gh-pages` without you having to push anything.
+
+Only once `gh-pages` exists does it appear in the menu at Settings → Pages.
+
+---
+
+## 7. The very first time
+
+1. **First** set Settings → Actions → General → Workflow permissions to *Read and
+   write*.
+2. Create the repo, put everything in it, KMZ in `source/` — and check that `.github/`
+   came along.
+3. Actions → "Publish to GitHub Pages" → **Run workflow**. Now `gh-pages` exists.
+4. Settings → Pages → branch `gh-pages`, folder `/ (root)` → Save.
+5. Make one pull request (a small change in `overrides.json`, for instance) and check
+   that you get two comments: the report and the preview link.
+6. **Open the live site and see whether the spots and the heatmap load.** That answers
+   the last open question from the plan in ten seconds: will we ever need a proxy, or
+   not?
+
+That last step is also the cheapest test in the whole project.

@@ -1,31 +1,31 @@
 {
   "_comment": [
-    "Handmatige correcties op de KMZ-data. Deze blijven staan bij elke nieuwe release.",
-    "Sleutel is altijd het ONFF-nummer, nooit de naam — namen bevatten typfouten en dubbels.",
-    "Elk veld is optioneel en overschrijft wat uit het KMZ komt.",
-    "Velden: name, province, desig, iucn, manager, registration, region.",
+    "Manual corrections on top of the KMZ data. These survive every new release.",
+    "The key is always the ONFF number, never the name — names contain typos and duplicates.",
+    "Every field is optional and overrides whatever came out of the KMZ.",
+    "Fields: name, province, desig, iucn, manager, registration, region.",
     "",
-    "Voor referenties zonder polygoon in het KMZ kan je hier een punt zetten:",
-    "  \"ONFF-0123\": { \"point\": [4.47, 50.85], \"_why\": \"geen grens in het KMZ\" }",
-    "Volgorde is [lengte, breedte] — GeoJSON-volgorde, dus lon eerst. Zo'n punt",
-    "wint altijd van de coordinaat uit de ONFF-indexsheet."
+    "For references with no polygon in the KMZ you can put a point here:",
+    "  \"ONFF-0123\": { \"point\": [4.47, 50.85], \"_why\": \"no boundary in the KMZ\" }",
+    "The order is [longitude, latitude] — GeoJSON order, so lon first. Such a point",
+    "always wins over the coordinate from the ONFF index sheet."
   ],
   "zones": {
     "ONFF-0002": {
       "name": "Kalmthoutse Heide",
-      "_why": "KMZ schrijft afwisselend 'Kalmhoutse heide' en 'Kalmthoutse Heide'"
+      "_why": "the KMZ alternates between 'Kalmhoutse heide' and 'Kalmthoutse Heide'"
     },
     "ONFF-0110": {
       "name": "Fort van Oelegem",
-      "_why": "KMZ bevat de typfout 'Fort van Oegegem'"
+      "_why": "the KMZ contains the typo 'Fort van Oegegem'"
     },
     "ONFF-0599": {
       "name": "Carrière de l'Alouette",
-      "_why": "KMZ schrijft \"Carriere de 'Alouttel\" — twee typfouten"
+      "_why": "the KMZ writes \"Carriere de 'Alouttel\" — two typos"
     },
     "ONFF-0001": {
       "name": "Hautes Fagnes",
-      "_why": "naam komt uit de bestandsnaam hautes-fagnes.kmz"
+      "_why": "name comes from the filename hautes-fagnes.kmz"
     }
   }
 }

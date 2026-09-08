@@ -1,130 +1,129 @@
 # Diana
 
-Kaart-app voor de Belgische ONFF-natuurgebieden (Belgian Flora & Fauna, onderdeel van
-WWFF) met live WWFF-spots. Een PWA op een open-source achtergrondkaart, die offline
-werkt en embedbaar is op een website.
+Map app for the Belgian ONFF nature reserves (Belgian Flora & Fauna, part of WWFF)
+with live WWFF spots. A PWA on an open-source base map, which works offline and can
+be embedded in a website.
 
-Code: MIT. Data: niet vrij — zie [LICENSE](LICENSE).
+Code: MIT. Data: not free — see [LICENSE](LICENSE).
 
-Dit is de repo. Het volledige plan staat in `Diana - Technisch plan v0.6.md`; online zetten staat in [DEPLOY.md](DEPLOY.md).
+This is the repo. The full plan is in `Diana - Technisch plan v0.6.md`; putting it online is covered in [DEPLOY.md](DEPLOY.md).
 
-## Documentatie (Engels)
+## Documentation
 
-Uitgebreide documentatie per doelgroep staat in [`docs/`](docs/):
+Detailed documentation per audience is in [`docs/`](docs/):
 
-| Document | Voor wie | Inhoud |
+| Document | Who for | Contents |
 |---|---|---|
-| [docs/DEVELOPER.md](docs/DEVELOPER.md) | ontwikkelaars | repo clonen, de twee GitHub Actions-workflows, `data/*.json` genereren — automatisch én manueel |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | ontwikkelaars/beheerders | waar elke databron vandaan komt, welke API's er lopen, welke mappen de app inleest |
-| [docs/ADMIN.md](docs/ADMIN.md) | beheerders | een nieuwe ONFF-release publiceren, het adminscherm in de app gebruiken, foutopsporing |
-| [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | gebruikers | platformen, installeren als app, elk scherm uitgelegd, embedden, en de **beperkingen** (alles lokaal, geen synchronisatie tussen toestellen) |
+| [docs/DEVELOPER.md](docs/DEVELOPER.md) | developers | cloning the repo, the two GitHub Actions workflows, generating `data/*.json` — automatically and by hand |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | developers/administrators | where every data source comes from, which APIs are involved, which folders the app reads |
+| [docs/ADMIN.md](docs/ADMIN.md) | administrators | publishing a new ONFF release, using the admin screen in the app, troubleshooting |
+| [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | users | platforms, installing as an app, every screen explained, embedding, and the **limitations** (everything local, no synchronisation between devices) |
 
-Deze Nederlandstalige `README.md` en `DEPLOY.md` blijven de kortste weg voor
-wie al met de repo vertrouwd is; de `docs/`-map is de volledige, Engelstalige
-uitleg voor elk van de vier doelgroepen hierboven.
+This `README.md` and `DEPLOY.md` remain the shortest route for anyone already
+familiar with the repo; the `docs/` folder is the full explanation for each of
+the four audiences above.
 
 ---
 
-## Wat er in deze repo zit
+## What is in this repo
 
 ```
-source/           de officiële ONFF KMZ-releases, zoals ze van de BOS-groups.io komen
-build/            de omzetting van KMZ naar de datafiles die de app laadt   ← bouwtijd
-data/             het resultaat — dit is wat de app ophaalt
-overrides.json    handmatige correcties die elke nieuwe release overleven
-web/              de webapplicatie zelf                                     ← runtime
-_site/            wat er gepubliceerd wordt (gemaakt door build/site.sh, niet in git)
-.github/          de Action die dit alles automatisch doet bij een pull request
+source/           the official ONFF KMZ releases, as they come from the BOS groups.io
+build/            the conversion from KMZ to the data files the app loads       ← build time
+data/             the result — this is what the app fetches
+overrides.json    manual corrections that survive every new release
+web/              the web application itself                                    ← runtime
+_site/            what gets published (made by build/site.sh, not in git)
+.github/          the Action that does all of this automatically on a pull request
 ```
 
-Twee helften die niet door elkaar lopen: `build/` draait op een GitHub-runner en komt
-nooit bij een gebruiker; `web/` is wat mensen openen.
+Two halves that do not get mixed up: `build/` runs on a GitHub runner and never
+reaches a user; `web/` is what people open.
 
-## De app draaien
+## Running the app
 
-Een statische server volstaat — de app heeft geen backend.
+A static server is enough — the app has no backend.
 
 ```bash
-python3 -m http.server 8000        # vanuit de repo-root, niet vanuit web/
+python3 -m http.server 8000        # from the repo root, not from web/
 # open http://localhost:8000/web/
 ```
 
-Vanuit `web/` starten werkt niet: de app haalt `../data/onff.geojson` op, en dat valt
-dan buiten de serverroot.
+Starting from inside `web/` does not work: the app fetches `../data/onff.geojson`,
+and that falls outside the server root.
 
-Zes schermen in de onderbalk: **Kaart** (zones, vier kaartstijlen, zoeken,
-gebiedspaneel, GPS met "sta ik in de zone"), **Spots** (wat er nu actief is én de
-aangekondigde agenda, met richting en afstand), **Meld** (jezelf spotten via Spotline),
-**Sessie** (activatiesessie met GPX-bewijs), **Heatmap** (kleurt de kaart op laatste
-activatie of aantal QSO's) en **Regels** (bandplan per mode). Plus NL/FR/EN en een
-service worker die alles offline houdt.
+Six screens in the bottom bar: **Map** (zones, four map styles, search, area panel,
+GPS with "am I inside the zone"), **Spots** (what is active right now plus the
+announced schedule, with bearing and distance), **Spot** (spotting yourself via
+Spotline), **Session** (an activation session with GPX evidence), **Heatmap**
+(colours the map by last activation or number of QSOs) and **Rules** (band plan per
+mode). Plus NL/FR/EN and a service worker that keeps everything available offline.
 
-Het zelfmeldscherm neemt de validatieregels over uit de eigen paginacode van
-`spots.wwff.co/spots/create` (roepteken-patroon, frequentiebereik, referentie van
-minstens 7 tekens, opmerking van hoogstens 100 tekens) en controleert de referentie via
-hun endpoint `/api/references/validate`. Versturen gebeurt als een **gewone
-formulierpost in een nieuw tabblad** — dat mag cross-origin, en de gebruiker ziet de
-bevestiging van Spotline zelf. Daardoor is er voor deze functie géén proxy nodig.
+The self-spotting screen takes its validation rules straight from the page code of
+`spots.wwff.co/spots/create` (callsign pattern, frequency ranges, a reference of at
+least 7 characters, a comment of at most 100 characters) and checks the reference
+through their `/api/references/validate` endpoint. Submitting happens as an
+**ordinary form post in a new tab** — that is allowed cross-origin, and the user sees
+Spotline's own confirmation. That is why this feature needs no proxy at all.
 
-Referentienummers staan standaard aan. Ze komen uit een aparte puntenbron met één punt
-per referentie: zet je ze op de vlakkenlaag, dan tekent MapLibre een label per
-polygoondeel — en ONFF-0329 bestaat uit 67 losse percelen.
+Reference numbers are on by default. They come from a separate point source with one
+point per reference: put them on the polygon layer and MapLibre draws a label per
+polygon part — and ONFF-0329 consists of 67 separate parcels.
 
-**Parameters in de URL** (ook voor de embed op het blogspot):
+**URL parameters** (also for the embed on the blogspot):
 
-| Parameter | Wat |
+| Parameter | What |
 |---|---|
-| `?lang=nl\|fr\|en` | taal forceren; standaard volgt de browser |
-| `?ref=ONFF-0104` | meteen op één gebied inzoomen |
-| `?prov=limburg` | inzoomen op een provincie |
-| `?spots=1` | de spotslaag meteen aanzetten |
-| `?embed=1` | app-chrome verbergen voor een iframe |
-| `?admin=1` | het beheerscherm tonen (ook: vijf keer op het logo tikken) |
+| `?lang=nl\|fr\|en` | force the language; by default it follows the browser |
+| `?ref=ONFF-0104` | zoom straight in on one area |
+| `?prov=limburg` | zoom in on a province |
+| `?spots=1` | switch the spots layer on right away |
+| `?embed=1` | hide the app chrome for an iframe |
+| `?admin=1` | show the admin screen (also: tap the logo five times) |
 
 ```html
-<iframe src="https://diana.<domein>/web/?embed=1&prov=antwerpen&lang=nl&spots=1"
+<iframe src="https://diana-onff.github.io/?embed=1&prov=antwerpen&lang=nl&spots=1"
         width="100%" height="600" style="border:0" loading="lazy"></iframe>
 ```
 
-**Twee externe bronnen, allebei met een zichtbare terugval.** De spots komen van
-`spots.wwff.co` en de heatmap van de gepubliceerde ONFF-statussheet. Of die twee een
-rechtstreekse verbinding vanuit de browser toelaten (CORS), is nog niet vastgesteld;
-lukt het niet, dan zegt de app dat met zoveel woorden en is de Worker uit het plan
-nodig.
+**Two external sources, both with a visible fallback.** The spots come from
+`spots.wwff.co` and the heatmap from the published ONFF status sheet. Whether those
+two allow a direct connection from the browser (CORS) has not been established yet;
+if it does not work, the app says so in as many words and the Worker from the plan
+is needed.
 
 ---
 
-## Een nieuwe ONFF-release publiceren
+## Publishing a new ONFF release
 
-Dit is de hele procedure. Er komt geen commando aan te pas.
+This is the whole procedure. No command is involved.
 
-1. Haal de nieuwe `ONFF_YYYYMMDD.kmz` van de BOS-groups.io.
-2. Ga op github.com naar de map `source/`, klik **Add file → Upload files**, sleep het
-   bestand erin, en kies onderaan **Create a new branch for this commit**.
-   (Het bestand is ±17 MB; de weblimiet is 25 MiB, dus dat past.)
-3. De Action draait automatisch en zet een rapport onder je pull request:
+1. Get the new `ONFF_YYYYMMDD.kmz` from the BOS groups.io.
+2. On github.com, go to the `source/` folder, click **Add file → Upload files**, drag
+   the file in, and pick **Create a new branch for this commit** at the bottom.
+   (The file is about 17 MB; the web limit is 25 MiB, so it fits.)
+3. The Action runs automatically and puts a report under your pull request:
 
-   > **945 gebieden** (was 932, +13) · **15 nieuw** · **2 verdwenen** · **7 gewijzigde grens**
+   > **945 areas** (was 932, +13) · **15 new** · **2 gone** · **7 changed boundary**
 
-   Met de lijsten uitklapbaar en de waarschuwingen erbij.
-4. Klik op de preview-link om de nieuwe kaart écht te bekijken vóór je iets publiceert.
-5. Klopt het? **Merge** de pull request. Dat is publiceren.
-6. Klopt het niet? Sluit de pull request, of gebruik **Revert** op de merge-commit om
-   in één klik terug te gaan naar de vorige versie.
+   With the lists collapsible and the warnings alongside.
+4. Click the preview link to really look at the new map before you publish anything.
+5. Does it look right? **Merge** the pull request. That is publishing.
+6. Does it not? Close the pull request, or use **Revert** on the merge commit to go
+   back to the previous version in one click.
 
-Een verdwenen gebied is geen fout maar echte informatie — ONFF schrapt gebieden. Daarom
-staat het in het rapport en wordt het nooit stilzwijgend toegepast.
+An area that has disappeared is not an error but real information — ONFF does remove
+areas. That is why it is in the report, and why it is never applied silently.
 
-Bij die pull request verschijnt ook een **preview-link** naar de kaart met de nieuwe
-data. Kijk daarnaar vóór je merget — dat is de enige controle die er is. Zie
-[DEPLOY.md](DEPLOY.md).
+That pull request also gets a **preview link** to the map with the new data. Look at
+it before you merge — that is the only check there is. See [DEPLOY.md](DEPLOY.md).
 
 ---
 
-## Namen corrigeren
+## Correcting names
 
-De gebiedsnamen in het KMZ bevatten typfouten en dubbele schrijfwijzen. Het script kiest
-automatisch de beste variant, maar niet altijd de juiste. Corrigeer die in
+The area names in the KMZ contain typos and inconsistent spellings. The script picks
+the best variant automatically, but not always the right one. Correct those in
 `overrides.json`:
 
 ```json
@@ -134,70 +133,70 @@ automatisch de beste variant, maar niet altijd de juiste. Corrigeer die in
 }
 ```
 
-Sleutel is altijd het **nummer**, nooit de naam. Zet er een `_why` bij, zodat over drie
-jaar nog te zien is waarom die correctie er staat. Een pull request op dit bestand laat
-de Action opnieuw draaien.
+The key is always the **number**, never the name. Add a `_why`, so that three years
+from now it is still clear why that correction is there. A pull request on this file
+makes the Action run again.
 
 ---
 
-## Lokaal draaien
+## Running it locally
 
 ```bash
 pip install -r build/requirements.txt
 python build/kmz2geojson.py --kmz "source/ONFF 20260101.kmz"
 ```
 
-Duurt ongeveer een halve minuut. Opties:
+Takes about half a minute. Options:
 
-| Optie | Standaard | Waarvoor |
+| Option | Default | What for |
 |---|---|---|
-| `--tolerance` | `0.00005` | vereenvoudiging in graden; 0,00005 ≈ 5 m |
-| `--decimals` | `5` | afronding van de coördinaten; 5 ≈ 1 m |
-| `--out` | `data` | uitvoermap |
-| `--overrides` | `overrides.json` | correctiebestand |
-| `--report` | `report.md` | waar het verschillenrapport heen gaat |
+| `--tolerance` | `0.00005` | simplification in degrees; 0.00005 ≈ 5 m |
+| `--decimals` | `5` | rounding of the coordinates; 5 ≈ 1 m |
+| `--out` | `data` | output folder |
+| `--overrides` | `overrides.json` | corrections file |
+| `--report` | `report.md` | where the diff report goes |
 
 ---
 
-## De datafiles
+## The data files
 
-| Bestand | Grootte | Wat |
+| File | Size | What |
 |---|---|---|
-| `data/onff.geojson` | 3,7 MB (1,0 MB gzip) | één MultiPolygon per referentie, met naam, provincie, oppervlakte en wat er aan attributen bekend is |
-| `data/onff-points.geojson` | klein | referenties die wél in de WWFF-directory staan maar géén grens hebben in het KMZ, als punt. De app toont ze als gestippelde ring en doet er bewust géén "sta ik erin"-test op |
-| `data/onff-activity.json` | 39 kB | per referentie het aantal QSO's en de datum van de laatste activatie, uit de WWFF-directory. De heatmap gebruikt dit als de ONFF-sheet niet bereikbaar is |
-| `data/onff-index.json` | 210 kB | dezelfde lijst zónder geometrie, plus de punten. Wordt níét door de app geladen — die bouwt zijn eigen index uit de twee geojson-bestanden. Bedoeld voor rapporten en gereedschap ernaast |
-| `data/meta.json` | klein | herkomst: welk bronbestand, welke release, welke instellingen, en hoeveel referenties zonder grens er geplaatst zijn |
+| `data/onff.geojson` | 3.7 MB (1.0 MB gzipped) | one MultiPolygon per reference, with name, province, area and whatever attributes are known |
+| `data/onff-points.geojson` | small | references that *are* in the WWFF directory but have no boundary in the KMZ, as a point. The app shows them as a dotted ring and deliberately does not run an "am I inside" test on them |
+| `data/onff-activity.json` | 39 kB | per reference the number of QSOs and the date of the last activation, from the WWFF directory. The heatmap uses this when the ONFF sheet is unreachable |
+| `data/onff-index.json` | 210 kB | the same list without geometry, plus the points. It is *not* loaded by the app — that builds its own index from the two geojson files. Meant for reports and tooling alongside |
+| `data/meta.json` | small | provenance: which source file, which release, which settings, and how many references without a boundary have been placed |
 
-Dat hele België in één megabyte past, is de reden dat Diana geen tile-server nodig heeft
-en volledig offline kan werken.
+That the whole of Belgium fits in one megabyte is the reason Diana needs no tile
+server and can work entirely offline.
 
-### Wat je niet in de data mag verwachten
+### What not to expect in the data
 
-De attribuutdekking in het KMZ is ongelijk. Van de 932 gebieden heeft:
+Attribute coverage in the KMZ is uneven. Of the 932 areas:
 
-- **565** een aanduiding (`desig`), **515** een IUCN-categorie, **445** een beheerder
-- **75** een registratienummer, **81** een regiocode
-- en ongeveer de helft **niets** buiten naam en nummer
+- **565** have a designation (`desig`), **515** an IUCN category, **445** a manager
+- **75** a registration number, **81** a region code
+- and roughly half have **nothing** beyond a name and a number
 
-Elk veld is dus optioneel. De app moet lege velden weglaten, niet als streepje tonen.
-Wat altijd berekend wordt en er altijd is: oppervlakte, middelpunt, bounding box en
-provincie.
+Every field is therefore optional. The app has to leave empty fields out, not show
+them as a dash. What is always computed and always present: area, centre point,
+bounding box and province.
 
-### Bekende eigenaardigheden van de bron
+### Known quirks of the source
 
-- Het referentienummer staat **niet in een veld** maar in de naam van de bovenliggende
-  folder, als `ONFF-nnnn <naam>`. Daarom wordt overal op het nummer gewerkt.
-- Het KMZ bevat een Maidenhead-gridlaag van ±32.700 placemarks. Die wordt weggegooid —
-  een grid is goedkoper te berekenen dan te versturen.
-- Onderliggend is het een WDPA-export met de ONFF-laag erbovenop; vandaar de velden met
-  hoofdletters (`MANG_AUTH`, `GIS_AREA`, `IUCN_CAT`) naast de Vlaamse in kleine letters
-  (`opp_ha`, `inspireid`).
-- **Welke referenties bestaan, komt uit de WWFF-directory**
-  (`https://wwff.co/wwff-data/wwff_directory.csv`, dagelijks vernieuwd, 68.000
-  referenties wereldwijd waarvan 964 ONFF). Het KMZ zegt alleen welke er een
-  *grens* hebben. Van de 948 actieve ONFF-referenties hebben er 932 een polygoon;
-  de overige 16 komen als **punt** op de kaart, met de coördinaat uit de directory
-  of uit `overrides.json` (`"point": [lon, lat]`). Geschrapte referenties worden
-  niet getoond. Elke referentie komt precies één keer voor: een polygoon wint
-  altijd van een punt. Zie [docs/ADMIN.md](docs/ADMIN.md#3-a-reference-with-no-boundary).
+- The reference number is **not in a field** but in the name of the parent folder, as
+  `ONFF-nnnn <name>`. That is why everything works off the number.
+- The KMZ contains a Maidenhead grid layer of some 32,700 placemarks. That gets thrown
+  away — a grid is cheaper to compute than to ship.
+- Underneath it is a WDPA export with the ONFF layer on top; hence the fields in
+  capitals (`MANG_AUTH`, `GIS_AREA`, `IUCN_CAT`) alongside the Flemish ones in
+  lowercase (`opp_ha`, `inspireid`).
+- **Which references exist comes from the WWFF directory**
+  (`https://wwff.co/wwff-data/wwff_directory.csv`, refreshed daily, 68,000 references
+  worldwide of which 964 are ONFF). The KMZ only says which ones have a *boundary*.
+  Of the 948 active ONFF references, 932 have a polygon; the remaining 16 go on the
+  map as a **point**, with the coordinate from the directory or from
+  `overrides.json` (`"point": [lon, lat]`). Deleted references are not shown. Every
+  reference appears exactly once: a polygon always beats a point. See
+  [docs/ADMIN.md](docs/ADMIN.md#3-a-reference-with-no-boundary).

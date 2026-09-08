@@ -1,26 +1,27 @@
-# Browsertests
+# Browser tests
 
-Playwright-tests die de app in een echte (headless) browser draaien, met alle
-externe hosts onderschept — er is dus geen netwerk voor nodig.
+Playwright tests that run the app in a real (headless) browser, with every
+external host intercepted — so no network is needed for them.
 
 ```bash
 pip install playwright --break-system-packages
-python3 -m http.server 8011          # vanuit de repo-root
-python3 build/tests/test_new.py      # enz.
+python3 -m http.server 8011          # from the repo root
+python3 build/tests/test_new.py      # etc.
 ```
 
-| Bestand | Wat het bewaakt |
+| File | What it guards |
 |---|---|
-| `test_new.py` | punten zonder grens: laden, tekenen, paneel, zoeken, laagknop, en dat de GPS-test ze overslaat |
-| `test_more.py` | taalkeuze (standaard Engels, "volg de browser", bewaard blijven) en de installatiestroom per platform |
-| `test_swipe.py` | naar beneden vegen om panelen te sluiten, en of alle eigen lagen zes stijlwissels overleven |
-| `test_final.py` | dat de installatiebalk wijkt voor een open paneel |
-| `test_splash.py` | startscherm, versienummer, de 16 punten, en of de onderbalk uitgelijnd staat |
-| `test_heat.py` | heatmap uit de sheet én de terugval op de WWFF-directory |
-| `test_worldpoints.py` | wereldwijde WWFF-gebieden: standaard aan, clustering, filteren op één land, laag uit/aan, en dat een embed hem uit laat tenzij `?world=1` |
-| `test_spotsalways.py` | dat de kaart ongevraagd opent waar je staat, dat spots niet uit te zetten zijn, en dat alleen de lijnen ernaartoe schakelbaar zijn (en bewaard blijven) |
-| `test_directory.py` | de bouwstap zelf (geen browser): onmogelijke coördinaten, lekken tussen de lagen, en of `--strict` bij een onbereikbare of afgebroken directory écht niets overschrijft |
-| `test_spotsfilter.py` | spots-filter: standaard wereldwijd, ONFF-only, één land via `wwff-programs.json`, en dat het snelle filter en Instellingen gesynchroniseerd blijven en de herlaadbeurt overleven |
+| `test_new.py` | points without a boundary: loading, drawing, panel, search, layer button, and that the GPS test skips them |
+| `test_more.py` | language choice (English by default, "follow the browser", staying saved) and the install flow per platform |
+| `test_swipe.py` | swiping down to close panels, and whether all our own layers survive six style switches |
+| `test_final.py` | that the install bar gives way to an open panel |
+| `test_splash.py` | splash screen, version number, the 16 dots, and whether the bottom bar is aligned |
+| `test_heat.py` | heatmap from the sheet and the fallback to the WWFF directory |
+| `test_worldpoints.py` | worldwide WWFF areas: on by default, clustering, filtering to one country, layer off/on, and that an embed leaves it off unless `?world=1` |
+| `test_spotsalways.py` | that the map opens unasked where you are standing, that spots cannot be switched off, and that only the lines leading to them are toggleable (and stay saved) |
+| `test_directory.py` | the build step itself (no browser): impossible coordinates, leaks between the layers, and whether `--strict` really overwrites nothing when the directory is unreachable or truncated |
+| `test_spotsfilter.py` | spots filter: worldwide by default, ONFF-only, one country via `wwff-programs.json`, and that the quick filter and Settings stay in sync and survive a reload |
 
-De stijlwisseltest in `test_swipe.py` is de belangrijkste: daar zat de bug waarbij
-alle eigen lagen om de beurt verdwenen na `map.setStyle()`.
+The style-switch test in `test_swipe.py` is the most important one: that is where
+the bug lived that made all our own layers disappear one by one after
+`map.setStyle()`.

@@ -8,7 +8,7 @@ def ok(cond,msg):
     if not cond: fails.append(msg)
 
 def route_all(ctx):
-    # geen net in deze container: alles wat naar buiten wil, onderscheppen
+    # no network in this container: intercept anything that wants to go out
     ctx.route(re.compile(r"https://tiles\.openfreemap\.org/.*"), lambda r: r.fulfill(
         status=200, content_type="application/json",
         body=json.dumps({"version":8,"sources":{},"layers":[
@@ -29,84 +29,85 @@ with sync_playwright() as p:
     pg.goto(BASE, wait_until="load")
     pg.wait_for_timeout(2500)
 
-    print("\n[1] geen JS-fouten bij het laden")
-    real = [e for e in errs if "Failed to load resource" not in e]   # ./data 404 is de bedoelde terugval
-    ok(not real, "geen page errors: "+ (real[0][:160] if real else "ok"))
+    print("\n[1] no JS errors on loading")
+    real = [e for e in errs if "Failed to load resource" not in e]   # the ./data 404 is the intended fallback
+    ok(not real, "no page errors: "+ (real[0][:160] if real else "ok"))
 
-    print("\n[2] punten zonder polygoon")
-    # Hoeveel er zijn hangt af van het KMZ dat er ligt: een nieuwe release kan
-    # grenzen toevoegen voor referenties die vorige keer nog een punt waren.
-    # Vastpinnen op een getal maakt de test kapot bij elke databuild, dus we
-    # vergelijken met wat meta.json van diezelfde build zegt.
+    print("\n[2] points without a polygon")
+    # How many there are depends on the KMZ that happens to be there: a new
+    # release can add boundaries for references that were still a point last time.
+    # Pinning this to a number breaks the test on every data build, so we compare
+    # against what meta.json from that same build says.
     import urllib.request, json as _json
     meta = _json.load(urllib.request.urlopen("http://localhost:8011/data/meta.json"))
     verwacht = meta.get("points_no_polygon", 0)
     n = pg.evaluate("() => noPoly.features.length")
-    ok(n==verwacht, f"{verwacht} punten geladen (kreeg {n})")
+    ok(n==verwacht, f"{verwacht} points loaded (got {n})")
     inidx = pg.evaluate("() => index.filter(z=>z.nopoly).length")
-    ok(inidx==verwacht, f"{verwacht} punten in de zoekindex (kreeg {inidx})")
+    ok(inidx==verwacht, f"{verwacht} points in the search index (got {inidx})")
     lay = pg.evaluate("() => !!map.getLayer('np-dot')")
-    ok(lay, "laag np-dot bestaat")
+    ok(lay, "layer np-dot exists")
     rendered = pg.evaluate("""() => { map.jumpTo({center:[4.5,50.9],zoom:6});
         return map.queryRenderedFeatures({layers:['np-dot']}).length; }""")
     pg.wait_for_timeout(1600)
     rendered = pg.evaluate("() => map.queryRenderedFeatures({layers:['np-dot']}).length")
-    # Eentje kan buiten beeld liggen (er stond er ooit een op Antarctica), dus
-    # we eisen niet alles, wel bijna alles van wat er in dit venster hoort.
+    # One of them may be off-screen (there was one in Antarctica at one point), so
+    # we do not demand all of them, but we do demand nearly all of what belongs in
+    # this viewport.
     ok(rendered >= max(1, verwacht - 2),
-       f"punten renderen echt op de kaart ({rendered} van {verwacht})")
+       f"points really do render on the map ({rendered} of {verwacht})")
 
-    print("\n[3] klikken op een punt geeft het juiste paneel")
-    # Welke referentie geen grens heeft, verandert met elke KMZ-release — een vast
-    # nummer prikken maakt deze test na de volgende upload onterecht rood. We
-    # nemen er eentje uit de dataset die er op dat moment echt is.
+    print("\n[3] clicking a point gives the right panel")
+    # Which reference has no boundary changes with every KMZ release — pinning a
+    # fixed number turns this test unfairly red after the next upload. We take one
+    # from the dataset that really is there at that moment.
     proef = pg.evaluate("() => noPoly.features[0] ? "
                         "{ref: noPoly.features[0].properties.ref, naam: noPoly.features[0].properties.name} : null")
-    ok(bool(proef), f"een referentie zonder grens om mee te testen: {proef}")
+    ok(bool(proef), f"a boundary-less reference to test with: {proef}")
     pg.evaluate(f"() => select({proef['ref']!r})")
     pg.wait_for_timeout(400)
-    ok(pg.locator("#sheet").get_attribute("class").find("open")>=0, "paneel opent")
-    ok((proef['naam'] or proef['ref']) in pg.locator("#zoneName").inner_text(), "naam klopt")
+    ok(pg.locator("#sheet").get_attribute("class").find("open")>=0, "panel opens")
+    ok((proef['naam'] or proef['ref']) in pg.locator("#zoneName").inner_text(), "name is right")
     note = pg.locator("#zoneNote").inner_text()
-    ok("no boundary" in note.lower() or "geen grens" in note.lower(), f"uitleg staat er: {note[:60]}…")
-    ok(len(pg.locator("#badges").inner_text().strip())>0, "er staan kenmerken bij de referentie")
+    ok("no boundary" in note.lower() or "geen grens" in note.lower(), f"the explanation is there: {note[:60]}…")
+    ok(len(pg.locator("#badges").inner_text().strip())>0, "the reference has attributes listed with it")
     ok("area" not in pg.locator("#facts").inner_text().lower() and " ha" not in pg.locator("#facts").inner_text(),
-       "geen verzonnen oppervlakte")
+       "no invented area")
 
-    print("\n[4] GPS-test slaat punten over (mag niet crashen)")
+    print("\n[4] the GPS test skips points (must not crash)")
     errs.clear()
-    pg.evaluate("() => evaluate(50.84896, 4.90140, 12)")   # exact op een punt zonder polygoon
+    pg.evaluate("() => evaluate(50.84896, 4.90140, 12)")   # exactly on a point without a polygon
     pg.wait_for_timeout(300)
-    ok(not errs, "geen fout bij evaluate() vlakbij een punt: "+(errs[0][:120] if errs else "ok"))
+    ok(not errs, "no error from evaluate() close to a point: "+(errs[0][:120] if errs else "ok"))
     st = pg.locator("#status").inner_text()
-    ok("outside" in st.lower() or "buiten" in st.lower() or len(st)>0, f"status getoond: {st[:70]}…")
+    ok("outside" in st.lower() or "buiten" in st.lower() or len(st)>0, f"status shown: {st[:70]}…")
 
-    print("\n[5] melding is wegklikbaar")
-    ok(pg.locator("#status").get_attribute("class").find("show")>=0, "melding staat aan")
+    print("\n[5] the message can be dismissed")
+    ok(pg.locator("#status").get_attribute("class").find("show")>=0, "message is showing")
     pg.locator("#stClose").click()
     pg.wait_for_timeout(200)
-    ok(pg.locator("#status").get_attribute("class").find("show")<0, "melding weggeklikt")
+    ok(pg.locator("#status").get_attribute("class").find("show")<0, "message dismissed")
 
-    print("\n[6] zoeken vindt een referentie zonder grens")
+    print("\n[6] search finds a reference without a boundary")
     pg.evaluate("() => { const s=document.getElementById('search'); s.classList.add('on'); s.style.display='block'; }")
     zoek = proef['ref'].split('-')[-1] if proef else '0961'
     pg.evaluate(f"() => {{ const i=document.getElementById('q'); i.value={zoek!r}; i.dispatchEvent(new Event('input',{{bubbles:true}})); }}")
     pg.wait_for_timeout(400)
     res = pg.evaluate("() => document.getElementById('results').innerText")
-    ok(len(res.strip()) > 0, f"zoeken op {zoek!r} geeft resultaten")
-    ok("◌" in res, "gemarkeerd als zonder grens")
+    ok(len(res.strip()) > 0, f"searching for {zoek!r} gives results")
+    ok("◌" in res, "marked as having no boundary")
 
-    print("\n[7] laagknop voor de punten")
-    ok(pg.evaluate("() => !document.getElementById('optNopoly').hidden"), "laagknop vrijgegeven zodra er punten zijn")
+    print("\n[7] layer button for the points")
+    ok(pg.evaluate("() => !document.getElementById('optNopoly').hidden"), "layer button released as soon as there are points")
     pg.evaluate("""() => { const o=document.querySelector('[data-layer=\\"nopoly\\"]'); o.click(); }""")
     pg.wait_for_timeout(300)
     vis = pg.evaluate("() => map.getLayoutProperty('np-dot','visibility')")
-    ok(vis=="none", f"uitzetten werkt (visibility={vis})")
+    ok(vis=="none", f"switching off works (visibility={vis})")
     pg.evaluate("""() => document.querySelector('[data-layer=\\"nopoly\\"]').click()""")
     pg.wait_for_timeout(300)
-    ok(pg.evaluate("() => map.getLayoutProperty('np-dot','visibility')")=="visible", "weer aan werkt")
+    ok(pg.evaluate("() => map.getLayoutProperty('np-dot','visibility')")=="visible", "switching back on works")
 
     br.close()
 
-print("\n"+("ALLES OK" if not fails else f"{len(fails)} PROBLEMEN: "+ " | ".join(fails)))
+print("\n"+("ALL OK" if not fails else f"{len(fails)} PROBLEMS: "+ " | ".join(fails)))
 sys.exit(1 if fails else 0)

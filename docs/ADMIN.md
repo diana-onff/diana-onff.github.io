@@ -212,7 +212,7 @@ ever appears when you upload a new KMZ — the nightly run never touches
 boundaries, and never opens a PR of its own when it succeeds.
 
 If you want the directory refreshed sooner than the next scheduled run, use
-**Actions → ONFF-data bouwen → Run workflow** — same result, no upload
+**Actions → Build ONFF data → Run workflow** — same result, no upload
 needed, and no need to wait for 01:00 UTC.
 
 You can also point the build at a **CSV of your own** instead of the live URL —

@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Bouwt de map die gepubliceerd wordt. Alles wat hier niet in staat, komt niet online.
+# Builds the directory that gets published. Anything not in here does not go online.
 #
-# Belangrijk: source/ blijft er bewust buiten. Het ONFF-KMZ wordt door ONFF
-# verspreid via een groups.io achter lidmaatschap; dat bestand hoort niet
-# ongevraagd op een publieke URL te staan.
+# Important: source/ is deliberately left out. The ONFF KMZ is distributed by ONFF
+# through a groups.io behind membership; that file has no business sitting on a
+# public URL unasked.
 #
-# Hier wordt ook het versiestempel gezet. Dat gebeurt met opzet bij het bouwen en
-# niet in de repo: een nummer dat je met de hand moet ophogen, staat vroeg of laat
-# stil — en dan liegt de app over wat je draait. De commit-hash klopt altijd,
-# zonder dat iemand eraan hoeft te denken.
+# This is also where the version stamp is set. That happens at build time on
+# purpose and not in the repo: a number you have to bump by hand sooner or later
+# stands still — and then the app lies about what you are running. The commit hash
+# is always right, without anyone having to think about it.
 set -euo pipefail
 
 OUT="${1:-_site}"
@@ -17,18 +17,18 @@ mkdir -p "$OUT/data"
 
 cp -r web/. "$OUT/"
 cp data/onff.geojson data/onff-index.json data/meta.json "$OUT/data/"
-# Uit de WWFF-directory, dus pas aanwezig na een build die hem kon ophalen.
-# (Als 'if', niet als '[ … ] && cp' — met set -e stopt het script daar anders op.)
+# From the WWFF directory, so only present after a build that could fetch it.
+# (As an 'if', not as '[ … ] && cp' — with set -e the script would stop there otherwise.)
 for extra in data/onff-points.geojson data/onff-activity.json data/wwff-programs.json data/wwff-world.geojson; do
   if [ -f "$extra" ]; then
     cp "$extra" "$OUT/data/"
   fi
 done
 
-# ---------------------------------------------------------------- versiestempel
-# In een Action staat de hash in GITHUB_SHA; lokaal vragen we het aan git zelf.
-# Lukt geen van beide (een uitgepakte zip zonder .git), dan is "lokaal" een
-# eerlijker antwoord dan een verzonnen nummer.
+# --------------------------------------------------------------- version stamp
+# Inside an Action the hash is in GITHUB_SHA; locally we ask git itself. If
+# neither works (an unpacked zip with no .git), then "lokaal" is a more honest
+# answer than a made-up number.
 SHA="${GITHUB_SHA:-}"
 if [ -z "$SHA" ]; then
   SHA="$(git rev-parse HEAD 2>/dev/null || true)"
@@ -36,29 +36,32 @@ fi
 KORT="${SHA:0:7}"
 [ -n "$KORT" ] || KORT="lokaal"
 
-# Datum van de commit zelf, niet van het moment van bouwen: bouw je hetzelfde
-# punt twee keer, dan hoort er hetzelfde stempel uit te komen.
+# Date of the commit itself, not of the moment of building: build the same point
+# twice and the same stamp ought to come out.
 DATUM="$(git log -1 --format=%cd --date=format:'%d/%m/%Y' 2>/dev/null || date -u +'%d/%m/%Y')"
 BUILD="$KORT · $DATUM"
 
-# De app leest dit als de constante BUILD. Python in plaats van sed, omdat een
-# stille mislukking hier maandenlang onopgemerkt blijft — en omdat het aantal
-# vervangingen te controleren valt.
+# The app reads this as the constant BUILD. Python instead of sed, because a
+# silent failure here goes unnoticed for months — and because the number of
+# replacements can be checked.
 python3 - "$OUT" "$BUILD" <<'PY'
 import pathlib, sys
 
 uit, build = pathlib.Path(sys.argv[1]), sys.argv[2]
 
-html = uit / "index.html"
-tekst = html.read_text(encoding="utf-8")
+# Since the split-up the placeholder lives in app.js and no longer in index.html.
+# The count is checked and must be exactly 1: a silent failure here means the app
+# keeps showing "dev" for months without anyone noticing.
+js = uit / "app.js"
+tekst = js.read_text(encoding="utf-8")
 aantal = tekst.count("'__DIANA_BUILD__'")
 if aantal != 1:
-    sys.exit(f"site.sh: plaatshouder __DIANA_BUILD__ {aantal}x gevonden in index.html, verwacht 1")
-html.write_text(tekst.replace("'__DIANA_BUILD__'", f"'{build}'"), encoding="utf-8")
+    sys.exit(f"site.sh: placeholder __DIANA_BUILD__ found {aantal}x in app.js, expected 1")
+js.write_text(tekst.replace("'__DIANA_BUILD__'", f"'{build}'"), encoding="utf-8")
 
-# De service worker krijgt per build een eigen cachenaam. Daardoor ruimt hij bij
-# het activeren vanzelf alles van de vorige uitgave op, en is een oude versie in
-# de cache geen kwestie van geduld meer maar van één herlaadbeurt.
+# The service worker gets its own cache name per build. That way it clears out
+# everything from the previous release by itself on activation, and an old version
+# in the cache is no longer a matter of patience but of a single reload.
 sw = uit / "sw.js"
 tekst = sw.read_text(encoding="utf-8")
 import re
@@ -66,10 +69,10 @@ nieuw, n = re.subn(r"(const VERSION\s*=\s*')[^']*(')",
                    lambda m: m.group(1) + "diana-" + build.split(" ")[0] + m.group(2),
                    tekst, count=1)
 if n != 1:
-    sys.exit("site.sh: VERSION niet gevonden in sw.js")
+    sys.exit("site.sh: VERSION not found in sw.js")
 sw.write_text(nieuw, encoding="utf-8")
-print(f"versiestempel: {build}")
+print(f"version stamp: {build}")
 PY
 
-echo "Gepubliceerd naar $OUT:"
+echo "Published to $OUT:"
 find "$OUT" -type f | sed "s|^$OUT/|  |" | sort
