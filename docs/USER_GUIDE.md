@@ -152,11 +152,13 @@ appears by itself when it would help, and you can make it permanent with
 
 ### Announce
 Tell people about an activation before it happens, instead of only spotting
-it once you're there. Two doors in: the link at the top of **Meld /
-self-spot** ("Only active later? Announce it"), or **+ Aankondigen** on the
-**Agenda** tab of the Spots screen. Either way it prefills your callsign and
-the reference the same way self-spotting does, and **← Back** returns you to
-whichever of the two you came from.
+it once you're there. Three doors in: **Agenda** in the bottom navigation
+bar, the link at the top of **Meld / self-spot** ("Only active later?
+Announce it"), or **+ Aankondigen** on the **Agenda** tab of the Spots
+screen. All three prefill your callsign and the reference the same way
+self-spotting does, and **← Back** returns you to whichever screen you came
+from (Spots, if you came in through the nav button or the Agenda tab; Meld,
+if you came in through that link).
 
 The fields: the activator's callsign, your own callsign (the two are
 separate — someone else can announce on an activator's behalf), the WWFF
@@ -165,6 +167,12 @@ start and end time in **your own local time** — Diana converts to UTC before
 it leaves your device, so you never have to do that arithmetic — and
 optionally a band, a mode, and a remark. You also choose a **PIN**, at least
 four characters.
+
+Diana itself limits you to 16 announcements a day from the same device (the
+screen says so) — that is Diana protecting the shared Spotline budget from a
+runaway script or a stuck tab, not a Spotline rule, and it resets at
+midnight UTC. Ordinary use, even a few corrections along the way, stays well
+under it.
 
 **The PIN is the only way to edit or cancel this announcement later, on
 Spotline's own site — Diana cannot do that for you.** Lose it and there is no

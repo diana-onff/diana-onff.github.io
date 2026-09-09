@@ -56,9 +56,18 @@ ALLOWED_ORIGINS = "https://diana-onff.github.io,http://localhost:8011"
 # only two attempts per ten minutes. Eight leaves four — still nothing against
 # WWFF's own ceiling, and enough that nobody meets this limit by using the app
 # the way it is meant to be used.
-LIMIT_IP_SPOTS = "16"          # per IP address, per window below
+LIMIT_IP_SPOTS = "8"          # per IP address, per window below
 LIMIT_IP_WINDOW = "600"       # seconds — ten minutes
-LIMIT_IP_AGENDA = "10"        # per IP address per day
+# Settled at 16 on 2026-09-09 (was 10). Check and Send are two requests each,
+# so one clean announcement already costs two; a real evening of planning —
+# a couple of activations, each with a correction or two — lands around
+# 12-16. 10 turned out too tight for that and started blocking people making
+# ordinary edits, not abuse. 16 stays nowhere near the shared budget
+# (WWFF's own ~100/min, 1000/hour per key, and LIMIT_GLOBAL_MINUTE below is
+# already far under that) — this ceiling exists to stop a runaway script or
+# a stuck tab from burning through everyone else's share, not to ration a
+# normal user.
+LIMIT_IP_AGENDA = "16"        # per IP address per day
 LIMIT_GLOBAL_MINUTE = "40"    # Diana as a whole, per minute
 
 # A second, independent net under LIMIT_GLOBAL_MINUTE: well below Cloudflare's

@@ -183,7 +183,7 @@ everybody's outage.
 | Limit | Value | What it is for |
 |---|---|---|
 | `LIMIT_IP_SPOTS` / `LIMIT_IP_WINDOW` | 8 per 10 min | one person hammering. Eight rather than five because check-then-send is two requests |
-| `LIMIT_IP_AGENDA` | 10 per day | the same, for announcements |
+| `LIMIT_IP_AGENDA` | 16 per day | the same, for announcements. Raised from 10 on 2026-09-09 — Check and Send are two requests each, so a real evening of planning with a correction or two landed close to the old ceiling on ordinary use, not abuse |
 | `LIMIT_GLOBAL_MINUTE` | 40 per minute | Diana as a whole, against the shared budget |
 | `LIMIT_GLOBAL_DAY` | 90,000 per day | a soft version of Cloudflare's own hard wall at 100,000 |
 

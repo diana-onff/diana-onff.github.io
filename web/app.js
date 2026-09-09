@@ -8,7 +8,7 @@ const $ = id => document.getElementById(id);
 
 /* Version of the app itself. Shown on the splash screen and in Settings, so that
    a report along the lines of "it's behaving oddly" can be tied to a version. */
-const APP_VERSION = '1.6.0';
+const APP_VERSION = '1.6.1';
 /* Filled in at publish time by build/site.sh: the short commit hash and the date
    of that build. If the placeholder is still there, you are running a copy that
    never went through the build step — locally, or straight out of the repo.
@@ -294,6 +294,7 @@ const STR = {
   "ag.pinhint": "Bewaar deze pin: enkel daarmee kan je deze aankondiging later via Spotline nog wijzigen.",
   "ag.sendbtn": "Aankondiging versturen",
   "ag.checkhint": "Controleren legt de aankondiging voor aan Spotline zonder ze te plaatsen. Klopt alles, dan kan je versturen.",
+  "ag.limithint": "Max. 16 aankondigingen per dag via deze app.",
   "ag.sending": "Versturen…",
   "ag.ok": "Aangekondigd",
   "ag.endbeforestart": "Einde moet na het begin liggen",
@@ -625,6 +626,7 @@ const STR = {
   "ag.pinhint": "Keep this PIN: it is the only way to edit this announcement later, via Spotline.",
   "ag.sendbtn": "Send announcement",
   "ag.checkhint": "Check submits the announcement to Spotline without posting it. If all is well, you can send it.",
+  "ag.limithint": "Max 16 announcements per day through this app.",
   "ag.sending": "Sending…",
   "ag.ok": "Announced",
   "ag.endbeforestart": "End must be after the start",
@@ -939,6 +941,7 @@ const STR = {
   "ag.pinhint": "Conservez ce code PIN : c'est le seul moyen de modifier cette annonce plus tard, via Spotline.",
   "ag.sendbtn": "Envoyer l'annonce",
   "ag.checkhint": "Contrôler soumet l'annonce à Spotline sans la publier. Si tout est correct, vous pouvez l'envoyer.",
+  "ag.limithint": "Max. 16 annonces par jour via cette appli.",
   "ag.sending": "Envoi…",
   "ag.ok": "Annoncé",
   "ag.endbeforestart": "La fin doit être après le début",
@@ -1253,6 +1256,7 @@ const STR = {
   "ag.pinhint": "Bewahre diese PIN auf: nur damit kannst du diese Ankündigung später über Spotline noch ändern.",
   "ag.sendbtn": "Ankündigung senden",
   "ag.checkhint": "Prüfen legt die Ankündigung Spotline vor, ohne sie zu veröffentlichen. Stimmt alles, kannst du sie senden.",
+  "ag.limithint": "Max. 16 Ankündigungen pro Tag über diese App.",
   "ag.sending": "Wird gesendet…",
   "ag.ok": "Angekündigt",
   "ag.endbeforestart": "Das Ende muss nach dem Beginn liegen",
@@ -1567,6 +1571,7 @@ const STR = {
   "ag.pinhint": "Gem denne pinkode: det er den eneste måde at redigere denne bebudelse senere, via Spotline.",
   "ag.sendbtn": "Send bebudelse",
   "ag.checkhint": "Kontrollér sender bebudelsen til Spotline uden at offentliggøre den. Er alt i orden, kan du sende den.",
+  "ag.limithint": "Maks. 16 bebudelser om dagen via denne app.",
   "ag.sending": "Sender…",
   "ag.ok": "Bebudet",
   "ag.endbeforestart": "Slut skal ligge efter start",
@@ -1881,6 +1886,7 @@ const STR = {
   "ag.pinhint": "Conserva questo PIN: è l'unico modo per modificare in seguito questo annuncio, tramite Spotline.",
   "ag.sendbtn": "Invia annuncio",
   "ag.checkhint": "Controlla sottopone l'annuncio a Spotline senza pubblicarlo. Se tutto è a posto, puoi inviarlo.",
+  "ag.limithint": "Massimo 16 annunci al giorno tramite questa app.",
   "ag.sending": "Invio…",
   "ag.ok": "Annunciato",
   "ag.endbeforestart": "La fine deve essere dopo l'inizio",
@@ -2195,6 +2201,7 @@ const STR = {
   "ag.pinhint": "Guarda este PIN: es la única forma de editar este anuncio más adelante, a través de Spotline.",
   "ag.sendbtn": "Enviar anuncio",
   "ag.checkhint": "Comprobar presenta el anuncio a Spotline sin publicarlo. Si todo está bien, puedes enviarlo.",
+  "ag.limithint": "Máximo 16 anuncios al día a través de esta app.",
   "ag.sending": "Enviando…",
   "ag.ok": "Anunciado",
   "ag.endbeforestart": "El fin debe ser posterior al inicio",
