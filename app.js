@@ -13,7 +13,7 @@ const APP_VERSION = '1.5.1';
    of that build. If the placeholder is still there, you are running a copy that
    never went through the build step — locally, or straight out of the repo.
    That is exactly what you want to know when someone reports a problem. */
-const BUILD = '1fd6548 · 09/09/2026';
+const BUILD = '14a2d30 · 09/09/2026';
 const BUILD_TXT = BUILD.startsWith('__') ? 'dev' : BUILD;
 
 /* ---------- splash screen ----------
@@ -299,7 +299,8 @@ const STR = {
   "ag.endbeforestart": "Einde moet na het begin liggen",
   "ag.toofar": "Kies een datum binnen een maand",
   "ag.savedtitle": "Jouw aankondigingen op dit toestel",
-  "ag.back": "← Terug naar Spots & agenda",
+  "ag.back": "← Terug",
+  "ag.fromself": "Ga je pas later actief zijn? Kondig het aan →",
   "sess.title": "Activatiesessie",
   "sess.sub": "Kies eerst een gebied op de kaart",
   "sess.unknown": "Positie onbekend",
@@ -629,7 +630,8 @@ const STR = {
   "ag.endbeforestart": "End must be after the start",
   "ag.toofar": "Pick a date within a month",
   "ag.savedtitle": "Your announcements on this device",
-  "ag.back": "← Back to Spots & agenda",
+  "ag.back": "← Back",
+  "ag.fromself": "Only active later? Announce it →",
   "sess.title": "Activation session",
   "sess.sub": "Pick a reference on the map first",
   "sess.unknown": "Position unknown",
@@ -942,7 +944,8 @@ const STR = {
   "ag.endbeforestart": "La fin doit être après le début",
   "ag.toofar": "Choisissez une date dans le mois qui vient",
   "ag.savedtitle": "Vos annonces sur cet appareil",
-  "ag.back": "← Retour à Spots et agenda",
+  "ag.back": "← Retour",
+  "ag.fromself": "Actif seulement plus tard ? Annoncez-le →",
   "sess.title": "Session d’activation",
   "sess.sub": "Choisissez d’abord une zone",
   "sess.unknown": "Position inconnue",
@@ -1255,7 +1258,8 @@ const STR = {
   "ag.endbeforestart": "Das Ende muss nach dem Beginn liegen",
   "ag.toofar": "Wähle ein Datum innerhalb eines Monats",
   "ag.savedtitle": "Deine Ankündigungen auf diesem Gerät",
-  "ag.back": "← Zurück zu Spots & Agenda",
+  "ag.back": "← Zurück",
+  "ag.fromself": "Erst später aktiv? Kündige es an →",
   "sess.title": "Aktivierungssitzung",
   "sess.sub": "Zuerst ein Gebiet auf der Karte wählen",
   "sess.unknown": "Position unbekannt",
@@ -1568,7 +1572,8 @@ const STR = {
   "ag.endbeforestart": "Slut skal ligge efter start",
   "ag.toofar": "Vælg en dato inden for en måned",
   "ag.savedtitle": "Dine bebudelser på denne enhed",
-  "ag.back": "← Tilbage til Spots & agenda",
+  "ag.back": "← Tilbage",
+  "ag.fromself": "Kun aktiv senere? Bebud det →",
   "sess.title": "Aktiveringssession",
   "sess.sub": "Vælg først et område på kortet",
   "sess.unknown": "Position ukendt",
@@ -1881,7 +1886,8 @@ const STR = {
   "ag.endbeforestart": "La fine deve essere dopo l'inizio",
   "ag.toofar": "Scegli una data entro un mese",
   "ag.savedtitle": "I tuoi annunci su questo dispositivo",
-  "ag.back": "← Torna a Spot e agenda",
+  "ag.back": "← Indietro",
+  "ag.fromself": "Attivo solo più tardi? Annuncialo →",
   "sess.title": "Sessione di attivazione",
   "sess.sub": "Scegli prima un riferimento",
   "sess.unknown": "Posizione sconosciuta",
@@ -2194,7 +2200,8 @@ const STR = {
   "ag.endbeforestart": "El fin debe ser posterior al inicio",
   "ag.toofar": "Elige una fecha dentro de un mes",
   "ag.savedtitle": "Tus anuncios en este dispositivo",
-  "ag.back": "← Volver a Spots y agenda",
+  "ag.back": "← Volver",
+  "ag.fromself": "¿Activo solo más tarde? Anúncialo →",
   "sess.title": "Sesión de activación",
   "sess.sub": "Elige primero una zona",
   "sess.unknown": "Posición desconocida",
@@ -4924,6 +4931,10 @@ document.querySelectorAll('.chip[data-add]').forEach(c => c.onclick = () => {
  * ================================================================== */
 let agGecontroleerd = false;
 
+/* Which screen "← Terug" returns to — wherever the visitor actually came
+ * from, not a hardcoded one. Set by whichever entry point opens the screen. */
+let agOrigin = 'viewSpots';
+
 function checkAgReference(){
   const v = $('agReference').value.trim().toUpperCase();
   const fb = $('fbAgReference');
@@ -5158,8 +5169,9 @@ function agendaOpen(){
   validateAgenda();
 }
 
-$('agNewOpen').onclick = () => gaNaarView('viewAgendaNew', agendaOpen);
-$('agBack').onclick = () => document.querySelector('#nav button[data-view="viewSpots"]').click();
+$('agNewOpen').onclick = () => { agOrigin = 'viewSpots'; gaNaarView('viewAgendaNew', agendaOpen); };
+$('agFromSelf').onclick = () => { agOrigin = 'viewSelf'; gaNaarView('viewAgendaNew', agendaOpen); };
+$('agBack').onclick = () => document.querySelector(`#nav button[data-view="${agOrigin}"]`).click();
 
 /* ================================================================== *
  * Screen 4 — activation session and GPS evidence
