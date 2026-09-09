@@ -121,7 +121,9 @@ new default for next time (see **Spots filter** under Settings below).
 
 ### Meld / self-spot (✚)
 Spot yourself. The reference is pre-filled if you came from a zone's detail
-panel; callsign and spotter are remembered from your last self-spot.
+panel; callsign and spotter are remembered from your last self-spot. Not
+active yet, just planning ahead? The link at the top of this screen goes to
+**Announce** instead (see below).
 
 Validation mirrors Spotline's own rules (callsign format and digit
 requirement, frequency range, a 100-character remark limit), and a bandplan
@@ -148,10 +150,13 @@ answer yourself, but Diana can't confirm anything for you. That fallback
 appears by itself when it would help, and you can make it permanent with
 **Always send the old way** in Settings if you'd rather have it that way.
 
-### Announce (+ Aankondigen, on the Spots screen's Agenda tab)
+### Announce
 Tell people about an activation before it happens, instead of only spotting
-it once you're there. Open it from the **Agenda** tab of the Spots screen —
-it prefills your callsign and the reference the same way self-spotting does.
+it once you're there. Two doors in: the link at the top of **Meld /
+self-spot** ("Only active later? Announce it"), or **+ Aankondigen** on the
+**Agenda** tab of the Spots screen. Either way it prefills your callsign and
+the reference the same way self-spotting does, and **← Back** returns you to
+whichever of the two you came from.
 
 The fields: the activator's callsign, your own callsign (the two are
 separate — someone else can announce on an activator's behalf), the WWFF

@@ -200,7 +200,19 @@ with sync_playwright() as p:
     ok(pg.is_visible("#viewSpots"), "back on the Spots & agenda screen")
     ok(pg.is_hidden("#viewAgendaNew"), "and the agenda screen is gone")
 
-    print("\n[13] no JS errors along the way")
+    print("\n[13] there is a second door in, from the Meld screen — and it remembers")
+    pg.evaluate("() => document.querySelector('[data-view=\"viewSelf\"]').click()")
+    pg.wait_for_timeout(200)
+    ok(pg.is_visible("#agFromSelf"), "the announce link is on the self-spot screen too")
+    pg.click("#agFromSelf")
+    pg.wait_for_timeout(300)
+    ok(pg.is_visible("#viewAgendaNew"), "and it opens the same screen")
+    pg.click("#agBack")
+    pg.wait_for_timeout(200)
+    ok(pg.is_visible("#viewSelf"), "← Terug returns to Meld, not always to Spots")
+    ok(pg.is_hidden("#viewAgendaNew"), "and the agenda screen is gone")
+
+    print("\n[14] no JS errors along the way")
     ok(not errs, f"no page errors: {errs[:2] if errs else 'ok'}")
 
     br.close()
