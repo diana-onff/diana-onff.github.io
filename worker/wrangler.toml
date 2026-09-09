@@ -1,0 +1,54 @@
+# Diana — Spotline proxy.
+#
+# This file is public, and that is fine: it contains no secret. The WWFF API key
+# lives only in Cloudflare, put there once with `wrangler secret put
+# WWFF_API_KEY`, and is readable by nothing and nobody afterwards — not the
+# dashboard, not wrangler, not this repository. The code sees it as
+# env.WWFF_API_KEY at run time and never writes it anywhere.
+#
+# FIRST TIME? See README.md in this directory. Two things must exist before
+# `wrangler deploy` will work: the KV namespace below, and the secret.
+
+name = "diana-spotline"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+# Keep the Worker off a public *.workers.dev address until the rate limiting of
+# step 2.6 has actually been tested. Flip this to true when you want the app to
+# be able to reach it.
+workers_dev = true
+
+[vars]
+# Which Spotline to talk to. The development host validates and, with
+# "dryrun": true, does not store anything. Moving to production is this one
+# line — which is exactly why it is a variable and not a constant in the code.
+WWFF_BASE = "https://spots-dev.cuf.fi"
+
+# Browsers may call this Worker from these origins, comma-separated, no spaces.
+# Outside a browser an Origin header is trivially forged, so this is a doorstep
+# and not a lock. The lock is the rate limiting.
+ALLOWED_ORIGINS = "https://diana-onff.github.io,http://localhost:8011"
+
+# Rate limits. Deliberately far below WWFF's own (~100/min, 1000/hour per key):
+# the budget is shared with every other Spotline user, so Diana running into its
+# own ceiling is a nuisance, while Diana emptying the shared one is everybody's
+# problem.
+LIMIT_IP_SPOTS = "5"          # per IP address, per window below
+LIMIT_IP_WINDOW = "600"       # seconds — ten minutes
+LIMIT_IP_AGENDA = "10"        # per IP address per day
+LIMIT_GLOBAL_MINUTE = "40"    # Diana as a whole, per minute
+
+# Upstream timeout in milliseconds. A user staring at a spinner is worse than an
+# honest error, and a hanging request holds a rate-limit slot for nothing.
+UPSTREAM_TIMEOUT_MS = "8000"
+
+# Counters and the kill switch. Create it once with:
+#   wrangler kv namespace create DIANA_KV
+# and paste the id it prints here — it is not a secret.
+#
+# Mind KV's own free-tier ceiling: 1000 writes per day. Only requests that pass
+# validation and actually go to WWFF write anything, so a preflight, a rejected
+# form or a blocked origin costs nothing.
+[[kv_namespaces]]
+binding = "DIANA_KV"
+id = "VUL_HIER_HET_ID_IN"

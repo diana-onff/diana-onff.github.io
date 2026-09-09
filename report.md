@@ -3,15 +3,11 @@
 **946 areas** (was 946, 0) · **0 new** · **0 gone** · **0 boundary changed**
 
 
-### Cross-check against the WWFF directory
-
-**948 active references** in the directory · **946 with a boundary** from the KMZ · **2 as a point** on the map · 16 deleted (not shown)
-
-Every reference appears only once: if there is a polygon in the KMZ, that one wins and the directory row is used only to check against.
-
-<details><summary>⚠️ 1 warnings</summary>
+<details><summary>⚠️ 3 warnings</summary>
 
 - release date in the KML (2026-01-01) differs from the filename (2026-08-01) — the filename was used
+- WWFF directory not read (URLError): used only the manual points from overrides.json
+- directory unreachable — the 2 points from the previous build are kept; onff-points.geojson has not been rewritten
 
 </details>
 
