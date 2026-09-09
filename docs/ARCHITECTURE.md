@@ -247,6 +247,7 @@ startup rather than only when a visitor opens the Spots screen.
 | `GET spots.wwff.co/static/agendas.json` | the full announced agenda |
 | `POST diana-spotline.diana-onff.workers.dev/spot` | submitting your own spot — the ordinary route, see below |
 | `POST spots.wwff.co/spots/store` | the fallback route for the same thing, see below |
+| `POST diana-spotline.diana-onff.workers.dev/agenda` | announcing a future activation, see below |
 
 Two endpoints that used to be here are gone. `GET /api/references/validate`
 was a live check while typing a reference; it is now done locally against
@@ -295,6 +296,19 @@ Spotline has *refused* the spot, because the old route would refuse it too and
 simply not tell you. It can also be made permanent per device with "Always
 send the old way" in Settings. What it cannot do is confirm anything: you see
 that the spot left, not that it arrived.
+
+**Announcing an activation (Fase 4) reuses the same Check/Send pattern and
+the same Worker**, at `POST {worker}/agenda` instead of `/spot` —
+`buildAgenda()` in `worker/src/index.js` already existed from Fase 2, built
+against the same API info as spots, so this screen needed no Worker changes
+at all. The Worker enforces the one-month ceiling and `end > start` itself;
+the form checks both client-side too, so a bad date never costs a request.
+There is no form-post fallback here — unlike `/spots/store`, Spotline
+documents no plain HTML endpoint for agenda entries — so an unreachable
+Worker is simply an error to try again later. On a successful send, Diana
+keeps the reference, date and the activator's PIN in
+`localStorage['diana.agendas']`: that PIN is the only way to edit or cancel
+the entry later, on Spotline's own site, and Diana has no other record of it.
 
 Reading the three static JSON files above is a normal cross-origin `fetch()`
 and needs no proxy — CORS on `spots.wwff.co/static/` has been measured and
@@ -346,6 +360,7 @@ never called during normal browsing. Full flow in [ADMIN.md](ADMIN.md).
 | `localStorage` keys `diana.installed` / `diana.inst.asked` | whether the app was installed, and whether the install banner has already been dismissed once (the banner then stays hidden for good — Settings' own "Install as an app" card keeps working regardless, it is not gated on this flag) | No |
 | `localStorage` keys `diana.spotFilter` / `diana.worldFilter` | which spots/agenda items to show (`'all'`, `'onff'`, or a programme code), and the same choice for the "other WWFF areas" map layer — two independent settings, see §2.1.3 and §2.3 | No |
 | `localStorage` (admin keys) | remembered repository/branch/path, and the GitHub token **only if the "remember" checkbox was ticked** | No |
+| `localStorage` key `diana.agendas` | announcements made from this device: reference, date, and the PIN needed to edit or cancel them on Spotline's own site | No |
 | Session GPX track (in memory / downloaded file) | an activation session's GPS trace | Not stored at all beyond the download — never uploaded anywhere |
 | Cache Storage (service worker) | app shell, the three `data/*.json` files, map tiles (LRU-capped) | No — per browser profile |
 

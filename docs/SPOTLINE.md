@@ -96,6 +96,31 @@ read the result there, but the app never learns what happened. That gap is the
 entire reason the Worker exists — and the reason this stays a way out rather
 than the way.
 
+## Announcing an activation is the same story, at a different address
+
+**Fase 4** added a screen for announcing an activation ahead of time —
+"Aankondigen", reached from the Agenda tab of the Spots screen — and it
+needed nothing new from the Worker. `buildAgenda()` already existed, written
+in Fase 2 against the same API description as spots, so the screen is purely
+the front end: the same Check-then-Send pattern, the same `refLookup()` for
+the reference field, posted to `{worker}/agenda` instead of `{worker}/spot`.
+
+Two things about it are genuinely different, both because an agenda entry
+outlives the moment it is sent. First, the times: the picker shows the
+activator's own local clock, and the app converts to UTC before anything
+leaves the device — nobody should have to do that arithmetic by hand.
+Second, the **PIN**: it is what lets the activator edit or cancel the entry
+later, directly on Spotline, and Diana has no part in that later edit. Lose
+the PIN and there is no way back in. Diana keeps a local list — reference,
+date, PIN — precisely so that "later" doesn't mean "guess". That list is
+`localStorage['diana.agendas']`, per device, like everything else in
+§"Where the key is" below except the key itself.
+
+There is no old-route fallback for this one. `/spots/store` exists as a real
+HTML form because Spotline built it that way; there is no documented
+equivalent for agenda entries, so an unreachable Worker here is just an
+error to retry, not a second path.
+
 ## Checking references without asking anyone
 
 There is a `GET /api/references/validate`, and Diana does not use it. Calling

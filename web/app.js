@@ -283,6 +283,23 @@ const STR = {
   "self.refprogram": "{c} — dit nummer controleren we hier niet",
   "self.refbadprogram": "✗ geen bestaand WWFF-programma",
   "self.refshape": "✗ ziet er niet uit als een WWFF-referentie",
+  "ag.new": "+ Aankondigen",
+  "ag.title": "Aankondigen",
+  "ag.sub": "Kondigt een activatie aan via WWFF Spotline",
+  "ag.poster": "Jouw roepteken",
+  "ag.start": "Begin (UTC)",
+  "ag.end": "Einde (UTC)",
+  "ag.band": "Band (optioneel)",
+  "ag.pin": "Pin (om later te bewerken)",
+  "ag.pinhint": "Bewaar deze pin: enkel daarmee kan je deze aankondiging later via Spotline nog wijzigen.",
+  "ag.sendbtn": "Aankondiging versturen",
+  "ag.checkhint": "Controleren legt de aankondiging voor aan Spotline zonder ze te plaatsen. Klopt alles, dan kan je versturen.",
+  "ag.sending": "Versturen…",
+  "ag.ok": "Aangekondigd",
+  "ag.endbeforestart": "Einde moet na het begin liggen",
+  "ag.toofar": "Kies een datum binnen een maand",
+  "ag.savedtitle": "Jouw aankondigingen op dit toestel",
+  "ag.back": "← Terug naar Spots & agenda",
   "sess.title": "Activatiesessie",
   "sess.sub": "Kies eerst een gebied op de kaart",
   "sess.unknown": "Positie onbekend",
@@ -596,6 +613,23 @@ const STR = {
   "self.refprogram": "{c} — we do not check this number here",
   "self.refbadprogram": "✗ not an existing WWFF programme",
   "self.refshape": "✗ does not look like a WWFF reference",
+  "ag.new": "+ Announce",
+  "ag.title": "Announce",
+  "ag.sub": "Announces an activation via WWFF Spotline",
+  "ag.poster": "Your callsign",
+  "ag.start": "Start (UTC)",
+  "ag.end": "End (UTC)",
+  "ag.band": "Band (optional)",
+  "ag.pin": "PIN (to edit later)",
+  "ag.pinhint": "Keep this PIN: it is the only way to edit this announcement later, via Spotline.",
+  "ag.sendbtn": "Send announcement",
+  "ag.checkhint": "Check submits the announcement to Spotline without posting it. If all is well, you can send it.",
+  "ag.sending": "Sending…",
+  "ag.ok": "Announced",
+  "ag.endbeforestart": "End must be after the start",
+  "ag.toofar": "Pick a date within a month",
+  "ag.savedtitle": "Your announcements on this device",
+  "ag.back": "← Back to Spots & agenda",
   "sess.title": "Activation session",
   "sess.sub": "Pick a reference on the map first",
   "sess.unknown": "Position unknown",
@@ -892,6 +926,23 @@ const STR = {
   "self.refprogram": "{c} — nous ne vérifions pas ce numéro ici",
   "self.refbadprogram": "✗ programme WWFF inexistant",
   "self.refshape": "✗ ne ressemble pas à une référence WWFF",
+  "ag.new": "+ Annoncer",
+  "ag.title": "Annoncer",
+  "ag.sub": "Annonce une activation via WWFF Spotline",
+  "ag.poster": "Votre indicatif",
+  "ag.start": "Début (UTC)",
+  "ag.end": "Fin (UTC)",
+  "ag.band": "Bande (facultatif)",
+  "ag.pin": "Code PIN (pour modifier plus tard)",
+  "ag.pinhint": "Conservez ce code PIN : c'est le seul moyen de modifier cette annonce plus tard, via Spotline.",
+  "ag.sendbtn": "Envoyer l'annonce",
+  "ag.checkhint": "Contrôler soumet l'annonce à Spotline sans la publier. Si tout est correct, vous pouvez l'envoyer.",
+  "ag.sending": "Envoi…",
+  "ag.ok": "Annoncé",
+  "ag.endbeforestart": "La fin doit être après le début",
+  "ag.toofar": "Choisissez une date dans le mois qui vient",
+  "ag.savedtitle": "Vos annonces sur cet appareil",
+  "ag.back": "← Retour à Spots et agenda",
   "sess.title": "Session d’activation",
   "sess.sub": "Choisissez d’abord une zone",
   "sess.unknown": "Position inconnue",
@@ -1188,6 +1239,23 @@ const STR = {
   "self.refprogram": "{c} — diese Nummer prüfen wir hier nicht",
   "self.refbadprogram": "✗ kein existierendes WWFF-Programm",
   "self.refshape": "✗ sieht nicht nach einer WWFF-Referenz aus",
+  "ag.new": "+ Ankündigen",
+  "ag.title": "Ankündigen",
+  "ag.sub": "Kündigt eine Aktivierung über WWFF Spotline an",
+  "ag.poster": "Dein Rufzeichen",
+  "ag.start": "Beginn (UTC)",
+  "ag.end": "Ende (UTC)",
+  "ag.band": "Band (optional)",
+  "ag.pin": "PIN (zum späteren Bearbeiten)",
+  "ag.pinhint": "Bewahre diese PIN auf: nur damit kannst du diese Ankündigung später über Spotline noch ändern.",
+  "ag.sendbtn": "Ankündigung senden",
+  "ag.checkhint": "Prüfen legt die Ankündigung Spotline vor, ohne sie zu veröffentlichen. Stimmt alles, kannst du sie senden.",
+  "ag.sending": "Wird gesendet…",
+  "ag.ok": "Angekündigt",
+  "ag.endbeforestart": "Das Ende muss nach dem Beginn liegen",
+  "ag.toofar": "Wähle ein Datum innerhalb eines Monats",
+  "ag.savedtitle": "Deine Ankündigungen auf diesem Gerät",
+  "ag.back": "← Zurück zu Spots & Agenda",
   "sess.title": "Aktivierungssitzung",
   "sess.sub": "Zuerst ein Gebiet auf der Karte wählen",
   "sess.unknown": "Position unbekannt",
@@ -1484,6 +1552,23 @@ const STR = {
   "self.refprogram": "{c} — vi tjekker ikke dette nummer her",
   "self.refbadprogram": "✗ ikke et eksisterende WWFF-program",
   "self.refshape": "✗ ligner ikke en WWFF-reference",
+  "ag.new": "+ Bebud",
+  "ag.title": "Bebud",
+  "ag.sub": "Bebuder en aktivering via WWFF Spotline",
+  "ag.poster": "Dit kaldesignal",
+  "ag.start": "Start (UTC)",
+  "ag.end": "Slut (UTC)",
+  "ag.band": "Bånd (valgfrit)",
+  "ag.pin": "Pinkode (til senere redigering)",
+  "ag.pinhint": "Gem denne pinkode: det er den eneste måde at redigere denne bebudelse senere, via Spotline.",
+  "ag.sendbtn": "Send bebudelse",
+  "ag.checkhint": "Kontrollér sender bebudelsen til Spotline uden at offentliggøre den. Er alt i orden, kan du sende den.",
+  "ag.sending": "Sender…",
+  "ag.ok": "Bebudet",
+  "ag.endbeforestart": "Slut skal ligge efter start",
+  "ag.toofar": "Vælg en dato inden for en måned",
+  "ag.savedtitle": "Dine bebudelser på denne enhed",
+  "ag.back": "← Tilbage til Spots & agenda",
   "sess.title": "Aktiveringssession",
   "sess.sub": "Vælg først et område på kortet",
   "sess.unknown": "Position ukendt",
@@ -1780,6 +1865,23 @@ const STR = {
   "self.refprogram": "{c} — questo numero non lo verifichiamo qui",
   "self.refbadprogram": "✗ programma WWFF inesistente",
   "self.refshape": "✗ non sembra un riferimento WWFF",
+  "ag.new": "+ Annuncia",
+  "ag.title": "Annuncia",
+  "ag.sub": "Annuncia un'attivazione tramite WWFF Spotline",
+  "ag.poster": "Il tuo nominativo",
+  "ag.start": "Inizio (UTC)",
+  "ag.end": "Fine (UTC)",
+  "ag.band": "Banda (opzionale)",
+  "ag.pin": "PIN (per modificare più tardi)",
+  "ag.pinhint": "Conserva questo PIN: è l'unico modo per modificare in seguito questo annuncio, tramite Spotline.",
+  "ag.sendbtn": "Invia annuncio",
+  "ag.checkhint": "Controlla sottopone l'annuncio a Spotline senza pubblicarlo. Se tutto è a posto, puoi inviarlo.",
+  "ag.sending": "Invio…",
+  "ag.ok": "Annunciato",
+  "ag.endbeforestart": "La fine deve essere dopo l'inizio",
+  "ag.toofar": "Scegli una data entro un mese",
+  "ag.savedtitle": "I tuoi annunci su questo dispositivo",
+  "ag.back": "← Torna a Spot e agenda",
   "sess.title": "Sessione di attivazione",
   "sess.sub": "Scegli prima un riferimento",
   "sess.unknown": "Posizione sconosciuta",
@@ -2076,6 +2178,23 @@ const STR = {
   "self.refprogram": "{c} — este número no lo comprobamos aquí",
   "self.refbadprogram": "✗ no es un programa WWFF existente",
   "self.refshape": "✗ no parece una referencia WWFF",
+  "ag.new": "+ Anunciar",
+  "ag.title": "Anunciar",
+  "ag.sub": "Anuncia una activación a través de WWFF Spotline",
+  "ag.poster": "Tu indicativo",
+  "ag.start": "Inicio (UTC)",
+  "ag.end": "Fin (UTC)",
+  "ag.band": "Banda (opcional)",
+  "ag.pin": "PIN (para editar más tarde)",
+  "ag.pinhint": "Guarda este PIN: es la única forma de editar este anuncio más adelante, a través de Spotline.",
+  "ag.sendbtn": "Enviar anuncio",
+  "ag.checkhint": "Comprobar presenta el anuncio a Spotline sin publicarlo. Si todo está bien, puedes enviarlo.",
+  "ag.sending": "Enviando…",
+  "ag.ok": "Anunciado",
+  "ag.endbeforestart": "El fin debe ser posterior al inicio",
+  "ag.toofar": "Elige una fecha dentro de un mes",
+  "ag.savedtitle": "Tus anuncios en este dispositivo",
+  "ag.back": "← Volver a Spots y agenda",
   "sess.title": "Sesión de activación",
   "sess.sub": "Elige primero una zona",
   "sess.unknown": "Posición desconocida",
@@ -3352,6 +3471,7 @@ $('spotTab').addEventListener('click', e=>{
   const b=e.target.closest('.seg[data-tab]'); if(!b) return;
   spotTab=b.dataset.tab;
   [...$('spotTab').children].forEach(c=>c.classList.toggle('on',c===b));
+  $('agNewOpen').hidden = spotTab !== 'agenda';
   renderSpots();
 });
 /* Settings ↔ the quick filter above the Spots list share the same value
@@ -4791,6 +4911,255 @@ document.querySelectorAll('.chip[data-add]').forEach(c => c.onclick = () => {
 /* The old send handler used to sit here, posting the form straight to
  * Spotline. It has not disappeared — it moved into verstuurKlassiek() above,
  * where it is now the fallback rather than the only way. */
+
+/* ================================================================== *
+ * Screen 3b — announcing an activation (Fase 4)
+ *
+ * The Worker already knows how to build and rate-limit an agenda payload
+ * (buildAgenda() in worker/src/index.js, built in Fase 2 against the same
+ * API info as spots) — this screen is the front end for it, reusing the
+ * Check/Send pattern from self-spotting above rather than inventing a new
+ * one. There is no classic fallback here: unlike /spots/store, there is no
+ * documented plain form-post endpoint for agenda entries to fall back to.
+ * ================================================================== */
+let agGecontroleerd = false;
+
+function checkAgReference(){
+  const v = $('agReference').value.trim().toUpperCase();
+  const fb = $('fbAgReference');
+  if(v.length < 7){ fb.textContent = v ? t('self.reftooshort') : ''; fb.className = 'fb'; return; }
+  const r = refLookup(v);
+  fb.textContent = r.text;
+  fb.className = 'fb' + (r.cls ? ' ' + r.cls : '');
+}
+
+/* The one-month ceiling is enforced by the Worker too (buildAgenda rejects a
+ * start more than a month out) — the min/max here just stop the picker from
+ * offering a date that would be rejected anyway, and say why up front. */
+function agendaGrenzen(){
+  const pad = n => String(n).padStart(2,'0');
+  const naarLokaal = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const nu = new Date();
+  const grens = new Date(nu.getTime() + 31*24*3600*1000);
+  $('agStart').min = $('agEnd').min = naarLokaal(nu);
+  $('agStart').max = $('agEnd').max = naarLokaal(grens);
+}
+
+function validateAgenda(){
+  let ok = true;
+  const set = (el, good) => {
+    el.classList.toggle('bad', !good && el.value.trim() !== '');
+    el.classList.toggle('good', good && el.value.trim() !== '');
+    if(!good) ok = false;
+  };
+  const a = $('agActivator'), p = $('agPoster'), r = $('agReference'), pin = $('agPin');
+  set(a, validCall(a.value.trim()));
+  set(p, validCall(p.value.trim()));
+  set(r, r.value.trim().length >= 7);
+  set(pin, pin.value.trim().length >= 4);
+
+  const s = $('agStart'), e = $('agEnd');
+  let whenMsg = '', whenOk = false;
+  if(s.value && e.value){
+    const t0 = new Date(s.value).getTime(), t1 = new Date(e.value).getTime();
+    if(isNaN(t0) || isNaN(t1)){ whenMsg = ''; }
+    else if(t1 <= t0){ whenMsg = t('ag.endbeforestart'); }
+    else if(t0 > Date.now() + 31*24*3600*1000){ whenMsg = t('ag.toofar'); }
+    else whenOk = true;
+  }
+  $('fbAgWhen').textContent = whenMsg;
+  $('fbAgWhen').className = 'fb' + (whenMsg ? ' bad' : '');
+  s.classList.toggle('bad', !!s.value && !whenOk);
+  e.classList.toggle('bad', !!e.value && !whenOk);
+  if(!whenOk) ok = false;
+
+  $('agCheck').disabled = !ok;
+  $('agSend').disabled  = !ok || !agGecontroleerd;
+  return ok;
+}
+
+function vergeetControleAg(){
+  if(!agGecontroleerd) return;
+  agGecontroleerd = false;
+  $('fbAgSend').textContent = t('self.recheck');
+  $('fbAgSend').className = 'fb';
+}
+
+/* Local time in, real UTC out — the picker shows the activator's own clock,
+ * but what travels to Spotline (and what the label promises) is UTC. */
+function agendaVelden(){
+  const uit = {
+    activator_call: $('agActivator').value.trim().toUpperCase(),
+    poster:         $('agPoster').value.trim().toUpperCase(),
+    reference:      $('agReference').value.trim().toUpperCase(),
+    utc_start:      new Date($('agStart').value).toISOString(),
+    utc_end:        new Date($('agEnd').value).toISOString(),
+    pin:            $('agPin').value.trim(),
+  };
+  const band = $('agBand').value.trim(); if(band) uit.band = band;
+  const mode = $('agMode').value;        if(mode) uit.mode = mode;
+  const rem  = $('agRemarks').value.trim(); if(rem) uit.remarks = rem;
+  return uit;
+}
+
+async function naarWorkerAgenda(dry){
+  const v = agendaVelden();
+  const r = await fetch(WORKER + '/agenda', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dry ? { ...v, dryrun: true } : v),
+  });
+  let data = null;
+  try{ data = await r.json(); }catch{}
+  return { status: r.status, data: data || {} };
+}
+
+/* Same answers as toonAntwoord() for self-spotting, minus the fallback offer
+ * — there is nothing to fall back to here. */
+function toonAntwoordAgenda(status, data){
+  const fb = $('fbAgSend');
+  const zet = (tekst, cls) => { fb.textContent = tekst; fb.className = 'fb' + (cls ? ' ' + cls : ''); };
+  if(status === 409){ zet(t('self.dup'), 'good'); return; }
+  if(status === 400){
+    const uitleg = (data.details && data.details.length) ? data.details.join(' · ') : (data.error || '');
+    zet(uitleg, 'bad'); return;
+  }
+  if(status === 401 || status === 500){ zet(t('self.keyfail'), 'bad'); return; }
+  if(status === 429){ zet(t('self.busy'), 'bad'); return; }
+  if(status === 503){ zet(data.limit === 'day' ? t('self.dailylimit') : t('self.off'), 'bad'); return; }
+  zet(t('self.unreachable'), 'bad');
+}
+
+/* The pin is the only way back into an announcement on Spotline's own site —
+ * lose it and there is no recovery. Kept locally, per device, next to the
+ * reference and date so it means something months later. */
+function agendaLijst(){
+  try{ return JSON.parse(recall('agendas') || '[]'); }catch{ return []; }
+}
+function agendaBewaar(item){
+  const lijst = agendaLijst();
+  lijst.unshift(item);
+  remember('agendas', JSON.stringify(lijst.slice(0, 50)));
+  renderAgendaSaved();
+}
+function agendaVerwijder(i){
+  const lijst = agendaLijst();
+  lijst.splice(i, 1);
+  remember('agendas', JSON.stringify(lijst));
+  renderAgendaSaved();
+}
+function renderAgendaSaved(){
+  const lijst = agendaLijst();
+  $('agSavedCard').hidden = !lijst.length;
+  $('agSavedList').innerHTML = lijst.map((it, i) => `
+    <div class="spot" style="cursor:default">
+      <span class="who"><div class="c">${it.reference}</div>
+        <div class="f">${(it.utc_start || '').slice(0,16).replace('T',' ')} UTC · pin ${it.pin}</div></span>
+      <button class="btn ghost" data-del="${i}" style="padding:4px 10px">✕</button>
+    </div>`).join('');
+}
+$('agSavedList').addEventListener('click', e => {
+  const b = e.target.closest('button[data-del]'); if(!b) return;
+  agendaVerwijder(Number(b.dataset.del));
+});
+
+$('agCheck').onclick = async () => {
+  if(!validateAgenda()) return;
+  $('agCheck').disabled = true;
+  const fb = $('fbAgSend');
+  fb.textContent = t('self.checking'); fb.className = 'fb';
+  try{
+    const { status, data } = await naarWorkerAgenda(true);
+    if(status >= 200 && status < 300){
+      agGecontroleerd = true;
+      fb.textContent = t('self.checkok'); fb.className = 'fb good';
+    } else {
+      agGecontroleerd = false;
+      toonAntwoordAgenda(status, data);
+    }
+  }catch{
+    agGecontroleerd = false;
+    fb.textContent = t('self.unreachable'); fb.className = 'fb bad';
+  }finally{
+    validateAgenda();
+  }
+};
+
+$('agSend').onclick = async () => {
+  if(!validateAgenda() || !agGecontroleerd) return;
+  $('agSend').disabled = true;
+  const fb = $('fbAgSend');
+  fb.textContent = t('ag.sending'); fb.className = 'fb';
+  try{
+    const { status, data } = await naarWorkerAgenda(false);
+    if(status >= 200 && status < 300){
+      const v = agendaVelden();
+      const id = data.agenda_id || (data.data && data.data.agenda_id) || null;
+      agendaBewaar({ reference: v.reference, utc_start: v.utc_start, pin: v.pin, id });
+      fb.textContent = t('ag.ok') + (id ? ` · #${id}` : '');
+      fb.className = 'fb good';
+      showStatus('in', t('ag.ok'), `${v.activator_call} · ${v.reference}`);
+      $('agReference').value = ''; $('agStart').value = ''; $('agEnd').value = '';
+      $('agBand').value = ''; $('agMode').value = ''; $('agRemarks').value = ''; $('agPin').value = '';
+      $('agCount').textContent = '0/100';
+      $('fbAgReference').textContent = ''; $('fbAgReference').className = 'fb';
+    } else {
+      toonAntwoordAgenda(status, data);
+    }
+  }catch{
+    fb.textContent = t('self.unreachable'); fb.className = 'fb bad';
+  }finally{
+    agGecontroleerd = false;
+    validateAgenda();
+  }
+};
+
+['agActivator','agPoster','agReference'].forEach(id => {
+  $(id).addEventListener('input', e => {
+    const p = e.target.selectionStart;
+    e.target.value = e.target.value.toUpperCase();
+    e.target.setSelectionRange(p, p);
+    if(id === 'agReference') checkAgReference();
+    vergeetControleAg();
+    validateAgenda();
+  });
+});
+['agStart','agEnd','agBand','agMode','agPin'].forEach(id => $(id).addEventListener('input', () => {
+  vergeetControleAg();
+  validateAgenda();
+}));
+$('agRemarks').addEventListener('input', e => {
+  $('agCount').textContent = `${e.target.value.length}/100`;
+  vergeetControleAg();
+  validateAgenda();
+});
+
+/* Opened from the "+ Aankondigen" button on the Agenda tab of the Spots
+ * screen, not from the bottom nav — gaNaarView() does by hand what the nav's
+ * own click handler does for its buttons. */
+function gaNaarView(id, extra){
+  $('viewHeat').classList.remove('minimized');
+  document.querySelectorAll('#nav button').forEach(c => c.classList.remove('on'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
+  $(id).classList.add('on');
+  toggle(null);
+  if(extra) extra();
+  requestAnimationFrame(() => { map.resize(); map.triggerRepaint(); });
+}
+
+function agendaOpen(){
+  const ref = selected;
+  const z = ref && zones && zones.features.find(f => f.properties.ref === ref);
+  if(z){ $('agReference').value = z.properties.ref; checkAgReference(); }
+  if(!$('agActivator').value) $('agActivator').value = recall('activator') || cfg.callp || cfg.call;
+  if(!$('agPoster').value)    $('agPoster').value    = recall('spotter')   || cfg.call || (cfg.callp||'').split('/')[0];
+  agendaGrenzen();
+  renderAgendaSaved();
+  validateAgenda();
+}
+
+$('agNewOpen').onclick = () => gaNaarView('viewAgendaNew', agendaOpen);
+$('agBack').onclick = () => document.querySelector('#nav button[data-view="viewSpots"]').click();
 
 /* ================================================================== *
  * Screen 4 — activation session and GPS evidence

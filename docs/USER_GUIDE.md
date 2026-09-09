@@ -148,6 +148,35 @@ answer yourself, but Diana can't confirm anything for you. That fallback
 appears by itself when it would help, and you can make it permanent with
 **Always send the old way** in Settings if you'd rather have it that way.
 
+### Announce (+ Aankondigen, on the Spots screen's Agenda tab)
+Tell people about an activation before it happens, instead of only spotting
+it once you're there. Open it from the **Agenda** tab of the Spots screen —
+it prefills your callsign and the reference the same way self-spotting does.
+
+The fields: the activator's callsign, your own callsign (the two are
+separate — someone else can announce on an activator's behalf), the WWFF
+reference (checked against Diana's own data, exactly as in self-spotting),
+start and end time in **your own local time** — Diana converts to UTC before
+it leaves your device, so you never have to do that arithmetic — and
+optionally a band, a mode, and a remark. You also choose a **PIN**, at least
+four characters.
+
+**The PIN is the only way to edit or cancel this announcement later, on
+Spotline's own site — Diana cannot do that for you.** Lose it and there is no
+recovery, so Diana keeps a local list of everything you've announced from
+this device (reference, date, PIN) right below the form, so you have
+somewhere to look it up months later. That list lives only on this device;
+see §Limitations.
+
+The screen won't let you pick a date more than a month out, or an end before
+the start — the same rule Spotline itself applies, caught here first so a
+typo never costs a request from the shared budget. Beyond that it works
+exactly like self-spotting: *Check* first, then *Send* opens only once the
+check came back good, and any edit closes it again. There is no "send the
+old way" fallback for an announcement — unlike a spot, there is no separate
+form Spotline offers for this that Diana could fall back to; if the Worker
+can't be reached, try again.
+
 ### Settings (⚙)
 Your callsign, portable callsign (e.g. `ON3VZ/P`) and Maidenhead grid locator
 (with "take it from GPS" and format validation). There is deliberately no
@@ -245,8 +274,9 @@ snippet for you from a province, language and spots choice — see
 
 **Everything is stored on this one device, in this one browser — nothing
 syncs.** Your callsign, grid locator, home-view preference, language choice,
-and (if you enabled it) a remembered Admin token all live in that browser's
-local storage. If you open Diana on your phone and then on your laptop, you
+the PINs of announcements you've made, and (if you enabled it) a remembered
+Admin token all live in that browser's local storage. If you open Diana on
+your phone and then on your laptop, you
 will need to enter your settings again on the laptop — the two are
 completely independent, and Diana has no account system to tie them
 together. Clearing your browser's site data, or using a private/incognito
