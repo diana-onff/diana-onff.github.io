@@ -209,6 +209,13 @@
 
   <div class="card">
     <h4 style="margin:0 0 10px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
+        data-i18n="self.settitle">Zelf spotten</h4>
+    <label class="chk"><input type="checkbox" id="setClassic"> <span data-i18n="self.classic">Altijd op de oude manier versturen</span></label>
+    <p class="hint" style="margin:6px 0 0" data-i18n="self.classichint">Stuurt de spot rechtstreeks naar Spotline in een nieuw tabblad, zonder controle vooraf en zonder bevestiging in de app. Bedoeld als terugval wanneer er iets mis is met de gewone weg.</p>
+  </div>
+
+  <div class="card">
+    <h4 style="margin:0 0 10px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
         data-i18n="set.worldtitle">Andere WWFF-gebieden</h4>
     <p class="hint" style="margin:0 0 10px" data-i18n="set.worldlead">Referentiepunten uit de wereldwijde WWFF-lijst, buiten België — altijd als punt, nooit als grens (die hebben we alleen voor ONFF). Standaard toont Diana ze allemaal; kies hieronder een land om te beperken.</p>
     <label class="fld"><span data-i18n="set.worldcountry">Alleen dit land tonen</span>
@@ -288,8 +295,11 @@
     <p class="warn" data-i18n="self.warn">Geen bedankjes of bandverzoeken hier. Elke spot gaat naar het DX-cluster; opmerkingen die daar niet horen zijn ruis. Spotline filtert bovendien op ongepaste taal.</p>
   </div>
 
-  <button class="btn amber" id="spSend" data-i18n="self.send">Spot versturen</button>
-  <p class="hint" data-i18n="self.newtab">Opent Spotline in een nieuw tabblad, zodat je hun eigen bevestiging ziet.</p>
+  <button class="btn ghost" id="spCheck" disabled data-i18n="self.check">Controleren</button>
+  <button class="btn amber" id="spSend" disabled data-i18n="self.send">Spot versturen</button>
+  <div class="fb" id="fbSend"></div>
+  <button class="btn ghost" id="spFallback" hidden data-i18n="self.fallback">Versturen op de oude manier</button>
+  <p class="hint" id="spHint" data-i18n="self.checkhint">Controleren legt de spot voor aan Spotline zonder hem te plaatsen. Klopt alles, dan kan je versturen.</p>
 </section>
 
 <section class="view" id="viewSession">
