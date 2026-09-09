@@ -92,6 +92,7 @@
     <button class="seg on" data-tab="spots" data-i18n="spots.tabnow">Nu actief</button>
     <button class="seg" data-tab="agenda" data-i18n="spots.tabagenda">Agenda</button>
   </div>
+  <button class="btn ghost" id="agNewOpen" hidden style="margin:4px 0 12px" data-i18n="ag.new">+ Aankondigen</button>
   <div class="segs" id="spotFilter" style="margin-bottom:12px">
     <button class="seg on" data-filter="onff">ONFF</button>
     <button class="seg" data-filter="all" data-i18n="spots.world">Wereldwijd</button>
@@ -300,6 +301,58 @@
   <div class="fb" id="fbSend"></div>
   <button class="btn ghost" id="spFallback" hidden data-i18n="self.fallback">Versturen op de oude manier</button>
   <p class="hint" id="spHint" data-i18n="self.checkhint">Controleren legt de spot voor aan Spotline zonder hem te plaatsen. Klopt alles, dan kan je versturen.</p>
+</section>
+
+<section class="view" id="viewAgendaNew">
+  <h1 data-i18n="ag.title">Aankondigen</h1>
+  <p class="sub" data-i18n="ag.sub">Kondigt een activatie aan via WWFF Spotline</p>
+
+  <div class="card">
+    <div class="fgrid">
+      <label class="fld"><span data-i18n="self.activator">Roepteken (activator)</span>
+        <input id="agActivator" type="text" autocomplete="off" spellcheck="false" placeholder="ON3VZ/P"></label>
+      <label class="fld"><span data-i18n="ag.poster">Jouw roepteken</span>
+        <input id="agPoster" type="text" autocomplete="off" spellcheck="false" placeholder="ON3VZ"></label>
+    </div>
+    <label class="fld"><span data-i18n="self.ref">WWFF-referentie</span>
+      <input id="agReference" type="text" autocomplete="off" spellcheck="false" placeholder="ONFF-0104"></label>
+    <div class="fb" id="fbAgReference"></div>
+    <div class="fgrid">
+      <label class="fld"><span data-i18n="ag.start">Begin (UTC)</span>
+        <input id="agStart" type="datetime-local"></label>
+      <label class="fld"><span data-i18n="ag.end">Einde (UTC)</span>
+        <input id="agEnd" type="datetime-local"></label>
+    </div>
+    <div class="fb" id="fbAgWhen"></div>
+    <div class="fgrid">
+      <label class="fld"><span data-i18n="ag.band">Band (optioneel)</span>
+        <input id="agBand" type="text" autocomplete="off" placeholder="20m"></label>
+      <label class="fld"><span data-i18n="self.mode">Mode</span>
+        <select id="agMode">
+          <option value="">—</option>
+          <option>SSB</option><option>CW</option><option>FT8</option><option>FT4</option>
+          <option>RTTY</option><option>PSK</option><option>FM</option><option>AM</option><option>Other</option>
+        </select></label>
+    </div>
+    <label class="fld"><span data-i18n="self.remarks">Opmerking (optioneel)</span>
+      <input id="agRemarks" type="text" maxlength="100" placeholder="QRV vanaf zonsopgang"></label>
+    <div class="fb"><span id="agCount">0/100</span></div>
+    <label class="fld"><span data-i18n="ag.pin">Pin (om later te bewerken)</span>
+      <input id="agPin" type="text" autocomplete="off" placeholder="min. 4 tekens"></label>
+    <p class="hint" data-i18n="ag.pinhint">Bewaar deze pin: enkel daarmee kan je deze aankondiging later via Spotline nog wijzigen.</p>
+  </div>
+
+  <button class="btn ghost" id="agCheck" disabled data-i18n="self.check">Controleren</button>
+  <button class="btn amber" id="agSend" disabled data-i18n="ag.sendbtn">Aankondiging versturen</button>
+  <div class="fb" id="fbAgSend"></div>
+  <p class="hint" id="agHint" data-i18n="ag.checkhint">Controleren legt de aankondiging voor aan Spotline zonder ze te plaatsen. Klopt alles, dan kan je versturen.</p>
+
+  <div class="card" id="agSavedCard" hidden style="margin-top:16px">
+    <h2 style="margin:0 0 8px;font-size:15px" data-i18n="ag.savedtitle">Jouw aankondigingen op dit toestel</h2>
+    <div id="agSavedList"></div>
+  </div>
+
+  <button class="btn ghost" id="agBack" style="margin-top:12px" data-i18n="ag.back">← Terug naar Spots &amp; agenda</button>
 </section>
 
 <section class="view" id="viewSession">
