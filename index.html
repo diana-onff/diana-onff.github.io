@@ -153,6 +153,13 @@
     <p class="hint" data-i18n="adm.prhint">Bekijk eerst de preview. Publiceren voegt de pull request samen met de hoofdbranch en zet de nieuwe gegevens live. Afwijzen sluit de pull request en verwijdert de branch — het bronbestand komt dan nergens terecht.</p>
   </div>
 
+  <div class="card" id="admCleanupCard" hidden>
+    <h4 class="ch" data-i18n="adm.cleanup">Wachtruimte opruimen</h4>
+    <p class="hint" data-i18n="adm.cleanuphint">Bestanden die nog in incoming/ staan, los van een pull request — bijvoorbeeld na een merge buiten de app om.</p>
+    <div id="admCleanupList"></div>
+    <button class="btn ghost" id="admCleanupRefresh" data-i18n="adm.prrefresh">Verversen</button>
+  </div>
+
   <div class="card">
     <h4 class="ch" data-i18n="adm.embed">Insluiten op een website</h4>
     <div class="fgrid">
