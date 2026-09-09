@@ -1,14 +1,24 @@
-# Werkmap van kmz2geojson.py — tijdelijk uitgepakte KML, hoort niet in de repo
+# Scratch directory of kmz2geojson.py — temporarily unpacked KML, not for the repo
 .kmz-work/
-
-# Gecompileerde Python — staat er nu wel in (build/__pycache__/), mag weg
+ 
+# Compiled Python
 __pycache__/
 *.py[cod]
-
-# Lokale bouwmap van site.sh
+ 
+# Local build directory of site.sh
 _site/
-
-# Het bron-KMZ hoort niet in deze publieke repo. Het staat in de private
-# bron-repo; de build haalt het daar op en zet het in bron/.
+ 
+# The source KMZ has no business in this public repo. It lives in the private
+# source repo; the build fetches it from there into bron/.
 source/*.kmz
 bron/
+ 
+# --- Cloudflare Worker ---
+# .dev.vars is where `wrangler dev` keeps secrets for local runs, in PLAIN TEXT.
+# It must never be committed. The KV namespace id in wrangler.toml is fine and
+# belongs in the repository: it is a reference, not a key, and useless to anyone
+# without a token for this Cloudflare account.
+.dev.vars
+.dev.vars.*
+.wrangler/
+node_modules/
