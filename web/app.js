@@ -8,7 +8,7 @@ const $ = id => document.getElementById(id);
 
 /* Version of the app itself. Shown on the splash screen and in Settings, so that
    a report along the lines of "it's behaving oddly" can be tied to a version. */
-const APP_VERSION = '1.5.1';
+const APP_VERSION = '1.6.0';
 /* Filled in at publish time by build/site.sh: the short commit hash and the date
    of that build. If the placeholder is still there, you are running a copy that
    never went through the build step — locally, or straight out of the repo.
@@ -3739,6 +3739,7 @@ $('nav').addEventListener('click', e=>{
   if(b.dataset.view==='viewRules') renderRules();
   if(b.dataset.view==='viewSession') renderSession();
   if(b.dataset.view==='viewSelf') selfPrefill();
+  if(b.dataset.view==='viewAgendaNew'){ agOrigin = 'viewSpots'; agendaOpen(); }
   if(b.dataset.view==='viewSet') loadSettingsUI();
   if(b.dataset.view==='viewAdmin') buildEmbed();
   // Only update when the map really changes size; a resize on every click costs

@@ -212,7 +212,14 @@ with sync_playwright() as p:
     ok(pg.is_visible("#viewSelf"), "← Terug returns to Meld, not always to Spots")
     ok(pg.is_hidden("#viewAgendaNew"), "and the agenda screen is gone")
 
-    print("\n[14] no JS errors along the way")
+    print("\n[14] a third door in: straight from the bottom nav")
+    pg.evaluate("() => document.querySelector('[data-view=\"viewAgendaNew\"]').click()")
+    pg.wait_for_timeout(300)
+    ok(pg.is_visible("#viewAgendaNew"), "the nav button opens the same screen")
+    ok(pg.evaluate("() => document.getElementById('agStart').min") != "",
+       "and it's prefilled/bounded (agendaOpen ran) exactly as the other two doors do")
+
+    print("\n[15] no JS errors along the way")
     ok(not errs, f"no page errors: {errs[:2] if errs else 'ok'}")
 
     br.close()
