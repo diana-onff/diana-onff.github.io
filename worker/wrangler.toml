@@ -24,6 +24,13 @@ workers_dev = true
 # line — which is exactly why it is a variable and not a constant in the code.
 WWFF_BASE = "https://spots-dev.cuf.fi"
 
+# The paths on that host. Configuration rather than constants, because the
+# documentation and the host have already disagreed once: the development host
+# answers 404 on the documented agenda path. Trying another one should be an
+# edit here and a redeploy, not a code change.
+SPOT_PATH = "/api/spots/add"
+AGENDA_PATH = "/api/agenda/store"
+
 # Browsers may call this Worker from these origins, comma-separated, no spaces.
 # Outside a browser an Origin header is trivially forged, so this is a doorstep
 # and not a lock. The lock is the rate limiting.

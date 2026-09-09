@@ -48,14 +48,7 @@ npx wrangler kv namespace create DIANA_KV
 ```
 
 Paste the `id` it prints into `wrangler.toml`, replacing `VUL_HIER_HET_ID_IN`.
-Wrangler shows it as a JSON snippet; this file is TOML, so copy only the id
-string itself, not the whole block.
-
-That id belongs in the repository. It is a reference, not a key: without a token
-for this Cloudflare account it does nothing. Committing it is what lets the next
-person — or you on another machine — deploy without hunting for it. What must
-never be committed is `.dev.vars`, the file `wrangler dev` writes local secrets
-into in plain text; `.gitignore` already blocks it.
+That id is not a secret.
 
 **2. Deploy:**
 

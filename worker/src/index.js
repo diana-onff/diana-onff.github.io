@@ -432,7 +432,13 @@ async function handlePost(request, env, kind) {
     };
   }
 
-  const path = kind === 'spot' ? '/api/spots/add' : '/api/agenda/store';
+  /* The upstream paths are configuration, not constants. WWFF's documentation
+   * and what a given host actually serves have already disagreed once — the
+   * development host answers 404 on the documented agenda path — and hunting
+   * that down should be an edit to wrangler.toml, not to this file. */
+  const path = kind === 'spot'
+    ? (env.SPOT_PATH || '/api/spots/add')
+    : (env.AGENDA_PATH || '/api/agenda/store');
   const answer = await toWwff(env, path, out);
   log(answer.status < 300 ? 'forwarded' : 'upstream_refused', answer.status);
   return { status: answer.status, data: answer.data };
@@ -456,7 +462,15 @@ export default {
      * whether the switch is on, without spending anything. */
     if (request.method === 'GET' && url.pathname === '/status') {
       return json(
-        { service: 'diana-spotline', version: VERSION, upstream: env.WWFF_BASE, enabled: !(await isOff(env)) },
+        {
+          service: 'diana-spotline', version: VERSION,
+          upstream: env.WWFF_BASE,
+          paths: {
+            spot: env.SPOT_PATH || '/api/spots/add',
+            agenda: env.AGENDA_PATH || '/api/agenda/store',
+          },
+          enabled: !(await isOff(env)),
+        },
         200,
         cors || {}
       );
