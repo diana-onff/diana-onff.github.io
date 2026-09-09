@@ -42,13 +42,20 @@ LIMIT_GLOBAL_MINUTE = "40"    # Diana as a whole, per minute
 # honest error, and a hanging request holds a rate-limit slot for nothing.
 UPSTREAM_TIMEOUT_MS = "8000"
 
-# Counters and the kill switch. Create it once with:
+# Counters and the kill switch.
+#
+# This id is not a secret and belongs in the repository: it is a reference, not
+# a key, and does nothing without a token for this Cloudflare account. Having it
+# here is what lets the next person deploy without hunting for it.
+#
+# Setting up a SEPARATE instance (a fork, a second account) means making your own:
 #   wrangler kv namespace create DIANA_KV
-# and paste the id it prints here — it is not a secret.
+# and replacing the id below with the one it prints. Wrangler shows it as a JSON
+# snippet; this file is TOML, so copy only the id string.
 #
 # Mind KV's own free-tier ceiling: 1000 writes per day. Only requests that pass
 # validation and actually go to WWFF write anything, so a preflight, a rejected
 # form or a blocked origin costs nothing.
 [[kv_namespaces]]
 binding = "DIANA_KV"
-id = "VUL_HIER_HET_ID_IN"
+id = "91c24f089f504da0af67499b40cc7ebb"
