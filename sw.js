@@ -13,7 +13,7 @@
  * Map tiles get a cache of their own with a rough LRU limit, so a downloaded area
  * stays put but storage does not grow without bound.
  */
-const VERSION   = 'diana-e8b94e2';
+const VERSION   = 'diana-938f1fc';
 const SHELL     = `${VERSION}-shell`;
 const TILES     = `${VERSION}-tiles`;
 const TILE_MAX  = 3000;               // roughly 60 MB of vector tiles
