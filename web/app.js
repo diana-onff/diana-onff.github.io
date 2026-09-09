@@ -263,6 +263,26 @@ const STR = {
   "self.freqrange": "moet tussen 135,7 en 7.500.000.000 kHz liggen",
   "self.segment": "segment volgens het bandplan",
   "self.sent": "Spot verstuurd",
+  "self.check": "Controleren",
+  "self.checkhint": "Controleren legt de spot voor aan Spotline zonder hem te plaatsen. Klopt alles, dan kan je versturen.",
+  "self.checking": "controleren bij Spotline…",
+  "self.checkok": "✓ Spotline aanvaardt deze spot — je kan hem nu versturen",
+  "self.sending": "versturen…",
+  "self.ok": "Spot staat op Spotline",
+  "self.dup": "Die spot stond er al — er is niets dubbel geplaatst.",
+  "self.keyfail": "De koppeling met Spotline is niet in orde. Dat ligt aan onze kant, niet aan jou.",
+  "self.busy": "Te veel spots kort na elkaar. Probeer het over een paar minuten opnieuw.",
+  "self.off": "Spotten via Diana staat tijdelijk uit.",
+  "self.unreachable": "Spotline is nu niet bereikbaar.",
+  "self.recheck": "Er is iets gewijzigd — controleer opnieuw.",
+  "self.fallback": "Versturen op de oude manier",
+  "self.fallbackwarn": "Dat opent Spotline in een nieuw tabblad. Je ziet hun antwoord dan zelf, maar de app krijgt geen bevestiging terug.",
+  "self.classic": "Altijd op de oude manier versturen",
+  "self.classichint": "Stuurt de spot rechtstreeks naar Spotline in een nieuw tabblad, zonder controle vooraf en zonder bevestiging in de app. Bedoeld als terugval wanneer er iets mis is met de gewone weg.",
+  "self.settitle": "Zelf spotten",
+  "self.refprogram": "{c} — dit nummer controleren we hier niet",
+  "self.refbadprogram": "✗ geen bestaand WWFF-programma",
+  "self.refshape": "✗ ziet er niet uit als een WWFF-referentie",
   "sess.title": "Activatiesessie",
   "sess.sub": "Kies eerst een gebied op de kaart",
   "sess.unknown": "Positie onbekend",
@@ -556,6 +576,26 @@ const STR = {
   "self.freqrange": "must be between 135.7 and 7,500,000,000 kHz",
   "self.segment": "segment per the band plan",
   "self.sent": "Spot sent",
+  "self.check": "Check",
+  "self.checkhint": "Checking puts the spot to Spotline without placing it. If it all holds up, you can send.",
+  "self.checking": "checking with Spotline…",
+  "self.checkok": "✓ Spotline accepts this spot — you can send it now",
+  "self.sending": "sending…",
+  "self.ok": "Spot is on Spotline",
+  "self.dup": "That spot was already there — nothing was posted twice.",
+  "self.keyfail": "The link with Spotline is not in order. That is on our side, not yours.",
+  "self.busy": "Too many spots in quick succession. Try again in a few minutes.",
+  "self.off": "Spotting through Diana is temporarily switched off.",
+  "self.unreachable": "Spotline cannot be reached right now.",
+  "self.recheck": "Something changed — check again.",
+  "self.fallback": "Send the old way",
+  "self.fallbackwarn": "That opens Spotline in a new tab. You see their answer yourself, but the app gets no confirmation back.",
+  "self.classic": "Always send the old way",
+  "self.classichint": "Sends the spot straight to Spotline in a new tab, without a check beforehand and without a confirmation in the app. Meant as a fallback when something is wrong with the normal route.",
+  "self.settitle": "Spotting yourself",
+  "self.refprogram": "{c} — we do not check this number here",
+  "self.refbadprogram": "✗ not an existing WWFF programme",
+  "self.refshape": "✗ does not look like a WWFF reference",
   "sess.title": "Activation session",
   "sess.sub": "Pick a reference on the map first",
   "sess.unknown": "Position unknown",
@@ -832,6 +872,26 @@ const STR = {
   "self.freqrange": "doit être entre 135,7 et 7 500 000 000 kHz",
   "self.segment": "segment selon le plan de bandes",
   "self.sent": "Spot envoyé",
+  "self.check": "Vérifier",
+  "self.checkhint": "Vérifier soumet le spot à Spotline sans le publier. Si tout est correct, vous pouvez envoyer.",
+  "self.checking": "vérification auprès de Spotline…",
+  "self.checkok": "✓ Spotline accepte ce spot — vous pouvez l'envoyer",
+  "self.sending": "envoi…",
+  "self.ok": "Le spot est sur Spotline",
+  "self.dup": "Ce spot existait déjà — rien n'a été publié en double.",
+  "self.keyfail": "La liaison avec Spotline n'est pas en ordre. C'est de notre côté, pas du vôtre.",
+  "self.busy": "Trop de spots coup sur coup. Réessayez dans quelques minutes.",
+  "self.off": "Le spotting via Diana est temporairement désactivé.",
+  "self.unreachable": "Spotline est injoignable pour le moment.",
+  "self.recheck": "Quelque chose a changé — vérifiez à nouveau.",
+  "self.fallback": "Envoyer à l'ancienne manière",
+  "self.fallbackwarn": "Cela ouvre Spotline dans un nouvel onglet. Vous voyez leur réponse vous-même, mais l'app ne reçoit aucune confirmation.",
+  "self.classic": "Toujours envoyer à l'ancienne manière",
+  "self.classichint": "Envoie le spot directement à Spotline dans un nouvel onglet, sans vérification préalable et sans confirmation dans l'app. Prévu comme repli si la voie normale pose problème.",
+  "self.settitle": "Spotter soi-même",
+  "self.refprogram": "{c} — nous ne vérifions pas ce numéro ici",
+  "self.refbadprogram": "✗ programme WWFF inexistant",
+  "self.refshape": "✗ ne ressemble pas à une référence WWFF",
   "sess.title": "Session d’activation",
   "sess.sub": "Choisissez d’abord une zone",
   "sess.unknown": "Position inconnue",
@@ -1108,6 +1168,26 @@ const STR = {
   "self.freqrange": "muss zwischen 135,7 und 7.500.000.000 kHz liegen",
   "self.segment": "Segment laut Bandplan",
   "self.sent": "Spot gesendet",
+  "self.check": "Prüfen",
+  "self.checkhint": "Prüfen legt den Spot Spotline vor, ohne ihn zu setzen. Stimmt alles, kannst du senden.",
+  "self.checking": "Prüfung bei Spotline…",
+  "self.checkok": "✓ Spotline akzeptiert diesen Spot — du kannst ihn jetzt senden",
+  "self.sending": "senden…",
+  "self.ok": "Spot steht auf Spotline",
+  "self.dup": "Dieser Spot war schon da — es wurde nichts doppelt gesetzt.",
+  "self.keyfail": "Die Verbindung zu Spotline ist nicht in Ordnung. Das liegt an uns, nicht an dir.",
+  "self.busy": "Zu viele Spots kurz hintereinander. Versuche es in ein paar Minuten erneut.",
+  "self.off": "Spotten über Diana ist vorübergehend abgeschaltet.",
+  "self.unreachable": "Spotline ist gerade nicht erreichbar.",
+  "self.recheck": "Etwas hat sich geändert — bitte erneut prüfen.",
+  "self.fallback": "Auf die alte Art senden",
+  "self.fallbackwarn": "Das öffnet Spotline in einem neuen Tab. Du siehst ihre Antwort selbst, aber die App bekommt keine Bestätigung zurück.",
+  "self.classic": "Immer auf die alte Art senden",
+  "self.classichint": "Sendet den Spot direkt an Spotline in einem neuen Tab, ohne vorherige Prüfung und ohne Bestätigung in der App. Gedacht als Rückfall, wenn mit dem normalen Weg etwas nicht stimmt.",
+  "self.settitle": "Selbst spotten",
+  "self.refprogram": "{c} — diese Nummer prüfen wir hier nicht",
+  "self.refbadprogram": "✗ kein existierendes WWFF-Programm",
+  "self.refshape": "✗ sieht nicht nach einer WWFF-Referenz aus",
   "sess.title": "Aktivierungssitzung",
   "sess.sub": "Zuerst ein Gebiet auf der Karte wählen",
   "sess.unknown": "Position unbekannt",
@@ -1384,6 +1464,26 @@ const STR = {
   "self.freqrange": "skal være mellem 135,7 og 7.500.000.000 kHz",
   "self.segment": "segment iflg. båndplanen",
   "self.sent": "Spot sendt",
+  "self.check": "Tjek",
+  "self.checkhint": "Tjek forelægger spottet for Spotline uden at placere det. Holder det hele, kan du sende.",
+  "self.checking": "tjekker hos Spotline…",
+  "self.checkok": "✓ Spotline accepterer dette spot — du kan sende det nu",
+  "self.sending": "sender…",
+  "self.ok": "Spottet ligger på Spotline",
+  "self.dup": "Det spot lå der allerede — intet blev sendt dobbelt.",
+  "self.keyfail": "Forbindelsen til Spotline er ikke i orden. Det er hos os, ikke hos dig.",
+  "self.busy": "For mange spots lige efter hinanden. Prøv igen om et par minutter.",
+  "self.off": "Spotting via Diana er midlertidigt slået fra.",
+  "self.unreachable": "Spotline kan ikke nås lige nu.",
+  "self.recheck": "Noget blev ændret — tjek igen.",
+  "self.fallback": "Send på den gamle måde",
+  "self.fallbackwarn": "Det åbner Spotline i en ny fane. Du ser selv deres svar, men appen får ingen bekræftelse tilbage.",
+  "self.classic": "Send altid på den gamle måde",
+  "self.classichint": "Sender spottet direkte til Spotline i en ny fane, uden tjek på forhånd og uden bekræftelse i appen. Ment som reserve, hvis der er noget galt med den normale vej.",
+  "self.settitle": "Spotte sig selv",
+  "self.refprogram": "{c} — vi tjekker ikke dette nummer her",
+  "self.refbadprogram": "✗ ikke et eksisterende WWFF-program",
+  "self.refshape": "✗ ligner ikke en WWFF-reference",
   "sess.title": "Aktiveringssession",
   "sess.sub": "Vælg først et område på kortet",
   "sess.unknown": "Position ukendt",
@@ -1660,6 +1760,26 @@ const STR = {
   "self.freqrange": "deve essere tra 135,7 e 7.500.000.000 kHz",
   "self.segment": "segmento secondo il band plan",
   "self.sent": "Spot inviato",
+  "self.check": "Verifica",
+  "self.checkhint": "La verifica sottopone lo spot a Spotline senza pubblicarlo. Se è tutto a posto, puoi inviare.",
+  "self.checking": "verifica presso Spotline…",
+  "self.checkok": "✓ Spotline accetta questo spot — ora puoi inviarlo",
+  "self.sending": "invio…",
+  "self.ok": "Lo spot è su Spotline",
+  "self.dup": "Quello spot c'era già — non è stato pubblicato due volte.",
+  "self.keyfail": "Il collegamento con Spotline non è a posto. È un problema nostro, non tuo.",
+  "self.busy": "Troppi spot uno dopo l'altro. Riprova tra qualche minuto.",
+  "self.off": "Lo spotting tramite Diana è temporaneamente disattivato.",
+  "self.unreachable": "Spotline non è raggiungibile in questo momento.",
+  "self.recheck": "Qualcosa è cambiato — verifica di nuovo.",
+  "self.fallback": "Invia alla vecchia maniera",
+  "self.fallbackwarn": "Apre Spotline in una nuova scheda. Vedi tu stesso la loro risposta, ma l'app non riceve alcuna conferma.",
+  "self.classic": "Invia sempre alla vecchia maniera",
+  "self.classichint": "Invia lo spot direttamente a Spotline in una nuova scheda, senza verifica preventiva e senza conferma nell'app. Pensato come ripiego quando qualcosa non va nella via normale.",
+  "self.settitle": "Spottarsi da soli",
+  "self.refprogram": "{c} — questo numero non lo verifichiamo qui",
+  "self.refbadprogram": "✗ programma WWFF inesistente",
+  "self.refshape": "✗ non sembra un riferimento WWFF",
   "sess.title": "Sessione di attivazione",
   "sess.sub": "Scegli prima un riferimento",
   "sess.unknown": "Posizione sconosciuta",
@@ -1936,6 +2056,26 @@ const STR = {
   "self.freqrange": "debe estar entre 135,7 y 7.500.000.000 kHz",
   "self.segment": "segmento según el plan de bandas",
   "self.sent": "Spot enviado",
+  "self.check": "Comprobar",
+  "self.checkhint": "Comprobar presenta el spot a Spotline sin publicarlo. Si todo está bien, puedes enviarlo.",
+  "self.checking": "comprobando con Spotline…",
+  "self.checkok": "✓ Spotline acepta este spot — ya puedes enviarlo",
+  "self.sending": "enviando…",
+  "self.ok": "El spot está en Spotline",
+  "self.dup": "Ese spot ya estaba — no se ha publicado nada por duplicado.",
+  "self.keyfail": "La conexión con Spotline no está en orden. Es cosa nuestra, no tuya.",
+  "self.busy": "Demasiados spots seguidos. Inténtalo de nuevo dentro de unos minutos.",
+  "self.off": "El spotting a través de Diana está desactivado temporalmente.",
+  "self.unreachable": "Spotline no está accesible ahora mismo.",
+  "self.recheck": "Algo ha cambiado — vuelve a comprobar.",
+  "self.fallback": "Enviar a la manera antigua",
+  "self.fallbackwarn": "Eso abre Spotline en una pestaña nueva. Verás su respuesta tú mismo, pero la app no recibe ninguna confirmación.",
+  "self.classic": "Enviar siempre a la manera antigua",
+  "self.classichint": "Envía el spot directamente a Spotline en una pestaña nueva, sin comprobación previa y sin confirmación en la app. Pensado como recurso cuando algo falla en la vía normal.",
+  "self.settitle": "Spotearse uno mismo",
+  "self.refprogram": "{c} — este número no lo comprobamos aquí",
+  "self.refbadprogram": "✗ no es un programa WWFF existente",
+  "self.refshape": "✗ no parece una referencia WWFF",
   "sess.title": "Sesión de activación",
   "sess.sub": "Elige primero una zona",
   "sess.unknown": "Posición desconocida",
@@ -4300,9 +4440,22 @@ $('embCopy').onclick = async () => {
  * own confirmation — more reliable than a fetch whose answer we are not
  * allowed to read anyway.
  * ================================================================== */
+/* The Worker is the ordinary route: it holds the API key, checks the payload
+ * once more on its own terms, and hands back what Spotline actually said. The
+ * form post below it is the fallback from step 3.4 — it still works, it just
+ * cannot tell you whether anything arrived. */
+const WORKER      = 'https://diana-spotline.diana-onff.workers.dev';
 const SPOT_POST   = 'https://spots.wwff.co/spots/store';
-const REF_CHECK   = 'https://spots.wwff.co/api/references/validate?reference=';
+const REF_SHAPE   = /^[A-Z0-9]{1,4}FF-\d{4}$/;   // the same rule the Worker applies
 const CALL_RE     = /^[A-Z0-9/]{3,}$/;
+
+/* Whether the current form contents have been approved by Spotline. Any edit
+ * clears it: a check on a frequency you have since changed says nothing about
+ * the spot you are about to send. Declared here, above validateSelf(), because
+ * that function reads it and runs during start-up. */
+let gecontroleerd = false;
+
+const klassiek = () => recall('self.classic') === '1';
 
 
 function validCall(v){ return CALL_RE.test(v) && /[0-9]/.test(v); }
@@ -4339,25 +4492,61 @@ function selfPrefill(){
   validateSelf();
 }
 
-let refTimer = null;
+/* Reference checking, against our own data instead of the API.
+ *
+ * There IS a GET /api/references/validate, but calling it while somebody types
+ * costs requests from the budget that is shared with every other Spotline
+ * client — and it is slower than what we can do here. We already carry the
+ * whole WWFF programme list (wwff-programs.json, 7 kB) and all 946 ONFF
+ * references, so the answer is instant, free, and better: for an ONFF
+ * reference we can show the name of the reserve rather than a bare tick.
+ *
+ * What we can and cannot say, honestly:
+ *   shape wrong           → certain, rejected
+ *   programme unknown     → certain, rejected (catches the common prefix typo)
+ *   ONFF, and we have it  → certain, with the name
+ *   ONFF, and we do not   → certain, rejected
+ *   another programme     → the programme exists; the number we do not know
+ *                           here unless the world layer happens to be loaded.
+ *                           Say so, and let Spotline have the last word.
+ */
+function refLookup(v){
+  if(!REF_SHAPE.test(v)) return { cls:'bad', text: t('self.refshape') };
+
+  const prog = v.split('-')[0];
+  const p = wwffPrograms.find(x => x.program === prog);
+  if(!p) return { cls:'bad', text: t('self.refbadprogram') };
+
+  /* ONFF is ours: both the areas with a boundary and the point-only ones. */
+  if(prog === 'ONFF'){
+    const inZones = zones && zones.features.find(f => f.properties.ref === v);
+    const inPts   = noPoly && noPoly.features.find(f => f.properties.ref === v);
+    const hit = inZones || inPts;
+    if(hit) return { cls:'good', text: '✓ ' + (hit.properties.name || v) };
+    return { cls:'bad', text: t('self.refunknown') };
+  }
+
+  /* Any other programme: only if the world layer is already in memory can we
+   * check the number too. Loading nine megabytes to validate a text field
+   * would be a poor trade. Mind the length check — worldPoints starts life as
+   * an empty collection, and an empty array would otherwise let us declare
+   * every foreign reference unknown. */
+  if(worldPoints && worldPoints.features && worldPoints.features.length){
+    const hit = worldPoints.features.find(f => f.properties.ref === v);
+    if(hit) return { cls:'good', text: '✓ ' + (hit.properties.name || v) };
+    return { cls:'bad', text: t('self.refunknown') };
+  }
+
+  return { cls:'', text: t('self.refprogram').replace('{c}', p.country) };
+}
+
 function checkReference(){
   const v = $('spReference').value.trim().toUpperCase();
   const fb = $('fbReference');
-  clearTimeout(refTimer);
   if(v.length < 7){ fb.textContent = v ? t('self.reftooshort') : ''; fb.className = 'fb'; return; }
-  fb.textContent = t('self.refchecking'); fb.className = 'fb';
-  refTimer = setTimeout(async () => {
-    try{
-      const d = await (await fetch(REF_CHECK + encodeURIComponent(v))).json();
-      if(d.valid && d.is_active){ fb.textContent = '✓ ' + (d.name || v); fb.className = 'fb good'; }
-      else if(d.valid){ fb.textContent = t('self.refinactive'); fb.className = 'fb bad'; }
-      else { fb.textContent = t('self.refunknown'); fb.className = 'fb bad'; }
-    }catch{
-      // If the check doesn't succeed (CORS or no network), we block nothing:
-      // Spotline checks it once more itself when the spot is sent.
-      fb.textContent = t('self.refnocheck'); fb.className = 'fb';
-    }
-  }, 500);
+  const r = refLookup(v);
+  fb.textContent = r.text;
+  fb.className = 'fb' + (r.cls ? ' ' + r.cls : '');
 }
 
 function validateSelf(){
@@ -4382,9 +4571,192 @@ function validateSelf(){
   }
   set(f, good, msg, 'fbFreq');
   if(!m.value) ok = false;
-  $('spSend').disabled = !ok;
+
+  /* Two buttons now, and they do not open at the same time. Check needs a form
+   * that holds together; Send needs a check that came back good. The one
+   * exception is classic mode, where there is nothing to check against
+   * because the spot goes straight to Spotline. */
+  $('spCheck').disabled = !ok || klassiek();
+  $('spSend').disabled  = !ok || (!gecontroleerd && !klassiek());
   return ok;
 }
+
+/* ---------------------------------------------------- checking and sending */
+
+function vergeetControle(){
+  if(!gecontroleerd) return;
+  gecontroleerd = false;
+  const fb = $('fbSend');
+  fb.textContent = t('self.recheck');
+  fb.className = 'fb';
+  $('spFallback').hidden = true;
+}
+
+function spotVelden(){
+  const uit = {
+    activator:     $('spActivator').value.trim().toUpperCase(),
+    spotter:       $('spSpotter').value.trim().toUpperCase(),
+    frequency_khz: Number($('spFreq').value.trim()),
+    mode:          $('spMode').value,
+    reference:     $('spReference').value.trim().toUpperCase(),
+  };
+  const rem = $('spRemarks').value.trim();
+  if(rem) uit.remarks = rem;
+  return uit;
+}
+
+/* One place where the Worker is called, for both the check and the real send.
+ * The only difference between the two is dryrun. */
+async function naarWorker(dry){
+  const r = await fetch(WORKER + '/spot', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dry ? { ...spotVelden(), dryrun: true } : spotVelden()),
+  });
+  let data = null;
+  try{ data = await r.json(); }catch{}
+  return { status: r.status, data: data || {} };
+}
+
+/* Turns an answer into something a person on a hilltop can act on. Returns
+ * whether the old route is worth offering: for a rejected spot it is not —
+ * the same spot would be rejected there too, just without telling you. */
+function toonAntwoord(status, data){
+  const fb = $('fbSend');
+  const zet = (tekst, cls) => { fb.textContent = tekst; fb.className = 'fb' + (cls ? ' ' + cls : ''); };
+
+  if(status === 409){ zet(t('self.dup'), 'good'); return false; }
+  if(status === 400){
+    const uitleg = (data.details && data.details.length) ? data.details.join(' · ') : (data.error || '');
+    zet(uitleg, 'bad');
+    return false;
+  }
+  if(status === 401 || status === 500){ zet(t('self.keyfail'), 'bad'); return true; }
+  if(status === 429){ zet(t('self.busy'), 'bad'); return true; }
+  if(status === 503){
+    /* Two different 503s: the daily ceiling, and the kill switch. The Worker
+     * tags them so we do not have to read its English prose. */
+    zet(data.limit === 'day' ? t('self.dailylimit') : t('self.off'), 'bad');
+    return true;
+  }
+  zet(t('self.unreachable'), 'bad');
+  return true;
+}
+
+$('spCheck').onclick = async () => {
+  if(!validateSelf()) return;
+  $('spCheck').disabled = true;
+  $('spFallback').hidden = true;
+  const fb = $('fbSend');
+  fb.textContent = t('self.checking'); fb.className = 'fb';
+  try{
+    const { status, data } = await naarWorker(true);
+    if(status >= 200 && status < 300){
+      gecontroleerd = true;
+      fb.textContent = t('self.checkok'); fb.className = 'fb good';
+    } else {
+      gecontroleerd = false;
+      $('spFallback').hidden = !toonAntwoord(status, data);
+    }
+  }catch{
+    /* No network, or the Worker is not answering at all. Nothing was sent, so
+     * the old route is still open — and on a hill with one bar that is
+     * exactly the moment you want it. */
+    gecontroleerd = false;
+    fb.textContent = t('self.unreachable'); fb.className = 'fb bad';
+    $('spFallback').hidden = false;
+  }finally{
+    validateSelf();
+  }
+};
+
+function onthoudRoepnamen(){
+  remember('activator', $('spActivator').value.trim());
+  remember('spotter',   $('spSpotter').value.trim());
+}
+
+/* The fallback from step 3.4: a real form post to another domain, which is
+ * allowed where a fetch is not. It works, and it always has — what it cannot
+ * do is tell you whether the spot arrived. That is the whole reason the
+ * Worker exists, and the whole reason this stays as a way out rather than as
+ * the way. */
+function verstuurKlassiek(){
+  onthoudRoepnamen();
+  const v = spotVelden();
+  const form = Object.assign(document.createElement('form'), {
+    method:'post', action:SPOT_POST, target:'_blank'
+  });
+  const velden = {
+    activator: v.activator, frequency_khz: $('spFreq').value.trim(), mode: v.mode,
+    reference: v.reference, spotter: v.spotter, remarks: v.remarks || '',
+  };
+  for(const [k, val] of Object.entries(velden)){
+    form.appendChild(Object.assign(document.createElement('input'), {type:'hidden', name:k, value:val}));
+  }
+  document.body.appendChild(form);
+  form.submit();
+  form.remove();
+  showStatus('in', t('self.sent'), `${v.activator} · ${v.reference} · ${velden.frequency_khz} kHz ${v.mode}`);
+  $('fbSend').textContent = t('self.fallbackwarn');
+  $('fbSend').className = 'fb';
+}
+
+$('spFallback').onclick = verstuurKlassiek;
+
+$('spSend').onclick = async () => {
+  if(!validateSelf()) return;
+  if(klassiek()) return verstuurKlassiek();
+  if(!gecontroleerd) return;
+
+  $('spSend').disabled = true;
+  $('spFallback').hidden = true;
+  const fb = $('fbSend');
+  fb.textContent = t('self.sending'); fb.className = 'fb';
+  try{
+    const { status, data } = await naarWorker(false);
+    if(status >= 200 && status < 300){
+      onthoudRoepnamen();
+      const id = data.spot_id || (data.data && data.data.spot_id);
+      fb.textContent = t('self.ok') + (id ? ` · #${id}` : '');
+      fb.className = 'fb good';
+      showStatus('in', t('self.ok'), `${spotVelden().activator} · ${spotVelden().reference}`);
+    } else {
+      $('spFallback').hidden = !toonAntwoord(status, data);
+    }
+  }catch{
+    fb.textContent = t('self.unreachable'); fb.className = 'fb bad';
+    $('spFallback').hidden = false;
+  }finally{
+    /* Whatever happened, the approval is spent. Sending the same spot again is
+     * a new decision and gets a new check. */
+    gecontroleerd = false;
+    validateSelf();
+  }
+};
+
+/* Classic mode: no checking, straight to Spotline. The screen has to say so,
+ * otherwise the two buttons and the hint underneath describe a flow that is
+ * not the one you are in. */
+function pasKlassiekToe(){
+  const aan = klassiek();
+  $('spCheck').hidden = aan;
+  $('spFallback').hidden = true;
+  $('spHint').textContent = aan ? t('self.classichint') : t('self.checkhint');
+  if(aan){ $('fbSend').textContent = ''; $('fbSend').className = 'fb'; }
+  validateSelf();
+}
+
+$('setClassic').addEventListener('change', e => {
+  remember('self.classic', e.target.checked ? '1' : '');
+  gecontroleerd = false;
+  pasKlassiekToe();
+});
+
+/* The setting survives a restart, so the screen has to come up in the state it
+ * was left in — otherwise someone who switched to classic mode last week finds
+ * a Check button that does something they deliberately turned off. */
+$('setClassic').checked = klassiek();
+pasKlassiekToe();
 
 ['spActivator','spSpotter','spReference'].forEach(id => {
   $(id).addEventListener('input', e => {
@@ -4392,12 +4764,20 @@ function validateSelf(){
     e.target.value = e.target.value.toUpperCase();
     e.target.setSelectionRange(p, p);
     if(id === 'spReference') checkReference();
+    vergeetControle();
     validateSelf();
   });
 });
-['spFreq','spMode'].forEach(id => $(id).addEventListener('input', validateSelf));
+['spFreq','spMode'].forEach(id => $(id).addEventListener('input', () => {
+  vergeetControle();
+  validateSelf();
+}));
 $('spRemarks').addEventListener('input', e => {
   $('spCount').textContent = `${e.target.value.length}/100`;
+  /* The remark travels with the spot, so a changed remark is a changed spot —
+   * even though nothing about it can fail validation. */
+  vergeetControle();
+  validateSelf();
 });
 document.querySelectorAll('.chip[data-add]').forEach(c => c.onclick = () => {
   const el = $('spRemarks');
@@ -4408,31 +4788,9 @@ document.querySelectorAll('.chip[data-add]').forEach(c => c.onclick = () => {
   $('spCount').textContent = `${el.value.length}/100`;
 });
 
-$('spSend').onclick = () => {
-  if(!validateSelf()) return;
-  remember('activator', $('spActivator').value.trim());
-  remember('spotter',   $('spSpotter').value.trim());
-
-  // A real form post to another domain is allowed; a fetch is not.
-  const form = Object.assign(document.createElement('form'), {
-    method:'post', action:SPOT_POST, target:'_blank'
-  });
-  const fields = {
-    activator:     $('spActivator').value.trim(),
-    frequency_khz: $('spFreq').value.trim(),
-    mode:          $('spMode').value,
-    reference:     $('spReference').value.trim(),
-    spotter:       $('spSpotter').value.trim(),
-    remarks:       $('spRemarks').value.trim(),
-  };
-  for(const [k,v] of Object.entries(fields)){
-    form.appendChild(Object.assign(document.createElement('input'), {type:'hidden', name:k, value:v}));
-  }
-  document.body.appendChild(form);
-  form.submit();
-  form.remove();
-  showStatus('in', t('self.sent'), `${fields.activator} · ${fields.reference} · ${fields.frequency_khz} kHz ${fields.mode}`);
-};
+/* The old send handler used to sit here, posting the form straight to
+ * Spotline. It has not disappeared — it moved into verstuurKlassiek() above,
+ * where it is now the fallback rather than the only way. */
 
 /* ================================================================== *
  * Screen 4 — activation session and GPS evidence

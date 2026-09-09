@@ -19,10 +19,19 @@ compatibility_date = "2026-09-01"
 workers_dev = true
 
 [vars]
-# Which Spotline to talk to. The development host validates and, with
-# "dryrun": true, does not store anything. Moving to production is this one
-# line — which is exactly why it is a variable and not a constant in the code.
-WWFF_BASE = "https://spots-dev.cuf.fi"
+# Which Spotline to talk to. This is production: spots sent through Diana land
+# on the real network. Moving back to the development host is this one line
+# plus a deploy — which is exactly why it is a variable and not a constant in
+# the code, and it is the first thing to try if something looks wrong:
+#
+#   WWFF_BASE = "https://spots-dev.cuf.fi"     # validates, stores nothing
+#
+# The development host is also where "dryrun": true was proven; that flag keeps
+# working here, and the app's "Check" button uses it for exactly that reason.
+# Note that the dev host answered 404 on the documented agenda path — see
+# AGENDA_PATH below. On production the documented path is expected to work, and
+# if it does not, that is an edit here rather than in the code.
+WWFF_BASE = "https://spots.wwff.co"
 
 # The paths on that host. Configuration rather than constants, because the
 # documentation and the host have already disagreed once: the development host
@@ -40,7 +49,12 @@ ALLOWED_ORIGINS = "https://diana-onff.github.io,http://localhost:8011"
 # the budget is shared with every other Spotline user, so Diana running into its
 # own ceiling is a nuisance, while Diana emptying the shared one is everybody's
 # problem.
-LIMIT_IP_SPOTS = "5"          # per IP address, per window below
+# Eight, not five, and the reason is the two-step flow in the app: checking a
+# spot and then sending it are two requests, so five would give one activator
+# only two attempts per ten minutes. Eight leaves four — still nothing against
+# WWFF's own ceiling, and enough that nobody meets this limit by using the app
+# the way it is meant to be used.
+LIMIT_IP_SPOTS = "8"          # per IP address, per window below
 LIMIT_IP_WINDOW = "600"       # seconds — ten minutes
 LIMIT_IP_AGENDA = "10"        # per IP address per day
 LIMIT_GLOBAL_MINUTE = "40"    # Diana as a whole, per minute

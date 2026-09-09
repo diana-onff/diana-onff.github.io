@@ -245,8 +245,16 @@ startup rather than only when a visitor opens the Spots screen.
 | `GET spots.wwff.co/static/spots.json` | the last ~50 live spots, **with** latitude/longitude |
 | `GET spots.wwff.co/static/agendas_active.json` | activations currently announced as starting |
 | `GET spots.wwff.co/static/agendas.json` | the full announced agenda |
-| `GET spots.wwff.co/api/references/validate?reference=X` | live check while typing a reference in the self-spot form: `{valid, is_active, name}` — an undocumented endpoint found in Spotline's own page source, not in any published API docs |
-| `POST spots.wwff.co/spots/store` | submitting your own spot (see below) |
+| `POST diana-spotline.diana-onff.workers.dev/spot` | submitting your own spot — the ordinary route, see below |
+| `POST spots.wwff.co/spots/store` | the fallback route for the same thing, see below |
+
+Two endpoints that used to be here are gone. `GET /api/references/validate`
+was a live check while typing a reference; it is now done locally against
+`data/` (see below), which is instant, costs nothing from the shared budget,
+and can show the name of the reserve rather than a bare tick. `GET
+/api/spots/...` never existed for reading — the API WWFF issued has no read
+endpoint at all, which is why the static files above stay the way spots come
+in.
 
 All three endpoints return every WWFF reference worldwide, not just ONFF —
 Diana fetches the lot and filters client-side against `spotFilter`, a value
@@ -265,19 +273,32 @@ references, Diana substitutes the centroid of its own polygon from
 all, and counts it in a visible "n without a known location" line rather
 than guessing or silently dropping it.
 
-**Self-spotting is a genuine HTML form submission, not a `fetch()` call.**
-`web/index.html` builds a real `<form method="post" target="_blank">`
-pointing at `/spots/store` and submits it, opening Spotline's own
-confirmation page in a new tab. Form submissions are not subject to CORS, so
-this is the one Spotline interaction that needs **no proxy regardless of
-Spotline's server configuration**. Reading the three static JSON files
-above, by contrast, is a normal cross-origin `fetch()` and *could* be
-blocked by CORS depending on how `spots.wwff.co` is configured — this has
-not yet been confirmed against the live site from outside this development
-environment. If it turns out to be blocked, the affected screens say so
-explicitly rather than failing silently; the fix at that point would be a
-small proxy in front of the three JSON files only (self-spotting would be
-unaffected).
+**Self-spotting goes through the Worker, in two deliberate steps.** "Check"
+sends the spot to `POST {worker}/spot` with `"dryrun": true`; Spotline
+validates it and stores nothing. Only when that comes back accepted does
+"Send" open, and it sends the same payload without the flag. Any edit to the
+form closes Send again — an approval of a frequency you have since changed
+says nothing about the spot you are about to send. The two steps are not
+automatic one after the other on purpose: that would double the consumption
+of a budget shared with every other Spotline client, for no one's benefit.
+
+The Worker is documented in full in `SPOTLINE.md` and lives in `worker/`. It
+holds the API key, which is the entire reason it exists: Diana is a static
+page, and anything the page can read, every visitor can read.
+
+**The form post is still there, as the way out.** `verstuurKlassiek()` builds
+the same real `<form method="post" target="_blank">` at `/spots/store` that
+used to be the only route. Form submissions are not subject to CORS, so this
+works even when the Worker does not. It is offered automatically when the
+Worker is unreachable, switched off, or over its daily ceiling — but not when
+Spotline has *refused* the spot, because the old route would refuse it too and
+simply not tell you. It can also be made permanent per device with "Always
+send the old way" in Settings. What it cannot do is confirm anything: you see
+that the spot left, not that it arrived.
+
+Reading the three static JSON files above is a normal cross-origin `fetch()`
+and needs no proxy — CORS on `spots.wwff.co/static/` has been measured and
+works.
 
 The client-side validation mirrored from Spotline's own form (kept in sync
 manually, since there's no shared schema):
@@ -286,18 +307,18 @@ manually, since there's no shared schema):
 |---|---|
 | Callsign (activator/spotter) | `/^[A-Z0-9/]{3,}$/` **and** at least one digit |
 | Frequency | 135.7 – 7,500,000,000 kHz |
-| Reference | at least 7 characters, plus the live `/references/validate` check |
+| Reference | `/^[A-Z0-9]{1,4}FF-\d{4}$/`, then the programme against `wwff-programs.json`, then the number itself: ONFF against `onff.geojson` + `onff-points.geojson` (both — a point-only reference is a valid reference), anything else against `wwff-world.geojson` when that layer is loaded. If it is not, the programme's country is shown with an explicit "not checked here" — never a rejection we cannot justify. See `refLookup()` |
 | Remarks | max 100 characters; Spotline additionally runs a server-side profanity filter |
 | Callsign/spotter/reference | auto-uppercased before sending, matching Spotline's own behaviour |
 
-**Status of the "upcoming API" mentioned on wwff.co/spotline:** Spotline's
-site references an API in addition to the three static files above. Diana
-currently uses only the static files, which are confirmed working. Kristof
-is requesting official API access from WWFF separately; if and when that
-access exists, the fetch layer for spots/agenda would be the only part of
-the app that needs to change — everything downstream (rendering, filtering,
-map layers) is already written against a normalised in-memory shape, not
-against the raw JSON structure.
+**The API that used to be "upcoming" now exists**, and Diana has a key for it.
+It has three endpoints — `POST /api/spots/add`, `POST /api/agenda/store`,
+`GET /api/references/validate` — and, notably, **no read endpoint for spots**.
+That settles a question this section used to leave open: the static JSON files
+stay the way spots come in, and not merely for now. They need no key, they do
+not count against the 100-per-minute budget, and they cache, which is what
+lets the map keep working offline. The API is used for the write side only,
+which is why the Worker exposes nothing but POST routes.
 
 ### 2.4 OpenFreeMap (base map)
 

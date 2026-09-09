@@ -120,15 +120,33 @@ to one specific country, and whichever you pick there is remembered as the
 new default for next time (see **Spots filter** under Settings below).
 
 ### Meld / self-spot (✚)
-Spot yourself. Reference number is pre-filled if you came from a zone's
-detail panel; callsign and spotter are remembered from your last self-spot.
-Validation mirrors WWFF Spotline's own rules exactly (callsign format and
-digit requirement, frequency range, minimum reference length, a 100-character
-remark limit), plus a live check that the reference you typed actually
-exists and is active. A bandplan check warns if your chosen mode doesn't
-match the segment your frequency falls in (e.g. SSB on a CW-only segment).
-Sending opens Spotline's own confirmation page in a new tab — your spot goes
-out exactly the way it would if you'd used Spotline directly.
+Spot yourself. The reference is pre-filled if you came from a zone's detail
+panel; callsign and spotter are remembered from your last self-spot.
+
+Validation mirrors Spotline's own rules (callsign format and digit
+requirement, frequency range, a 100-character remark limit), and a bandplan
+check warns if your mode doesn't match the segment your frequency falls in —
+SSB on a CW-only segment, say. The reference is checked against Diana's own
+data, so it answers instantly and without a network: for an ONFF reference it
+shows you the name of the reserve rather than just a tick.
+
+**Two buttons, in this order.** *Check* asks Spotline whether the spot is
+acceptable without placing it, and tells you what they said. Only then does
+*Send* open. Change anything afterwards and Send closes again — the approval
+was for the spot you had, not the one you have now. Two presses rather than
+one, because checking costs a request from a budget shared with every other
+Spotline user, and doing both automatically would spend it twice for nothing.
+
+When a spot goes out you get a real confirmation with its number, not just
+"sent". Press twice on a bad connection and Diana says the spot was already
+there instead of showing an error. If Spotline refuses something, you get
+their own explanation rather than a generic failure.
+
+**If sending isn't working**, Diana offers *Send the old way*: the spot goes
+straight to Spotline in a new tab, the way it always used to. You see their
+answer yourself, but Diana can't confirm anything for you. That fallback
+appears by itself when it would help, and you can make it permanent with
+**Always send the old way** in Settings if you'd rather have it that way.
 
 ### Settings (⚙)
 Your callsign, portable callsign (e.g. `ON3VZ/P`) and Maidenhead grid locator
