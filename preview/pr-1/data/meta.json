@@ -1,0 +1,19 @@
+{
+  "source_file": "ONFF 20260801.kmz",
+  "release": "2026-08-01",
+  "generated": "2026-09-09T08:27:43Z",
+  "zones": 946,
+  "directory_failed": null,
+  "directory_listed": 948,
+  "directory_deleted": 16,
+  "directory_rows": 68716,
+  "directory_nonwwff": 0,
+  "points_no_polygon": 2,
+  "points_unplaced": 0,
+  "activity_refs": 926,
+  "world_points": 64677,
+  "source_polygons": 12538,
+  "tolerance_deg": 5e-05,
+  "decimals": 5,
+  "script_version": "1.0.0"
+}
