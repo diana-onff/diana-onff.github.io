@@ -29,12 +29,18 @@ and `worker/test/routing.mjs` asserts each of those.
 | Method | Path | What it does |
 |---|---|---|
 | `POST` | `/spot` | Validates and forwards to `POST {WWFF_BASE}/api/spots/add` |
-| `POST` | `/agenda` | Validates and forwards to `POST {WWFF_BASE}/api/agenda/store` |
+| `POST` | `/agenda` | Validates and forwards to `POST {WWFF_BASE}/api/agendas/add` |
 | `GET` | `/status` | Version, upstream, and whether the switch is on. Costs nothing, needs no key. |
 | `OPTIONS` | any | CORS preflight, answered before any counter is touched |
 
 Add `"dryrun": true` to a spot or agenda body and Spotline validates without
 storing. Use it for everything until you are sure.
+
+**On that agenda path:** WWFF's own published API documentation says
+`POST /api/agenda/store`. That 404s on production. WWFF confirmed (Jouni
+OH3CUF, 2026-09-09) that the real, currently-routed path is
+`/api/agendas/add` — their documentation is wrong, not this Worker. If it
+ever 404s again, ask WWFF before changing this file.
 
 ## Setting it up
 

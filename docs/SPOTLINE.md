@@ -104,6 +104,8 @@ needed nothing new from the Worker. `buildAgenda()` already existed, written
 in Fase 2 against the same API description as spots, so the screen is purely
 the front end: the same Check-then-Send pattern, the same `refLookup()` for
 the reference field, posted to `{worker}/agenda` instead of `{worker}/spot`.
+(That endpoint's own upstream path needed a correction on 2026-09-09 — WWFF's
+published docs and their live router disagreed; see `worker/README.md`.)
 
 Two things about it are genuinely different, both because an agenda entry
 outlives the moment it is sent. First, the times: the picker shows the

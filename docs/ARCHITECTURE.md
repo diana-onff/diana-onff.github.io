@@ -326,8 +326,12 @@ manually, since there's no shared schema):
 | Callsign/spotter/reference | auto-uppercased before sending, matching Spotline's own behaviour |
 
 **The API that used to be "upcoming" now exists**, and Diana has a key for it.
-It has three endpoints — `POST /api/spots/add`, `POST /api/agenda/store`,
+It has three endpoints — `POST /api/spots/add`, `POST /api/agendas/add`,
 `GET /api/references/validate` — and, notably, **no read endpoint for spots**.
+(WWFF's own published documentation says `POST /api/agenda/store` for the
+second one; that path 404s on production. WWFF confirmed on 2026-09-09 that
+`/api/agendas/add` is the real, currently-routed one — their documentation is
+wrong, not this app. See `worker/wrangler.toml`'s `AGENDA_PATH`.)
 That settles a question this section used to leave open: the static JSON files
 stay the way spots come in, and not merely for now. They need no key, they do
 not count against the 100-per-minute budget, and they cache, which is what

@@ -467,13 +467,14 @@ async function handlePost(request, env, kind) {
     };
   }
 
-  /* The upstream paths are configuration, not constants. WWFF's documentation
-   * and what a given host actually serves have already disagreed once — the
-   * development host answers 404 on the documented agenda path — and hunting
-   * that down should be an edit to wrangler.toml, not to this file. */
+  /* The upstream paths are configuration, not constants. WWFF's own published
+   * documentation says POST /api/agenda/store, but production actually routes
+   * it at /api/agendas/add — confirmed with WWFF (Jouni OH3CUF, 2026-09-09) to
+   * be a documentation bug on their side, not something wrong here. If this
+   * ever drifts again, that is an edit to wrangler.toml, not to this file. */
   const path = kind === 'spot'
     ? (env.SPOT_PATH || '/api/spots/add')
-    : (env.AGENDA_PATH || '/api/agenda/store');
+    : (env.AGENDA_PATH || '/api/agendas/add');
   const answer = await toWwff(env, path, out);
   log(answer.status < 300 ? 'forwarded' : 'upstream_refused', answer.status);
   return { status: answer.status, data: answer.data };
@@ -502,7 +503,7 @@ export default {
           upstream: env.WWFF_BASE,
           paths: {
             spot: env.SPOT_PATH || '/api/spots/add',
-            agenda: env.AGENDA_PATH || '/api/agenda/store',
+            agenda: env.AGENDA_PATH || '/api/agendas/add',
           },
           enabled: !(await isOff(env)),
         },
