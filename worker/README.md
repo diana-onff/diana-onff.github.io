@@ -48,7 +48,14 @@ npx wrangler kv namespace create DIANA_KV
 ```
 
 Paste the `id` it prints into `wrangler.toml`, replacing `VUL_HIER_HET_ID_IN`.
-That id is not a secret.
+Wrangler shows it as a JSON snippet; this file is TOML, so copy only the id
+string itself, not the whole block.
+
+That id belongs in the repository. It is a reference, not a key: without a token
+for this Cloudflare account it does nothing. Committing it is what lets the next
+person — or you on another machine — deploy without hunting for it. What must
+never be committed is `.dev.vars`, the file `wrangler dev` writes local secrets
+into in plain text; `.gitignore` already blocks it.
 
 **2. Deploy:**
 
@@ -87,11 +94,18 @@ node worker/test/routing.mjs      # CORS, the kill switch, rate limiting, and
                                   # that the key does not leak
 ```
 
-Against the live development host, with `dryrun` so nothing is stored:
+Against the live development host, with `dryrun` so nothing is stored — same
+checks in both, pick the one your shell speaks:
 
 ```
 bash worker/test/curl.sh https://diana-spotline.diana-onff.workers.dev
 ```
+```powershell
+.\worker\test\curl.ps1 https://diana-spotline.diana-onff.workers.dev
+```
+
+On Windows, note that `curl` in PowerShell is an alias for `Invoke-WebRequest`
+and behaves differently. Use `curl.exe` when calling it by hand.
 
 ## Operating it
 
@@ -133,10 +147,28 @@ is everybody's outage.
 Cloudflare's free tier gives 100,000 KV reads and **1000 KV writes** a day. The
 writes are the tight one, so only requests that pass validation and are actually
 going upstream write anything — a preflight, a rejected form or a blocked origin
-costs nothing. Two writes per accepted request means roughly 500 spots a day
-before KV becomes the limit, which is far more than this service will ever see.
+costs nothing. Three writes per accepted request (per IP, global-per-minute,
+global-per-day) means roughly 330 spots a day before KV becomes the limit,
+which is still far more than this service will ever see.
 
 The counters are read-then-write without a lock, so two requests in the same
 millisecond can lose one increment. That is accepted: being off by one costs one
 spot too many, and the alternative — a Durable Object — is a different pricing
 tier for a counter that only has to be roughly right.
+
+**A fourth, independent ceiling: `LIMIT_GLOBAL_DAY`.** Cloudflare's own free
+tier stops answering requests at all past 100,000 a day — a hard wall with no
+warning and no message this Worker gets a chance to shape. `LIMIT_GLOBAL_DAY`
+(default 90,000) is a soft version of that same number, checked and counted the
+same way as the other limits above: only on requests that pass validation and
+are actually going upstream. That is an honest limitation, not an oversight —
+counting every single hit this Worker receives, including a flood of garbage
+that never gets this far, would burn the 1000-write budget in minutes and make
+the count meaningless. What `LIMIT_GLOBAL_DAY` actually promises is narrower
+and still useful: if Diana's own *accepted* traffic is approaching a number
+worth worrying about, this is what notices, with a 503 and
+`{"limit": "day"}` instead of Cloudflare's own unstyled wall. At the default
+`LIMIT_GLOBAL_MINUTE` of 40, accepted traffic tops out near 57,600 a day on its
+own — under this ceiling by construction — so in normal operation it should
+never fire. Raise the per-minute limit in Fase 5 without revisiting this one,
+and it starts meaning something again.

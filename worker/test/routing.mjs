@@ -119,7 +119,7 @@ console.log('\n[5] a valid spot is forwarded, once');
   ok(r.status === 201, 'the upstream status is passed through');
   ok(sent.length === before + 1, 'exactly one call went out');
   ok(sent[sent.length - 1].url === 'https://spots-dev.example/api/spots/add', 'to the right endpoint');
-  ok(env.DIANA_KV.store.size === 2, 'two counters written: per IP and global');
+  ok(env.DIANA_KV.store.size === 3, 'three counters written: per IP, global-per-minute, global-per-day');
 }
 
 console.log('\n[6] the per-IP limit holds, and one IP cannot block another');
@@ -146,6 +146,21 @@ console.log('\n[7] the global ceiling holds even across different IPs');
   const body = await r.json();
   ok(r.status === 429, 'the fourth is refused, from a fresh IP');
   ok(/as a whole/.test(body.error), 'and the message says it is Diana, not you');
+  ok(sent.length === before, 'nothing reached WWFF');
+}
+
+console.log('\n[7b] the daily ceiling is a separate, independent net');
+{
+  // A high per-minute limit, so what trips here can only be the daily one.
+  const env = makeEnv({ LIMIT_GLOBAL_DAY: '2', LIMIT_GLOBAL_MINUTE: '1000' });
+  for (let i = 0; i < 2; i++) {
+    await worker.fetch(post('/spot', spot, { ip: `198.51.100.${i}` }), env);
+  }
+  const before = sent.length;
+  const r = await worker.fetch(post('/spot', spot, { ip: '198.51.100.50' }), env);
+  const body = await r.json();
+  ok(r.status === 503, 'the third that day gets a 503, like the kill switch — not a 429');
+  ok(body.limit === 'day', 'tagged so the app can show its own translated message');
   ok(sent.length === before, 'nothing reached WWFF');
 }
 

@@ -45,6 +45,15 @@ LIMIT_IP_WINDOW = "600"       # seconds — ten minutes
 LIMIT_IP_AGENDA = "10"        # per IP address per day
 LIMIT_GLOBAL_MINUTE = "40"    # Diana as a whole, per minute
 
+# A second, independent net under LIMIT_GLOBAL_MINUTE: well below Cloudflare's
+# own free-tier ceiling of 100,000 requests a day, so a warning arrives with
+# room to react instead of on the same request that hits the real wall. At
+# 40/minute the minute limit above already keeps a full day of accepted
+# traffic near 57,600 — under this number on its own — so in normal operation
+# this should never fire. It exists for the day something upstream of it
+# changes and nobody thought to revisit this file too.
+LIMIT_GLOBAL_DAY = "90000"
+
 # Upstream timeout in milliseconds. A user staring at a spinner is worse than an
 # honest error, and a hanging request holds a rate-limit slot for nothing.
 UPSTREAM_TIMEOUT_MS = "8000"

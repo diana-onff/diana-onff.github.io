@@ -274,18 +274,28 @@ async function isOff(env) {
 
 /* ------------------------------------------------------- rate limiting */
 
-/* Two layers, and they answer different questions:
+/* Three layers, and they answer different questions:
  *
  *   per IP     — is one person hammering this?
- *   global     — is Diana as a whole about to eat the shared WWFF budget?
+ *   global     — is Diana as a whole about to eat the shared WWFF budget, this minute?
+ *   day        — is Diana as a whole approaching Cloudflare's own daily ceiling?
  *
- * The global one is the important one. WWFF's budget is shared with every other
- * Spotline client; Diana hitting its own ceiling is an inconvenience for one
- * user, Diana emptying WWFF's is everyone's outage.
+ * The global-per-minute one is the important one day to day: WWFF's budget is
+ * shared with every other Spotline client, and Diana hitting its own ceiling is
+ * an inconvenience for one user, while Diana emptying WWFF's is everyone's
+ * outage. LIMIT_GLOBAL_MINUTE already keeps a full day of accepted spots far
+ * below the daily check below — it exists as a second, independent net, not
+ * because the first one is expected to fail.
  *
  * Counting happens only here, after validation, for requests that are actually
  * going upstream. A preflight, a rejected form or a blocked origin writes
- * nothing — which is what keeps this inside KV's 1000 writes a day.
+ * nothing — which is what keeps this inside KV's 1000 writes a day. That
+ * same rule is why the daily count below tracks accepted, upstream-bound
+ * requests rather than every request this Worker receives: counting every
+ * single hit — including the ones a flood of garbage would produce — would
+ * blow the write budget long before the count meant anything. What it can
+ * honestly promise is this: if Diana's own accepted traffic is approaching a
+ * number worth worrying about, this is what notices.
  */
 async function overLimit(env, who, kind) {
   const now = Math.floor(Date.now() / 1000);
@@ -315,6 +325,16 @@ async function overLimit(env, who, kind) {
      * minimum and simply lingers a little after it stops being counted. */
     ttl: 60,
     scope: 'global',
+  });
+
+  /* Well below Cloudflare's own free-tier ceiling of 100,000 requests a day —
+   * a warning that arrives with room to react, not a message that shows up
+   * exactly when the real wall is already hit. */
+  checks.push({
+    key: `global:day:${Math.floor(now / 86400)}`,
+    max: num(env.LIMIT_GLOBAL_DAY, 90000),
+    ttl: 86400 + 60,
+    scope: 'day',
   });
 
   for (const c of checks) {
@@ -421,6 +441,21 @@ async function handlePost(request, env, kind) {
   const hit = await overLimit(env, who, kind);
   if (hit) {
     log('rate_limited', hit);
+    /* The daily ceiling gets its own status and its own wording: 429 with
+     * "try again shortly" is honest for a minute-scale limit and misleading
+     * for one that clears at midnight UTC. 503 says "not you, not now" — the
+     * same signal the kill switch gives — and `limit: 'day'` is the field the
+     * app checks to show its own translated explanation instead of this raw
+     * text, once the app is the one calling this Worker (Fase 3). */
+    if (hit === 'day') {
+      return {
+        status: 503,
+        data: {
+          error: 'Diana has reached its shared daily capacity on the free tier this service runs on — please try again tomorrow',
+          limit: 'day',
+        },
+      };
+    }
     return {
       status: 429,
       data: {
