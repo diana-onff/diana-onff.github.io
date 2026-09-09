@@ -131,6 +131,13 @@ const STR = {
   "adm.promoted": "bronbestand naar source/ verplaatst",
   "adm.promotefail": "Gepubliceerd, maar het bronbestand staat nog in de wachtruimte",
   "adm.discarded": "bronbestand uit de wachtruimte verwijderd",
+  "adm.cleanup": "Wachtruimte opruimen",
+  "adm.cleanuphint": "Bestanden die nog in incoming/ staan, los van een pull request — bijvoorbeeld na een merge buiten de app om.",
+  "adm.cleanupempty": "De wachtruimte is leeg.",
+  "adm.cleanuppromote": "Naar source/ verplaatsen",
+  "adm.cleanupdiscard": "Verwijderen",
+  "adm.cleanupconfirm": "Dit bestand definitief uit de wachtruimte verwijderen?",
+  "adm.retry": "Opnieuw proberen",
   "adm.openpr": "Pull request openen",
   "adm.done": "Pull request aangemaakt",
   "adm.failed": "Uploaden mislukt",
@@ -416,6 +423,13 @@ const STR = {
   "adm.promoted": "source file moved to source/",
   "adm.promotefail": "Published, but the source file is still in the staging folder",
   "adm.discarded": "source file removed from the staging folder",
+  "adm.cleanup": "Clean up the staging folder",
+  "adm.cleanuphint": "Files still in incoming/, independent of any pull request — for instance after a merge done outside the app.",
+  "adm.cleanupempty": "The staging folder is empty.",
+  "adm.cleanuppromote": "Move to source/",
+  "adm.cleanupdiscard": "Delete",
+  "adm.cleanupconfirm": "Permanently delete this file from the staging folder?",
+  "adm.retry": "Try again",
   "adm.openpr": "Open pull request",
   "adm.done": "Pull request created",
   "adm.failed": "Upload failed",
@@ -701,6 +715,13 @@ const STR = {
   "adm.promoted": "fichier source déplacé vers source/",
   "adm.promotefail": "Publié, mais le fichier source est encore dans la salle d'attente",
   "adm.discarded": "fichier source retiré de la salle d'attente",
+  "adm.cleanup": "Nettoyer la salle d'attente",
+  "adm.cleanuphint": "Fichiers encore dans incoming/, indépendamment de toute pull request — par exemple après une fusion faite en dehors de l'application.",
+  "adm.cleanupempty": "La salle d'attente est vide.",
+  "adm.cleanuppromote": "Déplacer vers source/",
+  "adm.cleanupdiscard": "Supprimer",
+  "adm.cleanupconfirm": "Supprimer définitivement ce fichier de la salle d'attente ?",
+  "adm.retry": "Réessayer",
   "adm.openpr": "Ouvrir la pull request",
   "adm.done": "Pull request créée",
   "adm.failed": "Échec du téléversement",
@@ -969,6 +990,13 @@ const STR = {
   "adm.promoted": "Quelldatei nach source/ verschoben",
   "adm.promotefail": "Veröffentlicht, aber die Quelldatei liegt noch im Warteraum",
   "adm.discarded": "Quelldatei aus dem Warteraum entfernt",
+  "adm.cleanup": "Warteraum aufräumen",
+  "adm.cleanuphint": "Dateien, die noch in incoming/ liegen, unabhängig von einem Pull Request — zum Beispiel nach einem Merge außerhalb der App.",
+  "adm.cleanupempty": "Der Warteraum ist leer.",
+  "adm.cleanuppromote": "Nach source/ verschieben",
+  "adm.cleanupdiscard": "Löschen",
+  "adm.cleanupconfirm": "Diese Datei endgültig aus dem Warteraum löschen?",
+  "adm.retry": "Erneut versuchen",
   "adm.openpr": "Pull Request öffnen",
   "adm.done": "Pull Request erstellt",
   "adm.failed": "Upload fehlgeschlagen",
@@ -1237,6 +1265,13 @@ const STR = {
   "adm.promoted": "kildefil flyttet til source/",
   "adm.promotefail": "Udgivet, men kildefilen ligger stadig i venterummet",
   "adm.discarded": "kildefil fjernet fra venterummet",
+  "adm.cleanup": "Ryd op i venterummet",
+  "adm.cleanuphint": "Filer der stadig ligger i incoming/, uafhængigt af en pull request — for eksempel efter en merge uden om appen.",
+  "adm.cleanupempty": "Venterummet er tomt.",
+  "adm.cleanuppromote": "Flyt til source/",
+  "adm.cleanupdiscard": "Slet",
+  "adm.cleanupconfirm": "Slet denne fil permanent fra venterummet?",
+  "adm.retry": "Prøv igen",
   "adm.openpr": "Åbn pull request",
   "adm.done": "Pull request oprettet",
   "adm.failed": "Upload mislykkedes",
@@ -1505,6 +1540,13 @@ const STR = {
   "adm.promoted": "file sorgente spostato in source/",
   "adm.promotefail": "Pubblicato, ma il file sorgente è ancora nella sala d'attesa",
   "adm.discarded": "file sorgente rimosso dalla sala d'attesa",
+  "adm.cleanup": "Svuota la sala d'attesa",
+  "adm.cleanuphint": "File ancora in incoming/, indipendentemente da qualsiasi pull request — per esempio dopo un merge fatto fuori dall'app.",
+  "adm.cleanupempty": "La sala d'attesa è vuota.",
+  "adm.cleanuppromote": "Sposta in source/",
+  "adm.cleanupdiscard": "Elimina",
+  "adm.cleanupconfirm": "Eliminare definitivamente questo file dalla sala d'attesa?",
+  "adm.retry": "Riprova",
   "adm.openpr": "Apri la pull request",
   "adm.done": "Pull request creata",
   "adm.failed": "Caricamento non riuscito",
@@ -1773,6 +1815,13 @@ const STR = {
   "adm.promoted": "archivo fuente movido a source/",
   "adm.promotefail": "Publicado, pero el archivo fuente sigue en la sala de espera",
   "adm.discarded": "archivo fuente retirado de la sala de espera",
+  "adm.cleanup": "Vaciar la sala de espera",
+  "adm.cleanuphint": "Archivos que aún están en incoming/, independientemente de cualquier pull request — por ejemplo tras una fusión hecha fuera de la app.",
+  "adm.cleanupempty": "La sala de espera está vacía.",
+  "adm.cleanuppromote": "Mover a source/",
+  "adm.cleanupdiscard": "Eliminar",
+  "adm.cleanupconfirm": "¿Eliminar definitivamente este archivo de la sala de espera?",
+  "adm.retry": "Reintentar",
   "adm.openpr": "Abrir la pull request",
   "adm.done": "Pull request creada",
   "adm.failed": "Error al subir",
@@ -3923,6 +3972,10 @@ function previewUrl(nummer){
 }
 
 async function toonPr(){
+  // Independent of everything below: whatever is still sitting in the waiting
+  // room, tracked pull request or not, gets its own chance to be cleaned up.
+  renderCleanup().catch(()=>{});
+
   const opgeslagen = huidigePr();
   const card = $('admPrCard');
   if(!opgeslagen || !adm.repo || !adm.token){ card.hidden = true; stopPrPoll(); return; }
@@ -3945,16 +3998,31 @@ async function toonPr(){
     // case the source file has not moved from its place yet; that happens here
     // after all, so the waiting room doesn't quietly stay full.
     let bijschrift = '';
+    let verplaatst = true;
     try{
       if(await verplaatsBron(opgeslagen.file, !!pr.merged)){
         bijschrift = ' · ' + t(pr.merged ? 'adm.promoted' : 'adm.discarded');
       }
-    }catch{}
+    }catch{
+      verplaatst = false;
+      bijschrift = ' · ' + t('adm.promotefail');
+    }
     $('admPrHead').textContent = (pr.merged ? t('adm.prmerged') : t('adm.prclosed')) + bijschrift;
-    $('admPrHead').className = 'fb good';
-    $('admPrChecks').innerHTML = '';
+    $('admPrHead').className = 'fb ' + (verplaatst ? 'good' : 'bad');
     $('admPrMerge').disabled = true;
-    bewaarPr(null); bewaarBezig(null); stopPrPoll();
+    stopPrPoll();
+    if(verplaatst){
+      // Nothing left to retry — the bookkeeping can go.
+      $('admPrChecks').innerHTML = '';
+      bewaarPr(null); bewaarBezig(null);
+    } else {
+      // The file is still in incoming/. Keep the record so a refresh — this
+      // button, or the cleanup list below — tries the move again instead of
+      // forcing a trip to github.com.
+      $('admPrChecks').innerHTML =
+        `<button class="btn ghost" id="admPrRetryMove">${t('adm.retry')}</button>`;
+      $('admPrRetryMove').onclick = () => toonPr().catch(()=>{});
+    }
     return;
   }
 
@@ -4068,6 +4136,60 @@ async function verplaatsBron(bestand, naarSource){
   return true;
 }
 
+/* ---------- cleaning up the waiting room by hand ----------
+ *
+ * Independent of any pull request the app happens to be tracking: a merge or
+ * a close done on github.com, a move that failed halfway, a second device —
+ * all of those leave incoming/ as the only place that still remembers what
+ * is unfinished. This lists it directly from the source repo and lets you
+ * finish the job without one of those specific situations having to apply.
+ */
+async function lijstWachtruimte(){
+  const bron = bronRepo();
+  const pad  = adm.path.replace(/^\/|\/$/g,'');
+  if(!bron || !adm.token || !pad) return [];
+  try{
+    const items = await gh(`/repos/${bron}/contents/${pad}?ref=${encodeURIComponent(adm.branch)}`);
+    return (Array.isArray(items) ? items : []).filter(x => x.type === 'file' && /\.kmz$/i.test(x.name));
+  }catch{
+    return [];   // no incoming/ yet, or nothing readable — same as "nothing to clean up"
+  }
+}
+
+async function renderCleanup(){
+  const card = $('admCleanupCard');
+  if(!bronRepo() || !adm.token){ card.hidden = true; return; }
+  const bestanden = await lijstWachtruimte();
+  card.hidden = false;
+  $('admCleanupList').innerHTML = bestanden.length ? bestanden.map(b => `
+    <div style="margin:10px 0;padding:10px;border:1px solid var(--line);border-radius:10px">
+      <div style="font-weight:650;margin-bottom:8px;word-break:break-all">${b.name}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn ghost" data-promote="${b.name}">${t('adm.cleanuppromote')}</button>
+        <button class="btn ghost" data-discard="${b.name}">${t('adm.cleanupdiscard')}</button>
+      </div>
+    </div>`).join('') : `<p class="hint">${t('adm.cleanupempty')}</p>`;
+}
+
+$('admCleanupList').addEventListener('click', async (e) => {
+  const knop = e.target.closest('[data-promote], [data-discard]');
+  if(!knop) return;
+  const naarSource = knop.hasAttribute('data-promote');
+  const bestand = knop.getAttribute(naarSource ? 'data-promote' : 'data-discard');
+  if(!naarSource && !confirm(t('adm.cleanupconfirm'))) return;
+  knop.closest('div[style]').querySelectorAll('button').forEach(b => b.disabled = true);
+  try{
+    await verplaatsBron(bestand, naarSource);
+    showStatus('in', t(naarSource ? 'adm.promoted' : 'adm.discarded'), bestand);
+  }catch(err){
+    showStatus('out', t('adm.failed'), err.message);
+  }finally{
+    renderCleanup().catch(()=>{});
+  }
+});
+
+$('admCleanupRefresh').onclick = () => renderCleanup().catch(err => showStatus('out', err.message, ''));
+
 $('admPrMerge').onclick = async () => {
   const opgeslagen = huidigePr();
   if(!opgeslagen) return;
@@ -4088,11 +4210,16 @@ $('admPrMerge').onclick = async () => {
     try{
       if(await verplaatsBron(opgeslagen.file, true)) bijschrift += ` · ${t('adm.promoted')}`;
       showStatus('in', t('adm.prmerged'), bijschrift);
+      bewaarPr(null); bewaarBezig(null); stopPrPoll();
+      $('admPrCard').hidden = true;
     }catch(err){
+      // The merge is done and cannot be undone — only the move failed. Leave
+      // the bookkeeping in place: a refresh now finds an already-merged pull
+      // request and simply tries the move again, exactly as if the merge had
+      // happened outside the app.
       showStatus('out', t('adm.promotefail'), err.message);
+      toonPr().catch(()=>{});
     }
-    bewaarPr(null); bewaarBezig(null); stopPrPoll();
-    $('admPrCard').hidden = true;
   }catch(err){
     showStatus('out', t('adm.failed'), err.message);
     $('admPrMerge').disabled = false;
@@ -4113,10 +4240,15 @@ $('admPrClose').onclick = async () => {
     let bijschrift = `#${opgeslagen.number}`;
     try{
       if(await verplaatsBron(opgeslagen.file, false)) bijschrift += ` · ${t('adm.discarded')}`;
-    }catch{}
-    showStatus('in', t('adm.prclosed'), bijschrift);
-    bewaarPr(null); bewaarBezig(null); stopPrPoll();
-    $('admPrCard').hidden = true;
+      showStatus('in', t('adm.prclosed'), bijschrift);
+      bewaarPr(null); bewaarBezig(null); stopPrPoll();
+      $('admPrCard').hidden = true;
+    }catch(err){
+      // Closed, but the discard itself failed. Same recovery as a failed
+      // promotion: keep the record, let a refresh try again.
+      showStatus('out', t('adm.promotefail'), err.message);
+      toonPr().catch(()=>{});
+    }
   }catch(err){
     showStatus('out', t('adm.failed'), err.message);
   }
