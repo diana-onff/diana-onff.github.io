@@ -56,7 +56,7 @@ ALLOWED_ORIGINS = "https://diana-onff.github.io,http://localhost:8011"
 # only two attempts per ten minutes. Eight leaves four — still nothing against
 # WWFF's own ceiling, and enough that nobody meets this limit by using the app
 # the way it is meant to be used.
-LIMIT_IP_SPOTS = "8"          # per IP address, per window below
+LIMIT_IP_SPOTS = "16"          # per IP address, per window below
 LIMIT_IP_WINDOW = "600"       # seconds — ten minutes
 LIMIT_IP_AGENDA = "10"        # per IP address per day
 LIMIT_GLOBAL_MINUTE = "40"    # Diana as a whole, per minute
