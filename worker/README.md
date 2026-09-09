@@ -48,7 +48,14 @@ npx wrangler kv namespace create DIANA_KV
 ```
 
 Paste the `id` it prints into `wrangler.toml`, replacing `VUL_HIER_HET_ID_IN`.
-That id is not a secret.
+Wrangler shows it as a JSON snippet; this file is TOML, so copy only the id
+string itself, not the whole block.
+
+That id belongs in the repository. It is a reference, not a key: without a token
+for this Cloudflare account it does nothing. Committing it is what lets the next
+person — or you on another machine — deploy without hunting for it. What must
+never be committed is `.dev.vars`, the file `wrangler dev` writes local secrets
+into in plain text; `.gitignore` already blocks it.
 
 **2. Deploy:**
 
@@ -57,7 +64,7 @@ npx wrangler deploy
 ```
 
 It will tell you the address, something like
-`https://diana-spotline.<your-subdomain>.workers.dev`.
+`https://diana-spotline.diana-onff.workers.dev`.
 
 **3. Put the key in.** This is the one step nobody else can do for you:
 
@@ -73,7 +80,7 @@ for instance), run the same command again.
 **4. Check:**
 
 ```
-curl https://diana-spotline.<your-subdomain>.workers.dev/status
+curl https://diana-spotline.diana-onff.workers.dev/status
 npx wrangler secret list      # shows the NAME, never the value
 ```
 
@@ -90,7 +97,7 @@ node worker/test/routing.mjs      # CORS, the kill switch, rate limiting, and
 Against the live development host, with `dryrun` so nothing is stored:
 
 ```
-bash worker/test/curl.sh https://diana-spotline.<your-subdomain>.workers.dev
+bash worker/test/curl.sh https://diana-spotline.diana-onff.workers.dev
 ```
 
 ## Operating it
