@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Diana — ONFF Zones</title>
+<meta name="theme-color" content="#1b4332">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<!-- iOS does not read the manifest icons for "Add to Home Screen". -->
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Diana">
+<link rel="stylesheet" href="vendor/maplibre-gl.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div id="map"></div>
+
+<div class="topbar">
+  <div class="brand"><img class="mark" src="logo.png" alt="" width="30" height="20"> Diana</div>
+  <div class="spacer"></div>
+  <button class="iconbtn" id="btnSearch" aria-expanded="false" title="Zoeken">⌕</button>
+  <button class="iconbtn" id="btnStyle"  aria-expanded="false" title="Kaartstijl">◐</button>
+  <button class="iconbtn" id="btnLayers" aria-expanded="false" title="Lagen">≡</button>
+</div>
+<div class="counts" id="counts">data laden…</div>
+
+<div class="pop" id="popStyle">
+  <h4 data-i18n="lay.style">Kaartstijl</h4>
+  <div class="opt on" data-style="liberty">Liberty</div>
+  <div class="opt" data-style="positron">Positron</div>
+  <div class="opt" data-style="bright">Bright</div>
+  <div class="opt" data-style="dark">Dark</div>
+</div>
+
+<div class="pop" id="popLayers">
+  <h4 data-i18n="lay.title">Lagen</h4>
+  <div class="opt on" data-layer="onff"><span data-i18n="lay.onff">ONFF-gebieden</span> <span class="sw on"></span></div>
+  <div class="opt on" data-layer="labels"><span data-i18n="lay.labels">Referentienummers</span> <span class="sw on"></span></div>
+  <div class="opt on" data-layer="nopoly" id="optNopoly" hidden><span data-i18n="lay.nopoly">Zonder grens (punt)</span> <span class="sw on"></span></div>
+  <div class="opt on" data-layer="spots"><span data-i18n="lay.spots">Spots op de kaart</span> <span class="sw on"></span></div>
+  <div class="opt on" data-layer="arcs"><span data-i18n="lay.arcs">Lijnen naar de spots</span> <span class="sw on"></span></div>
+  <div class="opt on" data-layer="world" id="optWorld" hidden><span data-i18n="lay.world">Andere WWFF-gebieden</span> <span class="sw on"></span></div>
+  <div class="opt disabled"><span data-i18n="lay.other">BCA, BLHA…</span> <span class="sw"></span></div>
+  <p class="hint" data-i18n="lay.spothint">Spots komen live van WWFF Spotline en verversen elke 30 s.</p>
+  <button class="btn ghost" id="btnFit" style="margin-top:6px;font-size:13.5px;padding:10px" data-i18n="lay.fit">⤢ Alle spots in beeld</button>
+  <button class="btn ghost" id="btnOffline" style="margin-top:6px;font-size:13.5px;padding:10px" data-i18n="lay.offline">⤓ Dit gebied offline bewaren</button>
+  <h4 style="margin-top:12px" data-i18n="lay.lang">Taal</h4>
+  <div class="langs" id="langPick">
+    <button class="seg" data-lang="en">EN</button>
+    <button class="seg" data-lang="nl">NL</button>
+    <button class="seg" data-lang="fr">FR</button>
+    <button class="seg" data-lang="de">DE</button>
+    <button class="seg" data-lang="da">DA</button>
+    <button class="seg" data-lang="it">IT</button>
+    <button class="seg" data-lang="es">ES</button>
+  </div>
+</div>
+
+<div class="search" id="search">
+  <input id="q" type="search" placeholder="" data-i18n-ph="search.ph" autocomplete="off">
+  <div class="results" id="results"></div>
+</div>
+
+<div class="sheet" id="spotSheet">
+  <div class="grip"></div>
+  <button class="closex" id="closeSpot" aria-label="Sluiten">×</button>
+  <div class="spothead">
+    <div class="callwrap"><div class="call" id="spCall">—</div><div class="ago" id="spAgo"></div></div>
+    <span class="pill" id="spRef"></span>
+  </div>
+  <div class="facts" id="spFacts"></div>
+  <div class="bearing" id="spBearing"></div>
+</div>
+
+<div class="sheet" id="sheet">
+  <div class="grip"></div>
+  <button class="closex" id="closeSheet" aria-label="Sluiten">×</button>
+  <div class="badges" id="badges"></div>
+  <h2 id="zoneName">—</h2>
+  <div class="facts" id="facts"></div>
+  <p class="note" id="zoneNote"></p>
+  <button class="btn amber" id="zoneSpot" style="margin-top:12px" data-i18n="zone.spotme">Meld jezelf actief</button>
+</div>
+
+<section class="view" id="viewSpots">
+  <h1 data-i18n="spots.title">Spots &amp; agenda</h1>
+  <p class="sub" data-i18n="spots.sub">Wie is er nu actief, en wie kondigt iets aan?</p>
+  <div class="segs" id="spotTab">
+    <button class="seg on" data-tab="spots" data-i18n="spots.tabnow">Nu actief</button>
+    <button class="seg" data-tab="agenda" data-i18n="spots.tabagenda">Agenda</button>
+  </div>
+  <div class="segs" id="spotFilter" style="margin-bottom:12px">
+    <button class="seg on" data-filter="onff">ONFF</button>
+    <button class="seg" data-filter="all" data-i18n="spots.world">Wereldwijd</button>
+  </div>
+  <div class="card"><div class="spotlist" id="spotList"><p class="hint" data-i18n="spots.loading">laden…</p></div></div>
+  <p class="hint" id="spotMeta"></p>
+</section>
+
+<section class="view" id="viewAdmin">
+  <h1 data-i18n="adm.title">Beheer</h1>
+  <p class="sub" data-i18n="adm.sub">Nieuwe bronbestanden naar de repository sturen</p>
+
+  <div class="card">
+    <h4 class="ch" data-i18n="adm.repo">Repository</h4>
+    <div class="fgrid">
+      <label class="fld"><span data-i18n="adm.owner">App-repo (publiek)</span>
+        <input id="admRepo" type="text" autocomplete="off" spellcheck="false" placeholder="diana-onff/diana-onff.github.io"></label>
+      <label class="fld"><span data-i18n="adm.branch">Hoofdbranch</span>
+        <input id="admBranch" type="text" autocomplete="off" spellcheck="false" placeholder="main"></label>
+    </div>
+    <label class="fld"><span data-i18n="adm.srcrepo">Bron-repo (privé)</span>
+      <input id="admSrc" type="text" autocomplete="off" spellcheck="false" placeholder="diana-onff/diana-source"></label>
+    <p class="hint" data-i18n="adm.srchint">Het KMZ gaat naar de private bron-repo, de app en de data staan in de publieke. Laat je dit veld leeg, dan gaat alles naar de app-repo — dat is de oude opzet.</p>
+    <label class="fld"><span data-i18n="adm.token">Toegangstoken</span>
+      <input id="admToken" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…"></label>
+    <label class="chk"><input type="checkbox" id="admRemember"> <span data-i18n="adm.remember">Token op dit toestel onthouden</span></label>
+    <p class="warn" data-i18n="adm.tokenwarn">Een token in de browser is leesbaar voor iedereen die aan dit toestel kan. Gebruik een fine-grained token dat alleen déze repository mag, alleen inhoud en pull requests, met een korte vervaldatum. Niet doen op een gedeelde computer.</p>
+    <button class="btn ghost" id="admTest" data-i18n="adm.test">Verbinding testen</button>
+    <div class="fb" id="admFb"></div>
+  </div>
+
+  <div class="card">
+    <h4 class="ch" data-i18n="adm.upload">Bestand uploaden</h4>
+    <label class="fld"><span data-i18n="adm.target">Wachtruimte in de bron-repo</span>
+      <input id="admPath" type="text" autocomplete="off" spellcheck="false" placeholder="incoming/"></label>
+    <input type="file" id="admFile" style="margin:6px 0 10px">
+    <div class="steps" id="admSteps" hidden></div>
+    <button class="btn amber" id="admSend" disabled data-i18n="adm.send">Uploaden en omzetten</button>
+    <p class="hint" data-i18n="adm.uploadhint">Het bestand komt in de wachtruimte van de bron-repo. Daarna draait de omzetting en komt het resultaat als pull request met preview te staan. Pas jouw publicatie zet het live en verplaatst het bronbestand naar source/.</p>
+  </div>
+
+  <div class="card">
+    <h4 class="ch" data-i18n="adm.current">Nu live</h4>
+    <div id="admCurrent" class="fb">…</div>
+    <p class="hint" data-i18n="adm.currenthint">Het bronbestand waaruit de gegevens op de site gebouwd zijn, en wanneer die build gedraaid heeft. Staat hier nog de vorige release na een upload, dan is er niets verwerkt.</p>
+  </div>
+
+  <div class="card" id="admPrCard" hidden>
+    <h4 class="ch" data-i18n="adm.prtitle">Openstaande upload</h4>
+    <div id="admPrHead" class="fb"></div>
+    <div class="steps" id="admPrChecks"></div>
+    <div id="admPrPreview" style="margin:2px 0 10px"></div>
+    <pre class="code" id="admPrReport" hidden style="max-height:230px;overflow:auto"></pre>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn amber" id="admPrMerge" disabled data-i18n="adm.prmerge">Publiceren</button>
+      <button class="btn ghost" id="admPrClose" data-i18n="adm.prreject">Afwijzen</button>
+      <button class="btn ghost" id="admPrRefresh" data-i18n="adm.prrefresh">Verversen</button>
+    </div>
+    <p class="hint" data-i18n="adm.prhint">Bekijk eerst de preview. Publiceren voegt de pull request samen met de hoofdbranch en zet de nieuwe gegevens live. Afwijzen sluit de pull request en verwijdert de branch — het bronbestand komt dan nergens terecht.</p>
+  </div>
+
+  <div class="card" id="admCleanupCard" hidden>
+    <h4 class="ch" data-i18n="adm.cleanup">Wachtruimte opruimen</h4>
+    <p class="hint" data-i18n="adm.cleanuphint">Bestanden die nog in incoming/ staan, los van een pull request — bijvoorbeeld na een merge buiten de app om.</p>
+    <div id="admCleanupList"></div>
+    <button class="btn ghost" id="admCleanupRefresh" data-i18n="adm.prrefresh">Verversen</button>
+  </div>
+
+  <div class="card">
+    <h4 class="ch" data-i18n="adm.embed">Insluiten op een website</h4>
+    <div class="fgrid">
+      <label class="fld"><span data-i18n="adm.embprov">Provincie / regio</span>
+        <input id="embProv" type="text" autocomplete="off" placeholder="antwerpen"></label>
+      <label class="fld"><span data-i18n="adm.emblang">Taal</span>
+        <input id="embLang" type="text" autocomplete="off" placeholder="nl"></label>
+    </div>
+    <label class="chk"><input type="checkbox" id="embSpots" checked> <span data-i18n="adm.embspots">Spots meteen aan</span></label>
+    <label class="chk"><input type="checkbox" id="embWorld"> <span data-i18n="adm.embworld">Ook andere WWFF-gebieden</span></label>
+    <pre class="code" id="embCode"></pre>
+    <button class="btn ghost" id="embCopy" data-i18n="adm.copy">Kopiëren</button>
+  </div>
+</section>
+
+<section class="view" id="viewSet">
+  <h1 data-i18n="set.title">Instellingen</h1>
+  <p class="sub" data-i18n="set.sub">Blijft op dit toestel — niets gaat naar een server</p>
+
+  <div class="card">
+    <h4 style="margin:0 0 10px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
+        data-i18n="set.you">Jouw station</h4>
+    <div class="fgrid">
+      <label class="fld"><span data-i18n="set.call">Roepnaam</span>
+        <input id="setCall" type="text" autocomplete="off" spellcheck="false" placeholder="ON3VZ"></label>
+      <label class="fld"><span data-i18n="set.portable">Portable roepnaam</span>
+        <input id="setCallP" type="text" autocomplete="off" spellcheck="false" placeholder="ON3VZ/P"></label>
+    </div>
+    <label class="fld"><span data-i18n="set.grid">Maidenhead-locator</span>
+      <input id="setGrid" type="text" autocomplete="off" spellcheck="false" placeholder="JO21EE" maxlength="8"></label>
+    <div class="fb" id="fbGrid"></div>
+    <button class="btn ghost" id="setGridGps" style="font-size:13.5px;padding:10px" data-i18n="set.gridfrom">Uit GPS overnemen</button>
+  </div>
+
+  <div class="card">
+    <h4 style="margin:0 0 10px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
+        data-i18n="set.spotstitle">Spots-filter</h4>
+    <p class="hint" style="margin:0 0 10px" data-i18n="set.spotslead">Welke spots en agenda-items Diana toont, op de kaart en in de Spots-lijst. Wat je hier kiest is meteen ook de instelling voor de volgende keer.</p>
+    <div class="segs" id="setSpotFilter">
+      <button class="seg" data-filter="onff">ONFF</button>
+      <button class="seg on" data-filter="all" data-i18n="spots.world">Wereldwijd</button>
+    </div>
+    <label class="fld" style="margin-top:10px"><span data-i18n="set.spotscountry">Of één specifiek land</span>
+      <select id="setSpotCountry"><option value="" data-i18n="set.spotscountrynone">— geen —</option></select>
+    </label>
+  </div>
+
+  <div class="card">
+    <h4 style="margin:0 0 10px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
+        data-i18n="self.settitle">Zelf spotten</h4>
+    <label class="chk"><input type="checkbox" id="setClassic"> <span data-i18n="self.classic">Altijd op de oude manier versturen</span></label>
+    <p class="hint" style="margin:6px 0 0" data-i18n="self.classichint">Stuurt de spot rechtstreeks naar Spotline in een nieuw tabblad, zonder controle vooraf en zonder bevestiging in de app. Bedoeld als terugval wanneer er iets mis is met de gewone weg.</p>
+  </div>
+
+  <div class="card">
+    <h4 style="margin:0 0 10px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
+        data-i18n="set.worldtitle">Andere WWFF-gebieden</h4>
+    <p class="hint" style="margin:0 0 10px" data-i18n="set.worldlead">Referentiepunten uit de wereldwijde WWFF-lijst, buiten België — altijd als punt, nooit als grens (die hebben we alleen voor ONFF). Standaard toont Diana ze allemaal; kies hieronder een land om te beperken.</p>
+    <label class="fld"><span data-i18n="set.worldcountry">Alleen dit land tonen</span>
+      <select id="setWorldCountry"><option value="" data-i18n="set.worldcountrynone">— alle landen —</option></select>
+    </label>
+  </div>
+
+  <div class="card">
+    <h4 style="margin:0 0 10px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
+        data-i18n="set.lang">Taal</h4>
+    <div class="langs" id="setLang" style="flex-wrap:wrap">
+      <button class="seg" data-lang="auto" data-i18n="set.langauto">Volg de browser</button>
+      <button class="seg" data-lang="en">EN</button>
+      <button class="seg" data-lang="nl">NL</button>
+      <button class="seg" data-lang="fr">FR</button>
+      <button class="seg" data-lang="de">DE</button>
+      <button class="seg" data-lang="da">DA</button>
+      <button class="seg" data-lang="it">IT</button>
+      <button class="seg" data-lang="es">ES</button>
+    </div>
+    <p class="hint" style="margin:8px 0 0" data-i18n="set.langnote">Zonder keuze start Diana in het Engels.</p>
+  </div>
+
+  <div class="card" id="instCard">
+    <h4 style="margin:0 0 6px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
+        data-i18n="inst.title">Als app installeren</h4>
+    <p class="hint" style="margin:0 0 10px" data-i18n="inst.lead">Eigen icoon, volledig scherm, en de kaart blijft werken zonder netwerk.</p>
+    <button class="btn amber" id="instBtn" hidden data-i18n="inst.btn">Op dit toestel installeren</button>
+    <p class="hint" id="instHow" style="margin:8px 0 0"></p>
+    <div class="fb" id="instFb"></div>
+  </div>
+
+  <p class="privacy">🔒 <span data-i18n="set.localonly">Alles wat je hier invult blijft in de browser van dít toestel.</span></p>
+  <p class="hint" style="text-align:center;margin:2px 0 0"><span data-i18n="set.version">Versie</span> <span id="setVer"></span></p>
+  <p class="hint" style="text-align:center;margin:2px 0 0"><span data-i18n="set.data">Gegevens</span> <span id="setData">…</span></p>
+  <p style="text-align:center;margin:8px 0 0"><button class="btn ghost" id="btnRefresh" style="font-size:12.5px;padding:8px 14px" data-i18n="set.refresh">Op updates controleren</button></p>
+</section>
+
+<section class="view" id="viewSelf">
+  <h1 data-i18n="self.title">Meld jezelf actief</h1>
+  <p class="sub" data-i18n="self.sub">Verstuurt een spot via WWFF Spotline</p>
+
+  <div class="banner in" id="selfCtx" hidden>
+    <span class="dot" style="width:11px;height:11px;border-radius:50%;background:currentColor"></span>
+    <span><div class="b1" id="selfCtx1"></div><div class="b2" data-i18n="self.prefilled">voorgevuld vanaf het geselecteerde gebied</div></span>
+  </div>
+
+  <div class="card">
+    <div class="fgrid">
+      <label class="fld"><span data-i18n="self.activator">Roepteken (activator)</span>
+        <input id="spActivator" type="text" autocomplete="off" spellcheck="false" placeholder="ON3VZ/P"></label>
+      <label class="fld"><span data-i18n="self.spotter">Spotter</span>
+        <input id="spSpotter" type="text" autocomplete="off" spellcheck="false" placeholder="ON3VZ"></label>
+    </div>
+    <label class="fld"><span data-i18n="self.ref">WWFF-referentie</span>
+      <input id="spReference" type="text" autocomplete="off" spellcheck="false" placeholder="ONFF-0104"></label>
+    <div class="fb" id="fbReference"></div>
+    <div class="fgrid">
+      <label class="fld"><span data-i18n="self.freq">Frequentie (kHz)</span>
+        <input id="spFreq" type="text" inputmode="decimal" autocomplete="off" placeholder="14244.0"></label>
+      <label class="fld"><span data-i18n="self.mode">Mode</span>
+        <select id="spMode">
+          <option value="">—</option>
+          <option>SSB</option><option>CW</option><option>FT8</option><option>FT4</option>
+          <option>RTTY</option><option>PSK</option><option>FM</option><option>AM</option><option>Other</option>
+        </select></label>
+    </div>
+    <div class="fb" id="fbFreq"></div>
+    <label class="fld"><span data-i18n="self.remarks">Opmerking (optioneel)</span>
+      <input id="spRemarks" type="text" maxlength="100" placeholder="QRV tot 16u"></label>
+    <div class="fb"><span id="spCount">0/100</span></div>
+    <div class="chips">
+      <button type="button" class="chip" data-add="5W QRP">+ 5W QRP</button>
+      <button type="button" class="chip" data-add="EFHW">+ EFHW</button>
+      <button type="button" class="chip" data-add="QSY soon">+ QSY soon</button>
+    </div>
+    <p class="warn" data-i18n="self.warn">Geen bedankjes of bandverzoeken hier. Elke spot gaat naar het DX-cluster; opmerkingen die daar niet horen zijn ruis. Spotline filtert bovendien op ongepaste taal.</p>
+  </div>
+
+  <button class="btn ghost" id="spCheck" disabled data-i18n="self.check">Controleren</button>
+  <button class="btn amber" id="spSend" disabled data-i18n="self.send">Spot versturen</button>
+  <div class="fb" id="fbSend"></div>
+  <button class="btn ghost" id="spFallback" hidden data-i18n="self.fallback">Versturen op de oude manier</button>
+  <p class="hint" id="spHint" data-i18n="self.checkhint">Controleren legt de spot voor aan Spotline zonder hem te plaatsen. Klopt alles, dan kan je versturen.</p>
+</section>
+
+<section class="view" id="viewSession">
+  <h1 data-i18n="sess.title">Activatiesessie</h1>
+  <p class="sub" id="sessRef" data-i18n="sess.sub">Nog geen gebied gekozen</p>
+  <div class="banner out" id="sessBanner">
+    <span class="dot" style="width:11px;height:11px;border-radius:50%;background:currentColor"></span>
+    <span><div class="b1" id="sessB1" data-i18n="sess.unknown">Positie onbekend</div>
+          <div class="b2" id="sessB2" data-i18n="sess.press">Druk op start; Diana volgt je positie.</div></span>
+  </div>
+  <div class="card">
+    <div class="srow"><span class="rec" id="sessRec" hidden><span class="d"></span><span data-i18n="sess.rec">Opname actief</span></span>
+      <span class="r" id="sessPts">—</span></div>
+    <div class="clock" id="sessClock">00:00:00</div>
+    <div class="r" id="sessPct" data-i18n="sess.notstarted">Nog niet gestart</div>
+  </div>
+  <button class="btn" id="sessStart" data-i18n="sess.start">Start activatie</button>
+  <button class="btn amber" id="sessStop" hidden data-i18n="sess.stop">Stop &amp; genereer bewijs</button>
+  <button class="btn ghost" id="sessGpx" hidden data-i18n="sess.gpx">Download GPX + samenvatting</button>
+  <p class="privacy">🔒 <span data-i18n="sess.privacy">Je track blijft op dit toestel. Er gaat niets naar een server tot je zelf exporteert.</span></p>
+</section>
+
+<section class="view panel" id="viewHeat">
+  <div class="grip"></div>
+  <div class="peek" data-i18n="heat.peek">Heatmap — tik om te openen</div>
+  <h1 data-i18n="heat.title">Activatie-heatmap</h1>
+  <p class="sub" data-i18n="heat.sub">Welke gebieden hebben aandacht nodig?</p>
+  <div class="segs" id="heatMetric">
+    <button class="seg on" data-metric="recency" data-i18n="heat.byrecency">Laatst actief</button>
+    <button class="seg" data-metric="qso" data-i18n="heat.byqso">Aantal QSO's</button>
+  </div>
+  <div id="heatBox"><p class="hint" data-i18n="heat.loading">Statusdata laden…</p></div>
+  <div id="heatNeg" hidden>
+    <h4 style="margin:14px 0 4px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
+        data-i18n="heat.neglected">Meest verwaarloosde gebieden</h4>
+    <div id="negList"></div>
+  </div>
+</section>
+
+<section class="view" id="viewRules">
+  <h1 data-i18n="rules.title">Regels &amp; bandplan</h1>
+  <p class="sub" data-i18n="rules.sub">WWFF wereldwijd en wat ONFF daaraan toevoegt</p>
+  <div class="card"><table class="rules"><tbody id="rulesBody"></tbody></table></div>
+  <div id="bandBox"></div>
+  <p class="hint"><span style="color:var(--amber)">▌</span> <span data-i18n="rules.mkwwff">WWFF-voorkeursfrequentie</span>
+     &nbsp; <span style="color:#7c3aed">▌</span> FT8</p>
+  <p class="hint" data-i18n="rules.src">Bron: IARU Regio 1-bandplan en WWFF Global Rules §14.7. Je vergunningsklasse kan verder beperken.</p>
+</section>
+
+<!-- Only appears when the browser genuinely offers to install, and only once:
+     dismiss it and it stays gone. Settings remains the permanent place for it. -->
+<div class="instbar" id="instBar" hidden>
+  <span class="t" data-i18n="inst.bar">Diana als app op dit toestel zetten?</span>
+  <button class="go" id="instBarGo" data-i18n="inst.bargo">Installeren</button>
+  <button class="no" id="instBarNo" data-i18n="inst.barno">Niet nu</button>
+</div>
+
+<nav class="nav" id="nav">
+  <button class="on" data-view="map"><span class="ic">◈</span><span data-i18n="nav.map">Kaart</span></button>
+  <button data-view="viewSpots"><span class="ic">((·))</span><span data-i18n="nav.spots">Spots</span></button>
+  <button data-view="viewSelf"><span class="ic">✚</span><span data-i18n="nav.self">Meld</span></button>
+  <button data-view="viewSet"><span class="ic">⚙</span><span data-i18n="nav.settings">Instellingen</span></button>
+  <button data-view="viewAdmin"><span class="ic">⛭</span><span data-i18n="nav.admin">Beheer</span></button>
+  <button data-view="viewSession"><span class="ic">◉</span><span data-i18n="nav.session">Sessie</span></button>
+  <button data-view="viewHeat"><span class="ic">▦</span><span data-i18n="nav.heat">Heatmap</span></button>
+  <button data-view="viewRules"><span class="ic">☰</span><span data-i18n="nav.rules">Regels</span></button>
+</nav>
+
+<!-- ================= splash screen =================
+     Shows immediately, while the 3.7 MB of zone data and the map style load.
+     Disappears on its own once the map has been drawn — or after a hard time
+     limit, because being stuck on a splash screen is worse than a bare map. -->
+<div class="splash" id="splash">
+  <div class="tx" aria-hidden="true"><i></i><i></i><i></i></div>
+  <div class="sweep" aria-hidden="true"></div>
+  <div class="sfoot">
+    <div class="sbrand"><img class="mark" src="logo.png" alt="" width="62" height="41"> Diana</div>
+    <div class="sload" id="splashTxt">Laden…</div>
+    <div class="sbar"><i id="splashBar"></i></div>
+    <div class="sver" id="splashVer"></div>
+  </div>
+</div>
+
+<button class="ver" id="verBadge" type="button" title="Diana"></button>
+
+<div class="status" id="status">
+  <span class="dot"></span>
+  <span class="txt"><div class="t1" id="stT1"></div><div class="t2" id="stT2"></div></span>
+  <button class="stx" id="stClose" aria-label="×">×</button>
+</div>
+
+<script src="vendor/maplibre-gl.js"></script>
+<script src="app.js" defer></script>
+</body>
+</html>
