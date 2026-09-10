@@ -1,5 +1,5 @@
 /* Order: what the user chose > the browser's language if we speak it > English. */
-const LANGS = ['en','nl','fr','de','da','it','es'];
+const LANGS = ['en','nl','fr','de','da','it','es','pt'];
 /* Order: ?lang= in the URL, then the choice from Settings, then English.
  *
  * "auto" is an explicit choice to follow the browser language — anyone who
@@ -26,7 +26,7 @@ let lang = pickLang();
    separate from `lang`, because that is the resolved language of the moment. */
 let langPref = savedLang() || 'en';
 const t = k => (STR[lang] && STR[lang][k]) || STR.nl[k] || k;
-function locale(){ return {nl:'nl-BE',fr:'fr-BE',en:'en-GB',de:'de-DE',da:'da-DK',it:'it-IT',es:'es-ES'}[lang] || 'en-GB'; }
+function locale(){ return {nl:'nl-BE',fr:'fr-BE',en:'en-GB',de:'de-DE',da:'da-DK',it:'it-IT',es:'es-ES',pt:'pt-PT'}[lang] || 'en-GB'; }
 
 function applyLang(){
   document.documentElement.lang = lang;
