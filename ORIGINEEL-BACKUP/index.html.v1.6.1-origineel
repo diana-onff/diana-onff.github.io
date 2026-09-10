@@ -449,35 +449,6 @@
 </div>
 
 <script src="vendor/maplibre-gl.js"></script>
-
-<!-- The app, in the order it has to run.
-     These were one app.js until they were cut apart along the section headings
-     that were already in it. They are ordinary scripts, not modules, so they
-     share one global scope exactly as the single file did: what core.js declares
-     is what spots.js sees. `defer` keeps them in document order and runs them
-     after the page is parsed, so the order below IS the order of the old file.
-
-     Therefore: only ever append at the end of a file, and do not move a line
-     between files without checking what runs at load time. Anything added here
-     must also go into SHELL_FILES in sw.js, or the app works online and is
-     silently broken offline. -->
-<script src="js/core.js" defer></script>
-<script src="js/i18n-strings.js" defer></script>
-<script src="js/i18n.js" defer></script>
-<script src="js/map-data.js" defer></script>
-<script src="js/map.js" defer></script>
-<script src="js/spots.js" defer></script>
-<script src="js/install.js" defer></script>
-<script src="js/gestures.js" defer></script>
-<script src="js/nav.js" defer></script>
-<script src="js/settings.js" defer></script>
-<script src="js/admin.js" defer></script>
-<script src="js/self-spot.js" defer></script>
-<script src="js/agenda.js" defer></script>
-<script src="js/session.js" defer></script>
-<script src="js/rules.js" defer></script>
-<script src="js/heatmap.js" defer></script>
-<script src="js/offline.js" defer></script>
-<script src="js/geo.js" defer></script>
+<script src="app.js" defer></script>
 </body>
 </html>

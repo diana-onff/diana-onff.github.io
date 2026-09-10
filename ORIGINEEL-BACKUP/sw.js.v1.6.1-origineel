@@ -22,15 +22,7 @@ const TILE_MAX  = 3000;               // roughly 60 MB of vector tiles
 // one level up) are listed. Whatever does not exist is skipped: addAll() fails as
 // a whole on a single 404, so we cache them one by one.
 const SHELL_FILES = [
-  './', './index.html', './app.css', './manifest.webmanifest',
-  // The app itself, split per screen. Every one of these must be here: leave one
-  // out and the app works online and is broken offline — which you find out in
-  // the woods, with no signal. Keep in step with the <script> tags in index.html.
-  './js/core.js', './js/i18n-strings.js', './js/i18n.js', './js/map-data.js',
-  './js/map.js', './js/spots.js', './js/install.js', './js/gestures.js',
-  './js/nav.js', './js/settings.js', './js/admin.js', './js/self-spot.js',
-  './js/agenda.js', './js/session.js', './js/rules.js', './js/heatmap.js',
-  './js/offline.js', './js/geo.js',
+  './', './index.html', './app.css', './app.js', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './apple-touch-icon.png', './start.jpg', './logo.png',
   './vendor/maplibre-gl.js', './vendor/maplibre-gl.css',
   './data/onff.geojson', './data/onff-index.json', './data/meta.json',

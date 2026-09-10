@@ -49,20 +49,14 @@ import pathlib, sys
 
 uit, build = pathlib.Path(sys.argv[1]), sys.argv[2]
 
-# The placeholder lives in js/core.js: first index.html, then app.js, and since
-# the split per screen it is core.js. Rather than name that file here, every .js
-# under js/ is searched — move the constant to another file and this keeps
-# working. The count over all of them together is checked and must be exactly 1:
-# a silent failure here means the app keeps showing "dev" for months without
-# anyone noticing, and two hits would mean the constant is declared twice.
-treffers = [p for p in sorted((uit / "js").glob("*.js"))
-            if "'__DIANA_BUILD__'" in p.read_text(encoding="utf-8")]
-aantal = sum(p.read_text(encoding="utf-8").count("'__DIANA_BUILD__'") for p in treffers)
-if aantal != 1:
-    namen = ", ".join(p.name for p in treffers) or "no file"
-    sys.exit(f"site.sh: placeholder __DIANA_BUILD__ found {aantal}x under js/ ({namen}), expected 1")
-js = treffers[0]
+# Since the split-up the placeholder lives in app.js and no longer in index.html.
+# The count is checked and must be exactly 1: a silent failure here means the app
+# keeps showing "dev" for months without anyone noticing.
+js = uit / "app.js"
 tekst = js.read_text(encoding="utf-8")
+aantal = tekst.count("'__DIANA_BUILD__'")
+if aantal != 1:
+    sys.exit(f"site.sh: placeholder __DIANA_BUILD__ found {aantal}x in app.js, expected 1")
 js.write_text(tekst.replace("'__DIANA_BUILD__'", f"'{build}'"), encoding="utf-8")
 
 # The service worker gets its own cache name per build. That way it clears out

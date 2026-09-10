@@ -21,7 +21,15 @@ python3 build/tests/test_new.py      # etc.
 | `test_spotsalways.py` | that the map opens unasked where you are standing, that spots cannot be switched off, and that only the lines leading to them are toggleable (and stay saved) |
 | `test_directory.py` | the build step itself (no browser): impossible coordinates, leaks between the layers, and whether `--strict` really overwrites nothing when the directory is unreachable or truncated |
 | `test_spotsfilter.py` | spots filter: worldwide by default, ONFF-only, one country via `wwff-programs.json`, and that the quick filter and Settings stay in sync and survive a reload |
+| `test_spot.py` | reporting a spot yourself: reference checking, check-then-send, and every answer the Worker can give (201, 400, 409, 429, 503, unreachable) |
+| `test_agenda.py` | announcing an activation: the date rules, local time going out as UTC, the PIN kept on the device, and all three ways into the screen |
+| `test_visual.py` | that the screens actually look right, by taking and inspecting screenshots |
+| `test_split.py` | that `web/js/*.js` stays loadable: every file has a `<script>` tag, every file is in `SHELL_FILES`, nothing throws at load, and the files can still see each other's declarations |
 
 The style-switch test in `test_swipe.py` is the most important one: that is where
 the bug lived that made all our own layers disappear one by one after
 `map.setStyle()`.
+
+`test_split.py` is the one to run after touching anything under `web/js/`. Those
+files are plain scripts sharing one global scope, in a fixed order — nothing in
+the language enforces that, so this test does. See `docs/DEVELOPER.md`.

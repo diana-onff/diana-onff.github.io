@@ -28,7 +28,9 @@ diana/
 │  └─ meta.json
 ├─ overrides.json     manual name corrections, keyed by reference number
 ├─ web/               the web application itself                  ← runtime
-│  ├─ index.html      the entire app: markup, styles, logic, one file
+│  ├─ index.html      the markup, and the <script> tags in the order they must run
+│  ├─ app.css         every style
+│  ├─ js/             the logic, one file per screen or concern — see below
 │  ├─ manifest.webmanifest
 │  ├─ sw.js           service worker (offline cache)
 │  └─ vendor/         MapLibre GL JS, vendored locally (not a CDN)
@@ -41,6 +43,57 @@ diana/
 The split that matters: **`build/` runs on a GitHub-hosted runner and never
 reaches a visitor's browser.** `web/` is the only thing a user ever loads.
 Nothing in `build/` is shipped as part of the site.
+
+### `web/js/` — one file per screen, and why the order is not negotiable
+
+These were a single `app.js` of nearly 5800 lines until it was cut apart along
+the section headings that were already in it. They were not rewritten and not
+reordered: concatenating them in the order below reproduces that file
+character for character, apart from one line noted in `map.js`.
+
+| File | What lives in it |
+|---|---|
+| `core.js` | `$()`, `APP_VERSION`, the build stamp, the splash screen, `remember()`/`recall()` |
+| `i18n-strings.js` | the `STR` tables — seven languages, and by far the biggest file |
+| `i18n.js` | picking a language, `t()`, `applyLang()`, `rerender()` |
+| `map-data.js` | the zone/index/activity state and everything that loads it |
+| `map.js` | the MapLibre map, all layers, selection, the detail panel, search, the popovers |
+| `spots.js` | the Spotline feed, filters, the list, arcs, the spot detail |
+| `install.js` | the "put Diana on your device" flow |
+| `gestures.js` | swipe-down-to-close, and tucking the heatmap panel away |
+| `nav.js` | the bottom bar and switching between full screens |
+| `settings.js` | Settings, the locator field, and where the map opens |
+| `admin.js` | the whole admin screen: GitHub API, upload, pull request, cleanup, embed code |
+| `self-spot.js` | reporting a spot yourself (Screen 3) |
+| `agenda.js` | announcing an activation (Screen 3b) |
+| `session.js` | the activation session and GPS evidence (Screen 4) |
+| `rules.js` | the band plan and the rules screen (Screen 6) |
+| `heatmap.js` | the activation heatmap (Screen 7) |
+| `offline.js` | service worker registration, the update flow, downloading an area |
+| `geo.js` | point-in-polygon, distance, `locate()`, the status bar, the locate button |
+
+They are **ordinary scripts, not ES modules**, so they share one global scope
+exactly as the single file did — what `core.js` declares is what `spots.js`
+sees, with no imports or exports anywhere. `defer` keeps them in document
+order and runs them after the page is parsed, so the order of the `<script>`
+tags in `index.html` *is* the order of the old file.
+
+That has three consequences worth knowing before you touch anything here:
+
+- **Append at the end of a file; do not move a line between files** without
+  checking whether it runs at load time. A `function` declaration is hoisted
+  only within its own file now. As one file, `map.js`'s
+  `$('btnOffline').onclick = prefetchArea` worked even though `prefetchArea()`
+  is declared 2500 lines further down; across files that would silently be
+  `undefined`. It is wrapped in an arrow for exactly that reason — that one
+  line is the only thing the split changed.
+- **A new file has to be added in three places**: a `<script>` tag in
+  `index.html`, an entry in `SHELL_FILES` in `sw.js`, and this table. Forget
+  the second and the app works online and is broken offline, which you find
+  out in the woods with no signal.
+- **The build stamp** (`'__DIANA_BUILD__'` in `core.js`) is replaced by
+  `build/site.sh`, which searches every file under `js/` and stops the build
+  unless it finds it exactly once.
 
 ---
 
