@@ -80,6 +80,24 @@ function evaluate(lat,lon,accuracy){
     }
     select(inside[0].properties.ref, inside.map(f=>f.properties.ref));
   } else {
+    // Same edge case as above, mirrored: the GPS point falls just outside a
+    // real boundary, but not further outside than the GPS's own reported
+    // error margin — so "outside" isn't something we can actually claim yet
+    // either. `cand`'s bbox is padded by ~2.2 km, far more than any realistic
+    // accuracy value, so a boundary within `acc` of this point — if one
+    // exists — is already in `cand`.
+    let nearEdgeF=null, nearEdgeD=Infinity;
+    for(const z of cand){
+      const f = zones.features.find(x=>x.properties.ref===z.ref);
+      const d = distanceToZone(lat,lon,f);
+      if(d<nearEdgeD){ nearEdgeD=d; nearEdgeF=f; }
+    }
+    if(nearEdgeF && nearEdgeD < acc){
+      showStatus('near', t('gps.nearedge').replace('{ref}', nearEdgeF.properties.ref),
+        t('gps.nearedgesub').replace('{d}', Math.round(nearEdgeD)).replace('{a}', acc));
+      select(nearEdgeF.properties.ref);
+      return;
+    }
     let best=null,bd=Infinity;
     for(const z of index){
       const zlat = z.lat ?? (z.bbox ? (z.bbox[1]+z.bbox[3])/2 : null);
