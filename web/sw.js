@@ -22,7 +22,7 @@ const TILE_MAX  = 3000;               // roughly 60 MB of vector tiles
 // one level up) are listed. Whatever does not exist is skipped: addAll() fails as
 // a whole on a single 404, so we cache them one by one.
 const SHELL_FILES = [
-  './', './index.html', './app.css', './manifest.webmanifest',
+  './', './index.html', './css/app.css', './manifest.webmanifest',
   // The app itself, split per screen. Every one of these must be here: leave one
   // out and the app works online and is broken offline — which you find out in
   // the woods, with no signal. Keep in step with the <script> tags in index.html.

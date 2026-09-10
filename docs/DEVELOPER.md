@@ -29,7 +29,7 @@ diana/
 ├─ overrides.json     manual name corrections, keyed by reference number
 ├─ web/               the web application itself                  ← runtime
 │  ├─ index.html      the markup, and the <script> tags in the order they must run
-│  ├─ app.css         every style
+│  ├─ css/app.css     every style, one file (see below)
 │  ├─ js/             the logic, one file per screen or concern — see below
 │  ├─ manifest.webmanifest
 │  ├─ sw.js           service worker (offline cache)
@@ -43,6 +43,17 @@ diana/
 The split that matters: **`build/` runs on a GitHub-hosted runner and never
 reaches a visitor's browser.** `web/` is the only thing a user ever loads.
 Nothing in `build/` is shipped as part of the site.
+
+### `web/css/app.css` — one file, already sectioned
+
+Still a single file: at under 450 lines it does not carry the weight `app.js`
+did, and splitting it up would trade "everything is in one place" for "which
+of five files is `.btn` in" without solving a real problem. It already has
+section comments (`/* ---------- topbar ---------- */` and so on) marking
+each screen's styles, so if it ever does grow past this, the cut lines are
+already there. It moved into its own folder mainly so it sits next to `js/`
+instead of loose in `web/` — the one thing that changed on the move was the
+splash screen's `url("start.jpg")`, which needed `../` in front of it.
 
 ### `web/js/` — one file per screen, and why the order is not negotiable
 

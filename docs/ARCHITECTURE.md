@@ -10,7 +10,7 @@ which files it reads. This is the *runtime* half of Diana — for how the
 ## 1. The shape of the system
 
 Diana has **no backend of its own**. It is a static site: `web/index.html` for
-the markup, `web/app.css` for the styles, and `web/js/` for the logic — one
+the markup, `web/css/app.css` for the styles, and `web/js/` for the logic — one
 file per screen or concern, loaded in a fixed order as plain scripts sharing
 one global scope (see `DEVELOPER.md` for the table and the rules that come
 with that order). Plus three small JSON files it reads at load time, plus a
