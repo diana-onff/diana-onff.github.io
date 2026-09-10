@@ -88,7 +88,7 @@ with sync_playwright() as p:
                        ("agendaOpen", "agenda.js"), ("prefetchArea", "offline.js"),
                        ("haversine", "geo.js"), ("showStatus", "geo.js")]:
         ok(pg.evaluate(f"() => typeof {name} !== 'undefined'"), f"{name} (from {home}) is reachable")
-    ok(pg.evaluate("() => Object.keys(STR).length === 7"), "all seven languages survived the cut")
+    ok(pg.evaluate("() => Object.keys(STR).length === 8"), "all eight languages survived the cut")
 
     print("\n[6] the one line the split had to change is still wired up")
     ok(pg.evaluate("() => typeof document.getElementById('btnOffline').onclick === 'function'"),

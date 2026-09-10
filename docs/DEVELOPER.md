@@ -65,7 +65,7 @@ character for character, apart from one line noted in `map.js`.
 | File | What lives in it |
 |---|---|
 | `core.js` | `$()`, `APP_VERSION`, the build stamp, the splash screen, `remember()`/`recall()` |
-| `i18n-strings.js` | the `STR` tables — seven languages, and by far the biggest file |
+| `i18n-strings.js` | the `STR` tables — eight languages, and by far the biggest file |
 | `i18n.js` | picking a language, `t()`, `applyLang()`, `rerender()` |
 | `map-data.js` | the zone/index/activity state and everything that loads it |
 | `map.js` | the MapLibre map, all layers, selection, the detail panel, search, the popovers |

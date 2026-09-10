@@ -67,7 +67,7 @@ The bottom bar covers Map, Spots, self-spotting, announcing an activation,
 an activation Session, the activation Heatmap, the band-plan Rules, and
 Settings — every screen explained in full in
 [docs/USER_GUIDE.md §3](docs/USER_GUIDE.md#3-the-screens). Seven languages
-(English, Dutch, French, German, Danish, Italian, Spanish), and a service
+(English, Dutch, French, German, Danish, Italian, Spanish, Portuguese), and a service
 worker that keeps everything available offline.
 
 Self-spotting and announcing an activation both go through a small
@@ -85,7 +85,7 @@ polygon part — and ONFF-0329 consists of 67 separate parcels.
 
 | Parameter | What |
 |---|---|
-| `?lang=nl\|fr\|en\|de\|da\|it\|es` | force the language; by default it follows the browser only if you explicitly choose "Follow the browser" in Settings — otherwise it's English |
+| `?lang=nl\|fr\|en\|de\|da\|it\|es\|pt` | force the language; by default it follows the browser only if you explicitly choose "Follow the browser" in Settings — otherwise it's English |
 | `?ref=ONFF-0104` | zoom straight in on one area |
 | `?prov=limburg` | zoom in on a province |
 | `?spots=1` | switch the live-spots map layer on right away |

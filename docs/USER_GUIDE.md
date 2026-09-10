@@ -238,8 +238,8 @@ calling frequencies per band highlighted.
 
 ## 4. Languages
 
-Diana is available in English, Dutch, French, German, Danish, Italian and
-Spanish. Set yours in **Settings → Language**; the flags row at the top of the
+Diana is available in English, Dutch, French, German, Danish, Italian,
+Spanish and Portuguese. Set yours in **Settings → Language**; the flags row at the top of the
 map does the same thing. Language is chosen, in order: the `?lang=` URL
 parameter, then your saved setting, otherwise **English**. Your browser's
 language is used only if you explicitly pick **Follow the browser** — so with
@@ -265,7 +265,7 @@ site, anything that accepts HTML.
 | Parameter | Effect |
 |---|---|
 | `?embed=1` | hides Diana's own navigation and header, so it fits inside someone else's page chrome |
-| `?lang=en\|nl\|fr\|de\|da\|it\|es` | forces a language, overriding browser detection |
+| `?lang=en\|nl\|fr\|de\|da\|it\|es\|pt` | forces a language, overriding browser detection |
 | `?ref=ONFF-0104` | opens directly zoomed to one zone |
 | `?prov=antwerpen` | zooms to one Belgian province |
 | `?spots=1` | turns the live-spots map layer on |
