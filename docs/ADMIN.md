@@ -2,9 +2,10 @@
 
 Everything an ONFF/Diana administrator needs: publishing a new KMZ release,
 using the in-app Admin panel, and what to do when something doesn't work.
-For the one-time repository setup (Pages, permissions), see
-[DEPLOY.md](../DEPLOY.md) — this document assumes that's already done and
-focuses on the recurring, day-to-day tasks.
+For the one-time repository setup, see [INSTALL.md](INSTALL.md) — this
+document assumes that's already done and focuses on the recurring,
+day-to-day tasks. For every credential involved and how to replace one, see
+[MAINTENANCE.md](MAINTENANCE.md).
 
 ---
 
@@ -172,7 +173,7 @@ snippet never changes on its own:
 
 `?embed=1` hides Diana's own navigation and header so the map fits cleanly
 into someone else's page layout — see
-[USER_GUIDE.md §Embedding](USER_GUIDE.md#embedding-diana-on-another-page)
+[USER_GUIDE.md §Embedding](USER_GUIDE.md#5-embedding-diana-on-another-page)
 for the full parameter reference and a live example.
 
 ---
@@ -304,6 +305,6 @@ of hosting choice. Making the **repository itself** public additionally
 republishes the raw source KMZ file on a second channel outside ONFF's own
 groups.io distribution. That second point is a courtesy question for the
 ONFF coordinator, not a technical constraint — see
-[DEPLOY.md §1](../DEPLOY.md#1-eerst-de-vraag-die-er-echt-toe-doet) and the
+[DEPLOY.md §1](../DEPLOY.md#1-first-the-question-that-really-matters) and the
 data-licensing terms in [LICENSE](../LICENSE) before deciding how open to
 make the repository.

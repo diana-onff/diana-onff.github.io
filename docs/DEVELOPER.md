@@ -247,7 +247,7 @@ code, via a repository variable `ONFF_REFS_CSV`.
 2. Extracts the ONFF reference number from the **folder name**, not a data
    field — placemarks are grouped under folders named `ONFF-nnnn <name>`.
    This is a real quirk of the source data, not a design choice; see
-   [ARCHITECTURE.md](ARCHITECTURE.md#31-the-onff-kmz).
+   [ARCHITECTURE.md](ARCHITECTURE.md#21-the-onff-kmz-one-layer-further-back).
 3. Merges every polygon under one reference number into a single
    `MultiPolygon` with `shapely.ops.unary_union` — some references (e.g.
    ONFF-0329) consist of dozens of disconnected parcels.

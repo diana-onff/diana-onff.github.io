@@ -44,7 +44,12 @@ ever 404s again, ask WWFF before changing this file.
 
 ## Setting it up
 
-Prerequisite: a Cloudflare account and `wrangler login`. See `CLOUDFLARE.md`.
+Prerequisite: a Cloudflare account and `wrangler login`. For the ordered,
+first-time version of everything below — including where the Worker fits
+among the rest of the setup — see
+[docs/INSTALL.md §9](../docs/INSTALL.md#9-the-worker-cloudflare). For every
+credential mentioned here and how to replace one later, see
+[docs/MAINTENANCE.md](../docs/MAINTENANCE.md).
 
 **1. Create the KV namespace** — it holds the counters and the kill switch:
 

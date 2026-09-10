@@ -1,8 +1,11 @@
-# Putting Diana online — everything inside GitHub
+# Deploying Diana
 
-No Cloudflare, no external service. One repo, GitHub Pages, and one administrator who
-uploads. This document is also honest about what becomes public in the process and
-what does not.
+Diana runs on two GitHub repositories and one Cloudflare Worker, all on free
+tiers. This document is the short orientation — what runs where, and why it's
+split the way it is. It assumes the setup already exists; for building it
+from nothing, see [docs/INSTALL.md](docs/INSTALL.md). For day-to-day
+publishing, see [docs/ADMIN.md](docs/ADMIN.md). For every credential involved
+and how to replace one, see [docs/MAINTENANCE.md](docs/MAINTENANCE.md).
 
 ---
 
@@ -10,186 +13,90 @@ what does not.
 
 > "Downside: it's public. But the data shouldn't just be up for grabs, should it?"
 
-There are three different things in that question, and only one of them is a real
-choice.
+There are two different things bundled in that question.
 
-### The zone boundaries become public either way
+**The zone boundaries are public regardless.** Diana is a static web app:
+every visitor's browser downloads `onff.geojson` to draw the map — that's how
+a static map works, on any hosting, public repository or not. Publishing
+Diana *as a web app* already means publishing the boundaries. They are
+already public in practice today, in the ONFF blog's own embedded Google My
+Maps.
 
-Diana is a static web app. Every visitor's browser **downloads `onff.geojson`** —
-that is how the map works. Anyone who can open the app can save that file. That holds
-on GitHub Pages, on Cloudflare, on any hosting whatsoever, and whether the repo is
-public or private.
-
-In other words: **publishing the app *is* publishing the boundaries.** If ONFF does
-not want that, then Diana cannot exist as a public web app — it would become a closed
-app behind a login, and that is an entirely different project.
-
-For reassurance: those boundaries are already public in practice. The ONFF blogspot
-shows them province by province in embedded Google My Maps, without a login.
-
-### Making the repo public adds exactly one thing
-
-Namely the **original KMZ file**, as a file, redistributed through a second channel.
-ONFF distributes it through the BOS groups.io, behind membership. It is not secret
-data — it is largely a WDPA export, and WDPA is itself an open dataset — but it *is*
-Luk's work, distributed through his channel.
-
-**So this is not a technical question but a question of courtesy, and it is Luk's to
-answer.**
-
-What you can put to him, in one sentence: *"Diana is going open source on GitHub. That
-means the zone boundaries go online as a data file — they have to, otherwise the map
-does not work. May the source KMZ go with it, or do we keep that out of the public
-repo?"*
-
-### And then there are two routes
-
-| | If Luk agrees | If Luk would rather not |
-|---|---|---|
-| Setup | **one public repo** | **two repos**: private for the source, public for the site |
-| KMZ | sits in `source/`, public | stays in the private repo |
-| Complexity | low | one extra repo and one token |
-| Cost | €0 | €0 (2,000 free Action minutes a month is plenty) |
-
-Route 1 is worked out in full below. Route 2 is in §5.
+**Making the *repository* public adds exactly one more thing: the original
+KMZ file**, redistributed on a second channel outside ONFF's own
+membership-gated groups.io. That file is largely a WDPA export (itself open
+data), but distributing it is a courtesy question for ONFF's coordinator, not
+a technical one — which is why this project keeps that one file out of the
+public repository entirely, in a private repo of its own. See
+[LICENSE](LICENSE) for the data-licensing terms this rests on.
 
 ---
 
-## 2. Route 1 — one public repo (recommended if Luk agrees)
-
-### Setting up, once
-
-1. Create a **public** repo on GitHub in the `diana-onff` organisation, named
-   `diana-onff.github.io`.
-2. Put everything from `diana-repo.zip` into it, plus `ONFF 20260101.kmz` in `source/`.
-3. Repo settings → **Pages** → Source: **Deploy from a branch** → branch `gh-pages`,
-   folder `/ (root)`. (That branch does not exist yet; it is created on the first
-   push. So set this up after the first workflow has run.)
-4. Invite the administrator as a **collaborator** with the *Write* role. That is all
-   he needs to upload and to merge.
-
-Your site is then at `https://diana-onff.github.io/`.
-
-### What happens automatically
-
-| When | What |
-|---|---|
-| pull request with a new KMZ | `build-data.yml` converts it and pastes the diff report underneath |
-| the same pull request | `pages.yml` publishes a **preview** at `.../preview/pr-12/` and posts that link underneath |
-| merge to `main` | the live site is updated |
-| pull request closed | the preview is cleaned up |
-
-That preview is deliberate. GitHub Pages does not offer it out of the box — which is
-why `pages.yml` publishes to a `gh-pages` branch instead of going through the standard
-Pages action. This lets the administrator **look at the real map with the new data
-before he merges**, and that is the only check there is.
-
-### What does not go online
-
-`build/site.sh` assembles the folder to be published out of `web/` and the three data
-files, and deliberately leaves `source/` out of it. So the KMZ is in the repo tree
-(because the Action reads it), but it is not served as part of the website.
-
----
-
-## 3. What the administrator does
-
-The full procedure, without a single command:
-
-1. Get the new `ONFF_YYYYMMDD.kmz` from the BOS groups.io.
-2. On github.com go to `source/` → **Add file → Upload files** → drag the file in →
-   at the bottom **Create a new branch for this commit** → **Propose changes**.
-3. Wait a few minutes. Two comments appear under the pull request: the diff report and
-   the preview link.
-4. Open the preview and look at the map.
-5. Does it look right? **Merge.** That is publishing.
-6. Does it not? Close the pull request. Or, if it has already been merged: **Revert**
-   on the merge commit, and the previous version is back.
-
-One administrator is enough. If you want more later, that is a matter of adding a
-collaborator.
-
----
-
-## 4. Limits worth knowing
-
-- **File size in the browser: 25 MiB.** The KMZ is 17 MB, so it fits. If it ever grows
-  past 25 MiB, it will have to go through git instead of the web interface.
-- **Pages site: 1 GB maximum, and a soft limit of 10 builds per hour.** We are at some
-  5 MB per publication and a handful of builds per month.
-- **Actions on a public repo are free and unlimited.**
-- **The repo history keeps every KMZ forever.** At roughly 17 MB per release and a
-  couple of releases a year, it will be years before that runs into anything.
-
----
-
-## 5. Route 2 — two repos, if the KMZ may not be public
-
-Also entirely inside GitHub.
+## 2. What actually runs where
 
 ```
-diana-onff/diana-source          (private)  source/ build/ overrides.json  + the conversion Action
-      │  pushes data/ and web/ after a merge to
-      ▼
-diana-onff/diana-onff.github.io  (public)   the site + the data   → GitHub Pages
+diana-onff/diana-onff.github.io   (public)    the app, data/, docs/, the two
+                                                GitHub Actions workflows, and
+                                                the Worker's source code
+        │
+        │  build-data.yml checks this repo out with SOURCE_TOKEN,
+        │  read-only, to reach the KMZ
+        ▼
+diana-onff/diana-source            (private)   only the ONFF KMZ files, and
+                                                an `incoming/` waiting room for
+                                                an upload nobody has approved yet
+
+diana-spotline (Cloudflare Worker)             holds WWFF_API_KEY; the only
+                                                thing in the project that ever
+                                                sees it — see SPOTLINE.md
 ```
 
-- The administrator uploads in the **private** repo. Everything he sees — the report,
-  the approval — stays there.
-- A fine-grained token with write access to the public repo only sits as a secret in
-  the private repo; the Action uses it to push the built site through.
-- Private Actions minutes: 2,000 free per month, and one conversion takes about a
-  minute.
-- What you give up: the preview URL then lives in the public repo, while the approval
-  happens in the private one. Workable, but less straightforward than route 1.
+This is Route 2 from the two options this project originally weighed — one
+public repository, or a public/private split. The split was chosen because
+the KMZ deserves the courtesy of staying off a second public channel; the
+public repository still holds everything that makes the site work, including
+the workflows and the Worker's code, so nothing about running or publishing
+Diana needs access to the private repository directly — only the nightly
+build's own token does.
 
-Do not start here. Start with the question to Luk.
-
----
-
-## 6. If no `gh-pages` appears
-
-That branch is created by the workflow. If it is not there, the workflow has not run
-or has got stuck. Work through this, in this order:
-
-**a. Is the `.github` folder actually in the repo?**
-This is by far the most common cause. Windows Explorer hides folders that start with a
-dot, so anyone who drags the unpacked files into the GitHub web uploader leaves
-`.github/` behind without noticing — and then there is no workflow at all. Check on
-github.com whether you can see `.github/workflows/pages.yml`. If not: create the file
-with **Add file → Create new file**, type `.github/workflows/pages.yml` as the name
-(GitHub creates the folders for you) and paste the contents in.
-
-**b. Is there anything in the Actions tab?**
-- *No runs at all* → the workflow is not there, or it is on a branch other than
-  `main`. Check what your main branch is called.
-- *A red run* → open it and read the failed step.
-
-**c. Red at "Publish", with a 403 or "permission denied"?**
-Then the token permission setting is still read-only. Settings → Actions → General →
-**Workflow permissions** → *Read and write permissions* → Save. After that, run the
-workflow again with **Run workflow** in the Actions tab.
-
-**d. Still nothing?**
-The workflow also has a manual button. Actions → "Publish to GitHub Pages" → **Run
-workflow**. That creates `gh-pages` without you having to push anything.
-
-Only once `gh-pages` exists does it appear in the menu at Settings → Pages.
+Both repositories cost nothing on GitHub's free plan: unlimited private
+repositories, and Actions minutes are unlimited on the *public* repo (the
+private one has no workflow of its own — it only gets checked out by the
+public repo's build). The Worker is free on Cloudflare's tier as well; see
+[MAINTENANCE.md §8](docs/MAINTENANCE.md#8-limits-worth-watching) for the
+actual ceilings and how far normal use sits below them.
 
 ---
 
-## 7. The very first time
+## 3. Publishing a new release, day to day
 
-1. **First** set Settings → Actions → General → Workflow permissions to *Read and
-   write*.
-2. Create the repo, put everything in it, KMZ in `source/` — and check that `.github/`
-   came along.
-3. Actions → "Publish to GitHub Pages" → **Run workflow**. Now `gh-pages` exists.
-4. Settings → Pages → branch `gh-pages`, folder `/ (root)` → Save.
-5. Make one pull request (a small change in `overrides.json`, for instance) and check
-   that you get two comments: the report and the preview link.
-6. **Open the live site and see whether the spots and the heatmap load.** That answers
-   the last open question from the plan in ten seconds: will we ever need a proxy, or
-   not?
+This is now [docs/ADMIN.md §1](docs/ADMIN.md#1-publishing-a-new-onff-release)
+in full — either a plain GitHub upload or Diana's own in-app Admin panel, both
+ending at the same pull request and the same preview-then-merge review. It
+isn't duplicated here to avoid the two documents drifting apart the way this
+one drifted from reality before this rewrite.
 
-That last step is also the cheapest test in the whole project.
+---
+
+## 4. Limits worth knowing when deploying
+
+- **GitHub's web upload limit is 25 MiB per file.** The ONFF KMZ is around
+  17 MB, so it fits; past 25 MiB it would need to go through git instead.
+- **GitHub Pages: 1 GB site, and a soft limit of roughly 10 builds an hour.**
+  Diana publishes a few megabytes, a handful of times a month.
+- The full list, including the ones that matter for ongoing operation (KV
+  writes, the shared WWFF budget, Actions minutes) is in
+  [MAINTENANCE.md §8](docs/MAINTENANCE.md#8-limits-worth-watching) — kept
+  there rather than here so there is one place to check, not two that can
+  disagree.
+
+---
+
+## 5. If something isn't working
+
+[docs/ADMIN.md §4 Troubleshooting](docs/ADMIN.md#4-troubleshooting) covers
+the recurring failure modes: no `gh-pages` branch, a 403 on publish, the
+wrong thing published, or a pull request that gets no diff report. Building
+from zero and hitting a snag along the way is covered directly in
+[docs/INSTALL.md](docs/INSTALL.md), step by step, with a checkpoint after
+each one.

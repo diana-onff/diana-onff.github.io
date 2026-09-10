@@ -76,7 +76,7 @@ Bottom navigation, left to right:
 The main screen. Four base-map styles, search by name or reference number, a
 zone-detail panel showing only whatever attributes that zone actually has
 (most zones have far less metadata than you'd expect — see
-[ARCHITECTURE.md §2.1](ARCHITECTURE.md#21-the-onff-kmz)), and GPS "am I
+[ARCHITECTURE.md §2.1](ARCHITECTURE.md#21-the-onff-kmz-one-layer-further-back)), and GPS "am I
 inside this zone right now" with a warning when your GPS accuracy is poor
 enough that the answer could flip. Zone reference numbers are shown as
 labels by default. When a spot or zone panel is open, on a phone-sized

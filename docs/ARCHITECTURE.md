@@ -372,7 +372,7 @@ never called during normal browsing. Full flow in [ADMIN.md](ADMIN.md).
 
 There is no account system and no server-side state anywhere in Diana. Every
 one of these lives in one browser, on one device. See
-[USER_GUIDE.md §Limitations](USER_GUIDE.md#limitations) for what that means
+[USER_GUIDE.md §Limitations](USER_GUIDE.md#6-limitations) for what that means
 in practice for someone using Diana on more than one device.
 
 ---
