@@ -60,6 +60,11 @@ from shapely.geometry import MultiPolygon, Polygon, mapping
 from shapely.ops import unary_union
 
 KML_NS = "{http://www.opengis.net/kml/2.2}"
+# Which programme this run is converting, and the pattern that finds its
+# reference numbers in the KMZ. Both are set by main() from --program: Diana
+# started as a Belgian app with ONFF baked in, and a second country must be a
+# flag on a build rather than an edit to this file.
+PROGRAM = "ONFF"
 REF_RE = re.compile(r"ONFF[- ]?(\d{4})")
 # Every WWFF reference worldwide, e.g. ONFF-0104, GFF-0231, VKFF-1234.
 FF_RE  = re.compile(r"\b[A-Z0-9]{1,3}FF-\d{3,5}\b")
@@ -163,14 +168,14 @@ def _extended_data(placemark) -> dict[str, str]:
 
 
 def _ref_from_ancestors(placemark) -> tuple[str | None, str | None]:
-    """Walk up the tree to find the nearest ONFF-nnnn name. Returns (ref, raw name)."""
+    """Walk up the tree to find the nearest <PROG>-nnnn name. Returns (ref, raw name)."""
     node = placemark
     while node is not None:
         name = _name(node)
         if name:
             match = REF_RE.search(name)
             if match:
-                return "ONFF-" + match.group(1), re.sub(r"\.kml$", "", name).strip()
+                return PROGRAM + "-" + match.group(1), re.sub(r"\.kml$", "", name).strip()
         node = node.getparent()
     return None, None
 
@@ -965,8 +970,12 @@ def main() -> int:
                              "references exist; the ones without a polygon in the KMZ become "
                              f"Point features. Default: {WWFF_DIRECTORY}")
     parser.add_argument("--program", default="ONFF",
-                        help="comma-separated reference prefixes to keep from the directory "
-                             "(default ONFF; e.g. 'ONFF,PAFF,DLFF' for a wider map)")
+                        help="the WWFF programme this KMZ belongs to (default ONFF). It "
+                             "decides which references are read from the directory, how "
+                             "they are recognised in the KMZ, and what the output files "
+                             "are called: data/zones/<program>.geojson and friends. One "
+                             "country per run — that is what keeps a bad file for one "
+                             "country from touching another country's data.")
     parser.add_argument("--no-refs", action="store_true",
                         help="skip the directory entirely (offline builds)")
     parser.add_argument("--strict", action="store_true",
@@ -974,6 +983,17 @@ def main() -> int:
                              "incomplete, instead of carrying on with less data. "
                              "For unattended runs that are allowed to commit by themselves.")
     args = parser.parse_args()
+
+    # One country per run. Everything downstream — which references are read
+    # from the directory, how they are recognised in the KMZ, what the files are
+    # called — hangs off this.
+    global PROGRAM, REF_RE
+    PROGRAM = args.program.strip().upper()
+    if not re.fullmatch(r"[A-Z0-9]{1,3}FF", PROGRAM):
+        print(f"--program {PROGRAM!r} does not look like a WWFF programme code "
+              f"(ONFF, PAFF, DLFF, …)", file=sys.stderr)
+        return 2
+    REF_RE = re.compile(PROGRAM + r"[- ]?(\d{4})")
 
     if not args.kmz.exists():
         raise SystemExit(f"KMZ not found: {args.kmz}")
@@ -1004,13 +1024,16 @@ def main() -> int:
 
     print("→ WWFF directory", file=sys.stderr)
     have = {r["ref"] for r in index_doc["refs"]}
-    programs = args.program.split(",")
+    programs = [PROGRAM]
     pt_features, pt_entries, activity, pt_warnings, pt_stats, programs_map, world_features = point_refs(
         None if args.no_refs else args.refs_csv, programs, have, overrides, args.decimals)
     stats["warnings"].extend(pt_warnings)
 
     args.out.mkdir(parents=True, exist_ok=True)
-    index_path = args.out / "onff-index.json"
+    zones_dir = args.out / "zones"
+    zones_dir.mkdir(parents=True, exist_ok=True)
+    slug = PROGRAM.lower()
+    index_path = zones_dir / f"{slug}-index.json"
 
     # The directory is the most fragile of the three sources: one 503 and we have
     # no points at all left. That is no reason to throw the previous build away.
@@ -1075,7 +1098,7 @@ def main() -> int:
     report = diff_report(index_doc, index_path, stats, args.kmz.name)
     args.report.write_text(report + "\n", encoding="utf-8")
 
-    geojson_path = args.out / "onff.geojson"
+    geojson_path = zones_dir / f"{slug}.geojson"
     geojson_path.write_text(json.dumps(geojson, separators=(",", ":")), encoding="utf-8")
     if args.gzip:
         # Only for a local size check: in production the hosting compresses itself.
@@ -1087,24 +1110,24 @@ def main() -> int:
     # — but NOT if the directory was unreachable: then "empty" is not an outcome
     # but an outage, and we would overwrite a good file with an empty one.
     if not directory_failed:
-        (args.out / "onff-points.geojson").write_text(
+        (zones_dir / f"{slug}-points.geojson").write_text(
             json.dumps({"type": "FeatureCollection",
                         "generated": index_doc["generated"],
                         "features": pt_features}, separators=(",", ":"), ensure_ascii=False),
             encoding="utf-8")
 
     # Activity per reference from the WWFF directory: number of QSOs and the date
-    # of the last activation. Small file, and it lets the heatmap work without the
-    # Google sheet — by far the most fragile of the three sources.
+    # of the last activation. Small file, and the only source the app has for
+    # those figures — the Nearby screen and the area panel both read it.
     if activity and not directory_failed:
-        (args.out / "onff-activity.json").write_text(
+        (zones_dir / f"{slug}-activity.json").write_text(
             json.dumps({"generated": index_doc["generated"],
                         "source": "wwff_directory.csv",
                         "refs": activity}, separators=(",", ":")), encoding="utf-8")
 
     # Worldwide programme → country list, for the spots filter in the app
-    # (Settings: ONFF only / one specific country / worldwide). Independent of
-    # --program: that only limits which references the map itself draws.
+    # (Settings: one country / worldwide). Independent of --program: that only
+    # decides which references this run turns into boundaries.
     if programs_map and not directory_failed:
         (args.out / "wwff-programs.json").write_text(
             json.dumps({"generated": index_doc["generated"],
@@ -1113,10 +1136,62 @@ def main() -> int:
                                                          key=lambda kv: kv[1])]},
                        separators=(",", ":"), ensure_ascii=False), encoding="utf-8")
 
+    # ---------------------------------------------------------- the manifest
+    # data/countries.json is what the app reads to know which countries it has
+    # boundaries for. It is MERGED, never rewritten: a build for one country
+    # updates its own entry and leaves every other country's alone. That is the
+    # whole point of building per country — a bad file for Germany must not be
+    # able to take Belgium off the map.
+    manifest_path = args.out / "countries.json"
+    entries = {}
+    if manifest_path.exists():
+        try:
+            old = json.loads(manifest_path.read_text(encoding="utf-8"))
+            for entry in old.get("countries") or []:
+                if entry.get("program"):
+                    entries[entry["program"]] = entry
+        except (ValueError, OSError) as exc:
+            print(f"  ! could not read the existing {manifest_path.name} ({exc}) — "
+                  f"it will be written fresh, with only {PROGRAM} in it", file=sys.stderr)
+
+    files = {"zones": f"zones/{slug}.geojson"}
+    if (zones_dir / f"{slug}-points.geojson").exists():
+        files["points"] = f"zones/{slug}-points.geojson"
+    if (zones_dir / f"{slug}-activity.json").exists():
+        files["activity"] = f"zones/{slug}-activity.json"
+
+    entries[PROGRAM] = {
+        "program": PROGRAM,
+        # The directory knows the country name; without it the app falls back to
+        # showing the programme code, which is no disaster.
+        "country": programs_map.get(PROGRAM) or entries.get(PROGRAM, {}).get("country") or PROGRAM,
+        "refs": stats["zones"],
+        "points": len(pt_features),
+        "release": stats["release"],
+        "source_file": args.kmz.name,
+        "generated": index_doc["generated"],
+        "bytes": geojson_path.stat().st_size,
+        "files": files,
+    }
+    manifest_path.write_text(json.dumps(
+        {"generated": index_doc["generated"],
+         "countries": [entries[k] for k in sorted(entries)]},
+        indent=2, ensure_ascii=False), encoding="utf-8")
+    print(f"→ {manifest_path.name}: {', '.join(sorted(entries))}", file=sys.stderr)
+
     # The "other WWFF areas" layer: every active reference outside --program, as a
-    # bare point. Only written if the directory could genuinely be read (otherwise
+    # bare point. A reference that has a boundary must not also be a point, so
+    # the programme being built is left out here — and the app leaves out every
+    # country it has loaded, which covers the case of a world file built before
+    # that country had boundaries at all. Only written if the directory could genuinely be read (otherwise
     # this would overwrite an empty or wildly outdated file with something that
     # looks emptier still); otherwise the previous version simply stays put.
+    # Every country in the manifest, not just the one built now: after a build
+    # for the Netherlands the Belgian references would otherwise come back as
+    # points, because that run only knew to leave out its own.
+    world_features = [f for f in world_features
+                      if str(f.get("properties", {}).get("ref", "")).split("-")[0] not in entries]
+
     if world_features and not directory_failed:
         (args.out / "wwff-world.geojson").write_text(
             json.dumps({"type": "FeatureCollection",

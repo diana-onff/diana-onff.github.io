@@ -60,7 +60,7 @@ python3 -m http.server 8000        # from the repo root, not from web/
 # open http://localhost:8000/web/
 ```
 
-Starting from inside `web/` does not work: the app fetches `../data/onff.geojson`,
+Starting from inside `web/` does not work: the app fetches `../data/countries.json`,
 and that falls outside the server root.
 
 The bottom bar covers Map, Spots, self-spotting, announcing an activation,
@@ -169,10 +169,11 @@ Takes about half a minute. Options:
 
 | File | Size | What |
 |---|---|---|
-| `data/onff.geojson` | 3.7 MB (1.0 MB gzipped) | one MultiPolygon per reference, with name, province, area and whatever attributes are known |
-| `data/onff-points.geojson` | small | references that *are* in the WWFF directory but have no boundary in the KMZ, as a point. The app shows them as a dotted ring and deliberately does not run an "am I inside" test on them |
-| `data/onff-activity.json` | 39 kB | per reference the number of QSOs and the date of the last activation, from the WWFF directory. This is what the Nearby screen and the zone panel show |
-| `data/onff-index.json` | 210 kB | the same list without geometry, plus the points. It is *not* loaded by the app — that builds its own index from the two geojson files. Meant for reports and tooling alongside |
+| `data/countries.json` | small | which countries Diana has boundaries for, and which files belong to each. This is what the app reads first; everything below follows from it |
+| `data/zones/onff.geojson` | 3.7 MB (1.0 MB gzipped) | one MultiPolygon per reference, with name, province, area and whatever attributes are known. One such file per country |
+| `data/zones/onff-points.geojson` | small | references that *are* in the WWFF directory but have no boundary in the KMZ, as a point. The app shows them as a dotted ring and deliberately does not run an "am I inside" test on them |
+| `data/zones/onff-activity.json` | 39 kB | per reference the number of QSOs and the date of the last activation, from the WWFF directory. This is what the Nearby screen and the zone panel show |
+| `data/zones/onff-index.json` | 210 kB | the same list without geometry, plus the points. It is *not* loaded by the app — that builds its own index from the two geojson files. Meant for reports and tooling alongside |
 | `data/meta.json` | small | provenance: which source file, which release, which settings, and how many references without a boundary have been placed |
 
 That the whole of Belgium fits in one megabyte is the reason Diana needs no tile

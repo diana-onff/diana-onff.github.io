@@ -33,12 +33,24 @@ const SHELL_FILES = [
   './js/offline.js', './js/geo.js',
   './icon-192.png', './icon-512.png', './apple-touch-icon.png', './start.jpg', './logo.png',
   './vendor/maplibre-gl.js', './vendor/maplibre-gl.css',
-  './data/onff.geojson', './data/onff-index.json', './data/meta.json',
-  './data/onff-points.geojson', './data/onff-activity.json', './data/wwff-programs.json',
-  './data/wwff-world.geojson',
-  '../data/onff.geojson', '../data/onff-index.json', '../data/meta.json',
-  '../data/onff-points.geojson', '../data/onff-activity.json', '../data/wwff-programs.json',
-  '../data/wwff-world.geojson',
+  // The files that are the same whatever country you carry. The per-country
+  // files are NOT listed here on purpose: which countries you have is a choice,
+  // and a shell that precached every one of them would drag Sweden down the
+  // line to fetch two Belgian reserves. They are cached the moment they are
+  // first fetched — every data response goes through versEerst() below, which
+  // keeps a copy — so a country you have opened once is a country you have
+  // offline.
+  './data/countries.json', './data/meta.json',
+  './data/wwff-programs.json', './data/wwff-world.geojson',
+  '../data/countries.json', '../data/meta.json',
+  '../data/wwff-programs.json', '../data/wwff-world.geojson',
+  // Belgium under the names it had before the manifest existed. A data set
+  // older than this release still uses them; cache.add() skips whatever is not
+  // there, so listing both layouts costs nothing.
+  './data/onff.geojson', './data/onff-index.json',
+  './data/onff-points.geojson', './data/onff-activity.json',
+  '../data/onff.geojson', '../data/onff-index.json',
+  '../data/onff-points.geojson', '../data/onff-activity.json',
 ];
 
 self.addEventListener('install', e => {

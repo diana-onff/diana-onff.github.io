@@ -26,8 +26,8 @@ handful of third-party endpoints it calls directly from the visitor's browser.
                                       │
         ┌─────────────────┬──────────┼──────────────┬───────────────────┐
         ▼                 ▼          ▼               ▼                   ▼
- data/onff.geojson  tiles.openfreemap  spots.wwff.co   api.github.com
- data/onff-index    .org (map tiles)   (spots, agenda,  (Admin panel
+ data/countries     tiles.openfreemap  spots.wwff.co   api.github.com
+ data/zones/*       .org (map tiles)   (spots, agenda,  (Admin panel
  data/meta.json     from this repo's   self-spot POST,   only — see
  (same repo,        published gh-pages  ref validation)   ADMIN.md)
   no API needed)
@@ -43,16 +43,17 @@ it does not introduce a new data source.
 
 | File | Size (approx.) | Read by | Contents |
 |---|---|---|---|
-| `data/onff.geojson` | 3.7 MB (≈1 MB gzipped) | the map, on load | one `MultiPolygon` per ONFF reference, with name, province, area, and whatever attributes the source KMZ provided |
-| `data/onff-points.geojson` | small | the map, on load (optional — a missing file is not an error) | one `Point` per reference that exists on the ONFF list but has **no boundary** in the KMZ |
-| `data/onff-activity.json` | 39 kB | the zone detail panel (on load) and the Nearby screen | QSO count and last-activation date per reference, taken from the WWFF directory. Since v1.8.0 this is the **only** source of activation figures — see §2.2 |
+| `data/countries.json` | small | the map, first of all | one entry per programme that has boundaries: its country name, counts, release, and which files belong to it. The app reads this to know what it can load; a data set from before it existed has none, and the app then falls back to the Belgian filenames it always used |
+| `data/zones/onff.geojson` | 3.7 MB (≈1 MB gzipped) | the map, on load | one `MultiPolygon` per ONFF reference, with name, province, area, and whatever attributes the source KMZ provided |
+| `data/zones/onff-points.geojson` | small | the map, on load (optional — a missing file is not an error) | one `Point` per reference that exists on the ONFF list but has **no boundary** in the KMZ |
+| `data/zones/onff-activity.json` | 39 kB | the zone detail panel (on load) and the Nearby screen | QSO count and last-activation date per reference, taken from the WWFF directory. Since v1.8.0 this is the **only** source of activation figures — see §2.2 |
 | `data/wwff-programs.json` | 7.5 kB | the Spots screen and Settings, to fill the "one specific country" list | every WWFF programme in the directory (worldwide) mapped to its country — has nothing to do with which zones the map draws |
 | `data/wwff-world.geojson` | 9.4 MB (≈1.4 MB gzipped) | the map, on load (optional — a missing file just leaves the layer empty) | one `Point` per **active, non-ONFF** WWFF reference worldwide (~64,700 of them), with only `ref` and `name` — never a boundary, for the same reason `onff-points.geojson` never invents one |
-| `data/onff-index.json` | 210 kB | **not loaded by the app** — it exists for tooling, reports and anything built alongside Diana | the zone list **without geometry**: reference, name, province, area, centroid, bounding box, plus a `points` array covering the boundary-less references (including those with no known coordinate, which therefore appear in no other file) |
+| `data/zones/onff-index.json` | 210 kB | **not loaded by the app** — it exists for tooling, reports and anything built alongside Diana | the zone list **without geometry**: reference, name, province, area, centroid, bounding box, plus a `points` array covering the boundary-less references (including those with no known coordinate, which therefore appear in no other file) |
 | `data/meta.json` | small | not shown to the user; provenance only | which source KMZ, which release date, which build settings, and how many boundary-less references were placed or left unplaced |
 
-The app builds its own in-memory search index from `onff.geojson` +
-`onff-points.geojson` at load time, so `onff-index.json` is a build artefact
+The app builds its own in-memory search index from `zones/onff.geojson` +
+`zones/onff-points.geojson` at load time, so `onff-index.json` is a build artefact
 rather than a runtime dependency — useful to know before optimising the wrong
 file.
 
@@ -68,7 +69,7 @@ small enough to ship as a static file and hold in memory.
 
 ### 2.1 The ONFF KMZ, one layer further back
 
-`data/onff.geojson` is generated (see [DEVELOPER.md §4](DEVELOPER.md#4-generating-datajson-manually))
+`data/zones/onff.geojson` is generated (see [DEVELOPER.md §4](DEVELOPER.md#4-generating-datajson-manually))
 from a KMZ released periodically by Belgian Flora & Fauna (ONFF, part of
 Belgium Outdoor Shack) through a members-only groups.io. A few things worth
 knowing when reasoning about gaps in the data:
@@ -199,6 +200,48 @@ appear are two different questions, even though they draw on the same
 underlying data. An embed (`?embed=1`) keeps this layer off unless the page
 explicitly opts in with `?world=1`, so an already-published `<iframe>` never
 changes appearance just because Diana's own default changed.
+
+### 2.1b One country per file, and a manifest over them
+
+Diana began as a Belgian app: one KMZ, one pair of data files, the letters ONFF
+written into the build script in a dozen places. Other WWFF programmes publish
+boundaries too, and an activator standing in a Dutch reserve needs the same
+answer a Belgian one gets. So the data is split per country:
+
+```
+data/countries.json          what exists, and where
+data/zones/onff.geojson      one country's boundaries
+data/zones/onff-points.geojson
+data/zones/onff-activity.json
+data/zones/onff-index.json
+```
+
+Three rules hold this together, and all three exist to stop one country from
+damaging another:
+
+**One conversion, one country.** `kmz2geojson.py --program PAFF` reads only
+PAFF references, recognises them in the KMZ by that code, and writes only
+`zones/paff.*`. In the private source repo each country has its own folder
+(`source/ONFF/`, `source/PAFF/`), and the workflow converts each folder's
+newest KMZ in turn. A file that will not parse fails its own conversion and
+leaves every other country's files exactly as they were.
+
+**The manifest is merged, never rewritten.** A build for the Netherlands reads
+`countries.json`, replaces its own entry, and writes the whole list back. This
+is the one shared file, so it is also the one place where a careless rewrite
+could make Belgium vanish — hence a test that does nothing but build two
+countries and check that the first survives the second.
+
+**A boundary beats a point.** `wwff-world.geojson` carries every WWFF reference
+that has no boundary anywhere, as a bare point. Every programme in the manifest
+is left out of it, or the same reserve would appear twice: once as an outline
+and once as a dot in the middle of it. The app checks this a second time at
+draw time, because a world file built before a country had boundaries would
+otherwise still list them.
+
+What the app does with all this: it reads the manifest, and loads the countries
+you asked for — your own by default, worked out from your callsign. Loading
+everything is not an option; one country is megabytes.
 
 ### 2.2 The ONFF activation-history sheet, and why it is no longer used
 

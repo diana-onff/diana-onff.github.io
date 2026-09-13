@@ -111,7 +111,10 @@ with sync_playwright() as p:
     ok(country_reset == "", "the country dropdown is empty again after 'Worldwide'")
 
     print("\n[8b] without a choice, the country comes from your callsign")
+    # "Without a choice" has to mean it: a country picked earlier is remembered
+    # on purpose and outranks the callsign, so clear that first.
     pg.evaluate("""() => {
+        localStorage.removeItem('diana.homeprog');
         setSpotFilter('all');
         cfg.call = 'PA0TEST'; cfg.callp = ''; syncSpotFilterUI();
     }""")
@@ -120,9 +123,31 @@ with sync_playwright() as p:
        "and the button says so")
     for call, prog in [("DL1ABC", "DLFF"), ("ON3VZ", "ONFF"), ("G0XYZ", "GXFF"),
                        ("OZ1AA", "OZFF"), ("XYZ9Q", "ONFF")]:
-        got = pg.evaluate(f"() => {{ cfg.call = '{call}'; return homeProgram(); }}")
+        got = pg.evaluate(f"() => {{ localStorage.removeItem('diana.homeprog');"
+                          f" cfg.call = '{call}'; return homeProgram(); }}")
         ok(got == prog, f"{call} → {got}" + ("" if got == prog else f" (expected {prog})"))
     pg.evaluate("() => { cfg.call = 'ON3VZ'; syncSpotFilterUI(); }")
+
+    print("\n[8b2] Worldwide does not forget which country is yours")
+    # The first version fell back to the callsign's country the moment you
+    # tapped Worldwide, so a Belgian who had picked the Netherlands found
+    # Belgium waiting for him on the way back.
+    pg.evaluate("() => { cfg.call = 'ON3VZ'; setSpotFilter('PAFF'); }")
+    pg.wait_for_timeout(150)
+    ok(pg.evaluate("() => document.querySelector('#spotFilter [data-home]').textContent") == "PAFF",
+       "picked the Netherlands")
+    pg.evaluate("() => document.querySelector('#spotFilter [data-filter=\"all\"]').click()")
+    pg.wait_for_timeout(150)
+    ok(pg.evaluate("() => document.querySelector('#spotFilter [data-home]').textContent") == "PAFF",
+       "the button still offers the Netherlands while showing the world")
+    pg.evaluate("() => document.querySelector('#spotFilter [data-home]').click()")
+    pg.wait_for_timeout(150)
+    ok(pg.evaluate("() => spotFilter") == "PAFF", "and one tap goes back there, not to Belgium")
+    pg.reload(wait_until="load"); pg.wait_for_timeout(2000)
+    pg.evaluate("() => { setSpotFilter('all'); showSpots=true; startSpots(); }")
+    pg.wait_for_timeout(400)
+    ok(pg.evaluate("() => document.querySelector('#spotFilter [data-home]').textContent") == "PAFF",
+       "and it is still the Netherlands after a restart")
 
     print("\n[8c] every programme in the prefix table really exists")
     # A guess that points at a programme WWFF does not have would filter the

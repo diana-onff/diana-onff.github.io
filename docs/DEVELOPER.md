@@ -268,8 +268,11 @@ code, via a repository variable `ONFF_REFS_CSV`.
    (`"point": [lon, lat]`, always wins), then the directory's coordinates, then
    its IARU locator. References with none of those are reported, not invented.
    The QSO count and last-activation date of every reference go to
-   `data/onff-activity.json`, which is what the Nearby screen and the zone
-   panel show. Separately — over the **whole** directory, ignoring
+   `data/zones/<program>-activity.json`, which is what the Nearby screen and
+   the zone panel show. Every output of a run is per country and carries the
+   programme in its name; `--program` decides which, one country per run. The
+   run then merges itself into `data/countries.json` rather than rewriting it —
+   see [ARCHITECTURE.md §2.1b](ARCHITECTURE.md#21b-one-country-per-file-and-a-manifest-over-them). Separately — over the **whole** directory, ignoring
    `--program` — every programme code is tallied against its most common
    `country` value and written to `data/wwff-programs.json`; and every active
    reference that is *not* ONFF is written to `data/wwff-world.geojson` as a

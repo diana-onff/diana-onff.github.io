@@ -1121,3 +1121,60 @@ voorbeeldbestand is, met het inlaadscherm, meerdere landen tegelijk, bewuste
 offline-keuze per land, en punten verbergen waar een vlak bestaat; (3)
 adminpagina met verplichte landkeuze bij uploaden en PR naar
 `incoming/<PROG>/`.
+
+---
+
+**Uitgevoerd op 2026-09-13 — v1.10.0. Ronde 1 van de landenuitbreiding: de
+pijplijn generiek, ONFF nog altijd het enige land.** Bewust niets zichtbaars
+veranderd, zodat een afwijkend formaat bij het eerste buitenlandse bestand aan
+het licht komt op een moment dat er nog niets stuk kan.
+
+- **Buildscript per land.** `--program` bestond al maar betekende "welke
+  voorvoegsels uit de directory"; nu bepaalt het ook hoe referenties in het
+  KMZ herkend worden (`REF_RE` stond hardgecodeerd op ONFF) en hoe de uitvoer
+  heet. Eén land per run, uitvoer naar `data/zones/<prog>.geojson` en
+  broertjes. Een code die geen WWFF-programma is, stopt de build.
+- **`data/countries.json`**, samengevoegd en nooit herschreven: een build voor
+  Nederland leest het manifest, vervangt zijn eigen regel en zet de rest terug.
+  Dat is het enige gedeelde bestand en dus de enige plek waar een slordige
+  herschrijving België kon laten verdwijnen — vandaar een test die niets
+  anders doet dan twee landen bouwen en kijken of de eerste de tweede
+  overleeft.
+- **Vlak verslaat punt, nu ook in de data.** Het wereldpuntenbestand liet
+  alleen het land weg dat op dat moment gebouwd werd, dus na een
+  PAFF-build stonden de Belgische referenties er weer als stip in. Nu wordt
+  alles uit het manifest weggelaten, en de app filtert er bij het tekenen nog
+  eens overheen voor het geval het wereldbestand ouder is dan een land.
+- **De app leest het manifest** en laadt meerdere landen tegelijk in dezelfde
+  `zones`/`index`/`activity`. Standaard het land van je roepnaam, want alles
+  laden is geen optie — één land is megabytes. Een land dat niet laadt sleurt
+  de andere niet mee. Zonder manifest valt hij terug op de oude Belgische
+  bestandsnamen, zodat app en data in willekeurige volgorde bijgewerkt kunnen
+  worden zonder lege kaart tussenin.
+- **Workflow** loopt over `bron/source/<PROG>/`-mappen, elk zijn nieuwste KMZ.
+  Een los KMZ in de map wordt nog altijd als ONFF gelezen, zodat de
+  bronrepo niet op dezelfde dag herschikt hoeft te worden. De uitvoercontrole
+  leest het manifest in plaats van één vaste bestandsnaam, en klaagt
+  uitdrukkelijk als een land dat erin staat zijn bestand kwijt is.
+- **Service worker** bewaart het manifest en de globale bestanden vooraf; de
+  landbestanden worden bij het eerste ophalen gecachet. Ze allemaal vooraf
+  binnenhalen zou Zweden meesleuren voor twee Belgische reservaten — de
+  bewuste offline-keuze per land is ronde 2.
+
+Ook meegenomen, gemeld tijdens de rit: de spotsfilter sprong terug naar België
+zodra je Wereldwijd aantikte. "Welk land staat op de knop" was gelijkgesteld
+aan "welk filter staat aan", en op Wereldwijd is er geen filter, dus viel hij
+terug op de roepnaam. Het laatst gekozen land wordt nu apart onthouden.
+
+Nieuwe tests: `test_countries.py` (25 checks, bouwt twee miniatuurlanden uit
+een zelfgemaakt KMZ en een nagemaakte directory) en `test_multicountry.py`
+(16 checks, de app met een verzonnen tweede land erbij). Volledige suite groen:
+17 bestanden, 357 checks.
+
+**Na het uploaden:** de eerstvolgende nachtelijke build schrijft
+`data/countries.json` en `data/zones/*`. Tot dan draait de app op de
+terugvalweg. De oude `data/onff*.json`/`geojson` blijven staan tot je ze
+weggooit — dat mag zodra die eerste build geslaagd is.
+
+Ronde 2 (tweede land, inlaadscherm, offline-keuze) wacht op een
+voorbeeldbestand; ronde 3 is de adminpagina met verplichte landkeuze.
