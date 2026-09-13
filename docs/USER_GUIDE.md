@@ -124,9 +124,15 @@ the layer off from the layers button, or narrow it to one country from
 A list view of the same live spots and agenda, refreshed every 30 seconds.
 Tap a spot for bearing, distance, a compass heading, and both locators.
 Diana shows **every WWFF spot worldwide** by default — the segmented control
-above the list (also on the map's layers panel) narrows that to ONFF only or
-to one specific country, and whichever you pick there is remembered as the
-new default for next time (see **Spots filter** under Settings below).
+above the list (also on the map's layers panel) narrows that to one country,
+and whichever you pick is remembered as the new default for next time (see
+**Spots filter** under Settings below).
+
+The left-hand button of that control is **your** country. Diana works it out
+from your callsign — PA0… offers PAFF, DL1… offers DLFF, ON3… offers ONFF —
+so you are not tapping past someone else's country every time. Pick a
+different one under Settings and the button follows along. If the callsign is
+one Diana does not recognise it falls back to ONFF, and one tap fixes it.
 
 ### Meld / self-spot (✚)
 Spot yourself. The reference is pre-filled if you came from a zone's detail

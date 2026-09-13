@@ -1089,3 +1089,35 @@ lijst). Volledige suite groen. `USER_GUIDE.md` en `DEVELOPER.md` bijgewerkt.
 
 **Nog open:** de 17 `adm.*`-sleutels die in fr/de/da/it/es naar het Nederlands
 terugvallen (bestond al voor deze ronde).
+
+---
+
+**Uitgevoerd op 2026-09-13 — v1.9.1.** Eerste steen van de landenuitbreiding,
+het stuk dat geen voorbeeldbestand nodig heeft.
+
+De spotsfilter had twee waarden die hetzelfde deden: `'onff'` én de
+programmacode `'ONFF'`. Dat eerste was een speciaal geval voor het ene land
+waarmee Diana toevallig begon. Het is weg; de eerste knop draagt nu een echte
+programmacode, standaard die van je roepnaam (PA0… → PAFF, DL1… → DLFF, ON3…
+→ ONFF), en volgt mee zodra je in Instellingen een ander land kiest. Wat
+onder de oude waarde bewaard stond wordt bij het lezen omgezet.
+
+Nieuw `PREFIX_PROGRAM` in `settings.js`, naast het bestaande `PREFIX_HOME`.
+Bewust geen gok waar het twijfelachtig is: WWFF heeft in zijn eigen lijst
+alleen GXFF (Engeland) en geen aparte Schotse of Welshe ploeg, dus G/M/2E
+gaan daarheen. Een test controleert elke code in die tabel tegen
+`wwff-programs.json` — een verzonnen programmacode zou de lijst stilletjes
+leegfilteren.
+
+Gedragsverandering die een bestaande test omkeerde: vroeger was géén knop
+actief zodra je in Instellingen een land koos, want de knop kón alleen ONFF
+tonen. Nu toont hij dat land en staat hij aan.
+
+Nog te doen voor de landenuitbreiding, in volgorde: (1) de pijplijn per land
+maken — `bron/<PROG>/` in de privé-repo, `data/zones/<prog>.geojson` plus een
+`data/countries.json` met wat beschikbaar is, per land bouwen zodat een kapot
+bestand de rest niet meesleurt; (2) tweede land erbij zodra er een
+voorbeeldbestand is, met het inlaadscherm, meerdere landen tegelijk, bewuste
+offline-keuze per land, en punten verbergen waar een vlak bestaat; (3)
+adminpagina met verplichte landkeuze bij uploaden en PR naar
+`incoming/<PROG>/`.

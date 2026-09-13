@@ -63,8 +63,8 @@ with sync_playwright() as p:
     vis = pg.evaluate("() => visibleSpots().length")
     ok(vis == 3, f"3 spots visible under 'worldwide' (got {vis})")
 
-    print("\n[4] ONFF-only shows the Belgian spot alone")
-    pg.evaluate("() => document.querySelector('#spotFilter [data-filter=\"onff\"]').click()")
+    print("\n[4] the first button is a country, and filters to it")
+    pg.evaluate("() => document.querySelector('#spotFilter [data-home]').click()")
     pg.wait_for_timeout(200)
     vis_onff = pg.evaluate("() => visibleSpots().map(s=>s.reference)")
     ok(vis_onff == ["ONFF-0001"], f"only ONFF-0001 (got {vis_onff})")
@@ -80,9 +80,16 @@ with sync_playwright() as p:
     ok(vis_nl == ["PAFF-0123"], f"only the Dutch spot (got {vis_nl})")
 
     print("\n[6] the two screens stay in sync")
-    spot_screen_on = pg.evaluate(
-        "() => [...document.getElementById('spotFilter').children].some(b=>b.classList.contains('on'))")
-    ok(not spot_screen_on, "no ONFF/Worldwide button active once a country has been chosen")
+    # This used to read "no button active once a country has been chosen",
+    # because the first button was hardwired to ONFF and could not represent
+    # anything else. It carries a real programme code now, so picking the
+    # Netherlands in Settings is something the quick bar can show — and does.
+    home = pg.evaluate("() => document.querySelector('#spotFilter [data-home]').textContent")
+    ok(home == "PAFF", f"the quick button followed the choice ({home})")
+    ok(pg.evaluate("() => document.querySelector('#spotFilter [data-home]').classList.contains('on')"),
+       "and is the active one")
+    ok(pg.evaluate("() => document.querySelector('#setSpotFilter [data-home]').textContent") == "PAFF",
+       "the same in Settings")
 
     print("\n[7] the choice survives a reload")
     # Key renamed to spotFilter2 when 'worldwide' became the factory setting: an
@@ -102,6 +109,37 @@ with sync_playwright() as p:
     pg.wait_for_timeout(200)
     country_reset = pg.evaluate("() => document.getElementById('setSpotCountry').value")
     ok(country_reset == "", "the country dropdown is empty again after 'Worldwide'")
+
+    print("\n[8b] without a choice, the country comes from your callsign")
+    pg.evaluate("""() => {
+        setSpotFilter('all');
+        cfg.call = 'PA0TEST'; cfg.callp = ''; syncSpotFilterUI();
+    }""")
+    ok(pg.evaluate("() => homeProgram()") == "PAFF", "PA0TEST → PAFF")
+    ok(pg.evaluate("() => document.querySelector('#spotFilter [data-home]').textContent") == "PAFF",
+       "and the button says so")
+    for call, prog in [("DL1ABC", "DLFF"), ("ON3VZ", "ONFF"), ("G0XYZ", "GXFF"),
+                       ("OZ1AA", "OZFF"), ("XYZ9Q", "ONFF")]:
+        got = pg.evaluate(f"() => {{ cfg.call = '{call}'; return homeProgram(); }}")
+        ok(got == prog, f"{call} → {got}" + ("" if got == prog else f" (expected {prog})"))
+    pg.evaluate("() => { cfg.call = 'ON3VZ'; syncSpotFilterUI(); }")
+
+    print("\n[8c] every programme in the prefix table really exists")
+    # A guess that points at a programme WWFF does not have would filter the
+    # list down to nothing, silently. Checked against the directory we ship.
+    missing = pg.evaluate("""() => {
+        const known = new Set(wwffPrograms.map(p => p.program));
+        return [...new Set(Object.values(PREFIX_PROGRAM))].filter(p => !known.has(p));
+    }""")
+    ok(not missing, f"no invented programme codes (missing: {missing})")
+
+    print("\n[8d] a filter saved under the old name still works")
+    pg.evaluate("() => localStorage.setItem('diana.spotFilter2', 'onff')")
+    pg.reload(wait_until="load"); pg.wait_for_timeout(2000)
+    ok(pg.evaluate("() => spotFilter") == "ONFF",
+       "the old 'onff' value is read as the programme code ONFF")
+    pg.evaluate("() => { setSpotFilter('all'); showSpots=true; startSpots(); }")
+    pg.wait_for_timeout(600)
 
     print("\n[9] the list reads newest first, and says how old each spot is")
     # This used to sort by distance the moment a GPS fix came in — and the age
