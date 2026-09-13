@@ -213,7 +213,40 @@ with sync_playwright() as p:
     pg.uncheck("#setClassic")
     pg.wait_for_timeout(150)
 
-    print("\n[11] no JS errors along the way")
+    print("\n[11] the quick words come from Settings, not from the HTML")
+    # Three fixed chips ("5W QRP", "EFHW", "QSY soon") are fine until your
+    # station is 10 W on a vertical. Five fields now, yours to fill in.
+    pg.evaluate("() => document.querySelector('#nav button[data-view=\"viewSelf\"]').click()")
+    pg.wait_for_timeout(300)
+    chips = pg.evaluate("() => [...document.querySelectorAll('#spChips .chip[data-add]')].map(c=>c.dataset.add)")
+    ok(chips == ["5W","QRP","EFHW","QSY soon","Vertical"], f"five defaults to start with (got {chips})")
+
+    pg.evaluate("""() => { cfg.chips = ['10W','Doublet','','','QRT 16u']; saveSettings(); renderChips(); }""")
+    chips = pg.evaluate("() => [...document.querySelectorAll('#spChips .chip[data-add]')].map(c=>c.dataset.add)")
+    ok(chips == ["10W","Doublet","QRT 16u"], f"an empty field gives no button (got {chips})")
+
+    pg.evaluate("() => { document.getElementById('spRemarks').value=''; }")
+    pg.click("#spChips .chip[data-add='10W']")
+    pg.click("#spChips .chip[data-add='QRT 16u']")
+    ok(pg.evaluate("() => document.getElementById('spRemarks').value") == "10W, QRT 16u",
+       "tapping two of them builds the remark")
+
+    print("\n[12] an emptied field stays empty after a reload")
+    pg.reload(wait_until="load"); pg.wait_for_timeout(2000)
+    ok(pg.evaluate("() => cfg.chips") == ["10W","Doublet","","","QRT 16u"],
+       "the cleared fields did not fill themselves back in with the defaults")
+
+    print("\n[13] the way to those settings sits on the spot screen itself")
+    pg.evaluate("() => document.querySelector('#nav button[data-view=\"viewSelf\"]').click()")
+    pg.wait_for_timeout(300)
+    ok(pg.evaluate("() => !!document.getElementById('spChipsEdit')"), "there is a ⚙ at the end of the row")
+    pg.click("#spChipsEdit"); pg.wait_for_timeout(400)
+    ok(pg.evaluate("() => document.getElementById('viewSet').classList.contains('on')"),
+       "and it lands you in Settings")
+    ok(pg.evaluate("() => document.getElementById('setChip1').value") == "10W",
+       "with the fields filled in as they are")
+
+    print("\n[14] no JS errors along the way")
     ok(not errs, f"no page errors: {errs[:2] if errs else 'ok'}")
 
     br.close()

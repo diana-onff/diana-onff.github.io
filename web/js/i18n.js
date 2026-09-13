@@ -47,7 +47,7 @@ function rerender(){
     renderRules();
     renderSession();
     selfPrefill();
-    if(heatLoaded) paintHeat();
+    if($('viewNearby').classList.contains('on')) renderNearby();
     if($('status').classList.contains('show')) $('status').classList.remove('show');
   }catch(err){ console.warn('hertekenen:', err); }
 }

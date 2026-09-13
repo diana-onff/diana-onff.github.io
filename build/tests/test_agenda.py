@@ -129,7 +129,7 @@ with sync_playwright() as p:
     ok(not pg.is_disabled("#agSend"), "Send opens after an accepted check")
 
     print("\n[4] any edit closes it again")
-    pg.fill("#agBand", "20m")
+    pg.select_option("#agBand", "20m")
     pg.wait_for_timeout(200)
     ok(pg.is_disabled("#agSend"), "Send is closed again once the form changes")
 
@@ -219,7 +219,40 @@ with sync_playwright() as p:
     ok(pg.evaluate("() => document.getElementById('agStart').min") != "",
        "and it's prefilled/bounded (agendaOpen ran) exactly as the other two doors do")
 
-    print("\n[15] no JS errors along the way")
+    print("\n[15] the band field is a list, and Settings decides how long it is")
+    # It used to be a free-text box with "20m" as a placeholder, which meant
+    # every operator invented their own spelling. The long list runs to 23cm
+    # because activations on 2m and 70cm happen; whoever never leaves HF can
+    # say so in Settings and get six lines instead of fifteen.
+    pg.evaluate("() => document.querySelector('#nav button[data-view=\"viewAgendaNew\"]').click()")
+    pg.wait_for_timeout(300)
+    ok(pg.evaluate("() => document.getElementById('agBand').tagName") == "SELECT",
+       "the band field is a dropdown, not a text box")
+    full = pg.evaluate("() => [...document.getElementById('agBand').options].map(o=>o.value)")
+    ok(full[0] == "" and "160m" in full and "23cm" in full and "2m" in full,
+       f"the full list runs from 160m to 23cm ({len(full)-1} bands)")
+
+    pg.evaluate("() => { cfg.bands='short'; fillBandOptions(); }")
+    short = pg.evaluate("() => [...document.getElementById('agBand').options].map(o=>o.value).filter(v=>v)")
+    ok(short == ["80m","40m","30m","20m","15m","10m"], f"the short list is the six HF bands (got {short})")
+
+    print("\n[16] switching to the short list does not throw away what you picked")
+    pg.evaluate("() => { cfg.bands='full'; fillBandOptions(); }")
+    pg.select_option("#agBand", "2m")
+    pg.evaluate("() => { cfg.bands='short'; fillBandOptions(); }")
+    ok(pg.evaluate("() => document.getElementById('agBand').value") == "2m",
+       "2m survives the switch to the HF-only list")
+    pg.evaluate("() => { cfg.bands='full'; fillBandOptions(); }")
+
+    print("\n[17] the choice is remembered on this device")
+    pg.evaluate("() => { cfg.bands='short'; saveSettings(); }")
+    pg.reload(wait_until="load"); pg.wait_for_timeout(2000)
+    ok(pg.evaluate("() => cfg.bands") == "short", "still the short list after a reload")
+    ok(pg.evaluate("() => [...document.getElementById('agBand').options].length") == 7,
+       "and the dropdown was built that way from the start")
+    pg.evaluate("() => { cfg.bands='full'; saveSettings(); }")
+
+    print("\n[18] no JS errors along the way")
     ok(not errs, f"no page errors: {errs[:2] if errs else 'ok'}")
 
     br.close()

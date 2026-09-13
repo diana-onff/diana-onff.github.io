@@ -46,6 +46,11 @@ function locate(quiet){
     map.easeTo({center:[lon,lat], zoom:Math.max(map.getZoom(),12)});
     evaluate(lat,lon,accuracy);
     renderSpots();
+    // Nearby was drawn from the centre of your locator square until now, or not
+    // at all. A real fix changes every distance on it.
+    // A new position is a new list, so it starts at the first pageful again.
+    nearShown = NEAR_MAX_ROWS;
+    if($('viewNearby').classList.contains('on')) renderNearby();
     // By now the arc lines have already been drawn from the centre of your
     // locator square — that is the only starting point there is at startup. As
     // soon as the GPS answers that no longer holds, so we draw them again.

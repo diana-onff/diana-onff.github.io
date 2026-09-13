@@ -3,10 +3,45 @@
  * ================================================================== */
 const GRID_RE = /^[A-R]{2}[0-9]{2}([A-X]{2})?$/i;
 
+/* The five words under the remark field on the spot screen. These are only
+   what Diana starts with — they are yours to overwrite in Settings, and an
+   empty field simply gives no button. */
+const CHIP_DEFAULTS = ['5W', 'QRP', 'EFHW', 'QSY soon', 'Vertical'];
+
+/* The radii the Nearby screen offers. A fixed set rather than a free number:
+   four taps beat a number pad in the field, and it keeps the list from being
+   asked to draw half of Belgium. */
+const NEAR_KM = [10, 25, 50, 100];
+
+/* Stored as one JSON list rather than five separate keys, so that a field you
+   deliberately cleared stays cleared: with five keys an empty one is
+   indistinguishable from one that was never set, and the default would come
+   creeping back on the next start. */
+function readChips(){
+  try{
+    const raw = recall('chips');
+    if(raw){
+      const a = JSON.parse(raw);
+      if(Array.isArray(a)) return CHIP_DEFAULTS.map((d,i) => typeof a[i] === 'string' ? a[i] : d);
+    }
+  }catch{}
+  return CHIP_DEFAULTS.slice();
+}
+
 const cfg = {
   call:  recall('call'),
   callp: recall('callp'),
   grid:  recall('grid'),
+  // Which band list the announce screen offers: 'full' is every amateur band
+  // from 160m to 23cm, 'short' only the six that carry nearly every ONFF
+  // activation. Neither is more correct than the other — the long one is
+  // complete, the short one fits on a phone without scrolling.
+  bands: recall('bands') === 'short' ? 'short' : 'full',
+  chips: readChips(),
+  // How far around you the Nearby screen looks, in kilometres. 25 is about an
+  // hour on a bicycle and a comfortable afternoon by car — far enough to plan
+  // with, close enough that the list stays a list.
+  nearkm: NEAR_KM.includes(parseInt(recall('nearkm'), 10)) ? parseInt(recall('nearkm'), 10) : 25,
   // 'gps' is the factory setting: wherever you are standing right now. For a
   // field application that is nearly always the answer to "where should the map
   // open". If the browser says no, or takes too long, homeView() moves on to
@@ -18,6 +53,9 @@ function saveSettings(){
   remember('call',  cfg.call);
   remember('callp', cfg.callp);
   remember('grid',  cfg.grid);
+  remember('bands', cfg.bands);
+  remember('nearkm', cfg.nearkm);
+  remember('chips', JSON.stringify(cfg.chips));
   remember('lang',  langPref);      // 'auto' or a language code — not the resolved language
 }
 
@@ -25,11 +63,40 @@ function loadSettingsUI(){
   $('setCall').value  = cfg.call;
   $('setCallP').value = cfg.callp;
   $('setGrid').value  = cfg.grid;
+  cfg.chips.forEach((v,i) => { $('setChip'+(i+1)).value = v; });
+  [...$('setBands').children].forEach(b => b.classList.toggle('on', b.dataset.bands === cfg.bands));
+  [...$('setNearKm').children].forEach(b => b.classList.toggle('on', +b.dataset.km === cfg.nearkm));
   syncSpotFilterUI();
   syncWorldFilterUI();
   [...$('setLang').children].forEach(b => b.classList.toggle('on', b.dataset.lang === langPref));
   checkGrid();
 }
+
+/* Both of these live in later files (agenda.js, self-spot.js) and are only ever
+   reached from a click — by then everything has loaded. Calling them from the
+   top level of this file would not work; see docs/DEVELOPER.md. */
+$('setBands').addEventListener('click', e => {
+  const b = e.target.closest('.seg[data-bands]'); if(!b) return;
+  cfg.bands = b.dataset.bands;
+  [...$('setBands').children].forEach(c => c.classList.toggle('on', c === b));
+  saveSettings();
+  fillBandOptions();
+});
+
+$('setNearKm').addEventListener('click', e => {
+  const b = e.target.closest('.seg[data-km]'); if(!b) return;
+  cfg.nearkm = +b.dataset.km;
+  [...$('setNearKm').children].forEach(c => c.classList.toggle('on', c === b));
+  saveSettings();
+  nearShown = NEAR_MAX_ROWS;
+  renderNearby();
+});
+
+[1,2,3,4,5].forEach(i => $('setChip'+i).addEventListener('input', () => {
+  cfg.chips[i-1] = $('setChip'+i).value.trim();
+  saveSettings();
+  renderChips();
+}));
 
 $('setLang').addEventListener('click', e => {
   const b = e.target.closest('.seg[data-lang]'); if(!b) return;

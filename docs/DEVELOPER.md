@@ -71,7 +71,7 @@ character for character, apart from one line noted in `map.js`.
 | `map.js` | the MapLibre map, all layers, selection, the detail panel, search, the popovers |
 | `spots.js` | the Spotline feed, filters, the list, arcs, the spot detail |
 | `install.js` | the "put Diana on your device" flow |
-| `gestures.js` | swipe-down-to-close, and tucking the heatmap panel away |
+| `gestures.js` | swipe-down-to-close on the bottom panels |
 | `nav.js` | the bottom bar and switching between full screens |
 | `settings.js` | Settings, the locator field, and where the map opens |
 | `admin.js` | the whole admin screen: GitHub API, upload, pull request, cleanup, embed code |
@@ -79,7 +79,7 @@ character for character, apart from one line noted in `map.js`.
 | `agenda.js` | announcing an activation (Screen 3b) |
 | `session.js` | the activation session and GPS evidence (Screen 4) |
 | `rules.js` | the band plan and the rules screen (Screen 6) |
-| `heatmap.js` | the activation heatmap (Screen 7) |
+| `nearby.js` | Nearby: the closest references and their activation history (Screen 7) |
 | `offline.js` | service worker registration, the update flow, downloading an area |
 | `geo.js` | point-in-polygon, distance, `locate()`, the status bar, the locate button |
 
@@ -268,8 +268,8 @@ code, via a repository variable `ONFF_REFS_CSV`.
    (`"point": [lon, lat]`, always wins), then the directory's coordinates, then
    its IARU locator. References with none of those are reported, not invented.
    The QSO count and last-activation date of every reference go to
-   `data/onff-activity.json`, which the app's heatmap uses when the ONFF sheet
-   is unreachable. Separately — over the **whole** directory, ignoring
+   `data/onff-activity.json`, which is what the Nearby screen and the zone
+   panel show. Separately — over the **whole** directory, ignoring
    `--program` — every programme code is tallied against its most common
    `country` value and written to `data/wwff-programs.json`; and every active
    reference that is *not* ONFF is written to `data/wwff-world.geojson` as a

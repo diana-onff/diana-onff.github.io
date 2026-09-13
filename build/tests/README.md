@@ -16,7 +16,7 @@ python3 build/tests/test_new.py      # etc.
 | `test_swipe.py` | swiping down to close panels, and whether all our own layers survive six style switches |
 | `test_final.py` | that the install bar gives way to an open panel |
 | `test_splash.py` | splash screen, version number, the 16 dots, and whether the bottom bar is aligned |
-| `test_heat.py` | heatmap from the sheet and the fallback to the WWFF directory |
+| `test_nearby.py` | the Nearby screen: what it does without a position, distances from a locator and from a GPS fix, the three orderings, tapping through to the map — and above all that its QSO counts are the WWFF directory's real ones, with nothing asked of Google Sheets |
 | `test_worldpoints.py` | worldwide WWFF areas: on by default, clustering, filtering to one country, layer off/on, and that an embed leaves it off unless `?world=1` |
 | `test_spotsalways.py` | that the map opens unasked where you are standing, that spots cannot be switched off, and that only the lines leading to them are toggleable (and stay saved) |
 | `test_directory.py` | the build step itself (no browser): impossible coordinates, leaks between the layers, and whether `--strict` really overwrites nothing when the directory is unreachable or truncated |

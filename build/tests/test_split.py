@@ -96,7 +96,7 @@ with sync_playwright() as p:
 
     print("\n[7] every screen still opens, with nothing thrown")
     for view in ["viewSpots", "viewSelf", "viewAgendaNew", "viewSession",
-                 "viewSet", "viewHeat", "viewRules"]:
+                 "viewSet", "viewNearby", "viewRules"]:
         b = pg.query_selector(f'[data-view="{view}"]')
         if not b:
             continue

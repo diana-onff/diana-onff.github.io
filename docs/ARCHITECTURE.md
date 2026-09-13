@@ -26,10 +26,10 @@ handful of third-party endpoints it calls directly from the visitor's browser.
                                       │
         ┌─────────────────┬──────────┼──────────────┬───────────────────┐
         ▼                 ▼          ▼               ▼                   ▼
- data/onff.geojson  tiles.openfreemap  spots.wwff.co  docs.google.com   api.github.com
- data/onff-index    .org (map tiles)   (spots, agenda,  (gviz CSV,       (Admin panel
- data/meta.json     from this repo's   self-spot POST,  activation       only — see
- (same repo,        published gh-pages  ref validation)  history sheet)  ADMIN.md)
+ data/onff.geojson  tiles.openfreemap  spots.wwff.co   api.github.com
+ data/onff-index    .org (map tiles)   (spots, agenda,  (Admin panel
+ data/meta.json     from this repo's   self-spot POST,   only — see
+ (same repo,        published gh-pages  ref validation)   ADMIN.md)
   no API needed)
 ```
 
@@ -45,7 +45,7 @@ it does not introduce a new data source.
 |---|---|---|---|
 | `data/onff.geojson` | 3.7 MB (≈1 MB gzipped) | the map, on load | one `MultiPolygon` per ONFF reference, with name, province, area, and whatever attributes the source KMZ provided |
 | `data/onff-points.geojson` | small | the map, on load (optional — a missing file is not an error) | one `Point` per reference that exists on the ONFF list but has **no boundary** in the KMZ |
-| `data/onff-activity.json` | 39 kB | the zone detail panel (on load) and the Heatmap (as a fallback) | QSO count and last-activation date per reference, taken from the WWFF directory |
+| `data/onff-activity.json` | 39 kB | the zone detail panel (on load) and the Nearby screen | QSO count and last-activation date per reference, taken from the WWFF directory. Since v1.8.0 this is the **only** source of activation figures — see §2.2 |
 | `data/wwff-programs.json` | 7.5 kB | the Spots screen and Settings, to fill the "one specific country" list | every WWFF programme in the directory (worldwide) mapped to its country — has nothing to do with which zones the map draws |
 | `data/wwff-world.geojson` | 9.4 MB (≈1.4 MB gzipped) | the map, on load (optional — a missing file just leaves the layer empty) | one `Point` per **active, non-ONFF** WWFF reference worldwide (~64,700 of them), with only `ref` and `name` — never a boundary, for the same reason `onff-points.geojson` never invents one |
 | `data/onff-index.json` | 210 kB | **not loaded by the app** — it exists for tooling, reports and anything built alongside Diana | the zone list **without geometry**: reference, name, province, area, centroid, bounding box, plus a `points` array covering the boundary-less references (including those with no known coordinate, which therefore appear in no other file) |
@@ -200,40 +200,37 @@ underlying data. An embed (`?embed=1`) keeps this layer off unless the page
 explicitly opts in with `?world=1`, so an already-published `<iframe>` never
 changes appearance just because Diana's own default changed.
 
-### 2.2 The ONFF activation-history sheet (heatmap)
+### 2.2 The ONFF activation-history sheet, and why it is no longer used
 
-The Heatmap screen colours zones by recency or QSO count, sourced from a
-**published Google Sheet** maintained by the ONFF coordinator (sheet ID
-`1MFZzdq6xJtpvTtOHfRob6Pvxeo2_5YOQSHjVE0wAyac`), fetched as CSV through the
-`gviz` endpoint — not the `/export` endpoint:
+Until v1.8.0 the Heatmap screen coloured every zone by recency or QSO count,
+read from a **published Google Sheet** maintained by the ONFF coordinator
+(sheet ID `1MFZzdq6xJtpvTtOHfRob6Pvxeo2_5YOQSHjVE0wAyac`), fetched as CSV
+through the `gviz` endpoint. That screen and that source are both gone. The
+reason is worth writing down, because the sheet is easy to rediscover and
+re-add:
 
-```
-https://docs.google.com/spreadsheets/d/<id>/gviz/tq?tqx=out:csv&sheet=<tab>
-```
+The app pulled one tab per year and only went back seven years, and it had no
+way to tell "this reference was not activated" from "this reference was never
+entered in this sheet". It showed the second as the first. In practice that
+meant **205 references with figures and 741 painted red as never activated**,
+out of 946 — while `data/onff-activity.json`, already sitting in the same
+release, had a QSO total and a last-activation date for 926 of them. ONFF-0002
+has thousands of QSOs and a 2024 activation, and the heatmap called it never
+touched. A number that is wrong in a way the reader cannot see is worse than
+no number, so the screen was replaced by **Nearby** (`web/js/nearby.js`),
+which reads `data/onff-activity.json` only.
 
-`/export?format=csv` returns `401` for this sheet and is not used. The
-`gviz` endpoint also accepts a small query language (e.g.
-`&tq=select D, max(A), sum(C) group by D`), which lets the app ask the
-sheet to pre-aggregate rather than downloading everything and reducing it
-client-side.
+What that costs: no per-year breakdown, and no colouring of the zones on the
+map. What it buys: figures that are right, no third party in the request path,
+and a screen that works offline like the rest of the app.
 
-If the sheet cannot be reached — it is a published spreadsheet, not an API, and
-whether CORS allows a browser to read it is still unconfirmed — the Heatmap
-falls back to `data/onff-activity.json`, built from the WWFF directory at data
-build time. That fallback is coarser (a total QSO count and one last-activation
-date per reference, with no per-year breakdown) but it needs no third party at
-all and works offline. The panel says which of the two it is showing.
-
-Relevant tabs: one per year (2013–2026: activation date, activating
-callsign, QSO count, ONFF reference, region, low-power/GoGreen flags),
-`"Still to go"` (references never activated), and the index tab (965
-references with name, municipality, IUCN category, province, manager,
-cross-references to Windmill/Lighthouse/SOTA/Castle award programmes).
-
-This is a scrape of a spreadsheet someone else maintains for a different
-purpose, not a published API — treat it as the least stable data source in
-the system, and expect the app's visible fallback message if it ever moves
-or is unpublished.
+If a future maintainer wants per-year data back, the sheet is still there — one
+tab per year (activation date, activating callsign, QSO count, ONFF reference,
+region, low-power/GoGreen flags), a `"Still to go"` tab, and an index tab. It
+is a scrape of a spreadsheet someone else maintains for a different purpose,
+not a published API. Whatever is built on it has to distinguish "absent from
+this sheet" from "never activated", which is exactly what the old screen did
+not do.
 
 ### 2.3 WWFF Spotline (live spots, agenda, self-spotting)
 
@@ -387,7 +384,7 @@ that has to be fresh.**
 |---|---|
 | App shell (`index.html`, `manifest.webmanifest`, vendored MapLibre, every `data/*.json`/`data/*.geojson` file including `wwff-world.geojson`, in both possible layouts) | cache-first, refreshed opportunistically |
 | Map tiles (`tiles.openfreemap.org`) | cache-first, own cache bucket, roughly LRU-trimmed at 3000 entries (~60 MB) |
-| Live data (`spots.wwff.co`, `docs.google.com`) | network-first; falls back to the last cached response only if the network request fails, so a visitor is never shown stale spots without the app having tried for fresh ones first |
+| Live data (`spots.wwff.co`) | network-first; falls back to the last cached response only if the network request fails, so a visitor is never shown stale spots without the app having tried for fresh ones first |
 
 Caches are versioned (`diana-v3-shell`, `diana-v3-tiles`); a version bump in
 `sw.js` drops every old cache on activation.
@@ -409,7 +406,7 @@ load index.html
    ├─ startSpots() ── spots.wwff.co/static/{spots,agendas_active,agendas}.json
    │                  polled every 30s while a relevant screen is open
    │
-   ├─ Heatmap screen opened ── docs.google.com gviz CSV, on demand
+   ├─ Nearby screen opened ── data/onff-activity.json, from this repo
    │
    ├─ self-spot submitted ── real form POST to spots.wwff.co/spots/store
    │                          (bypasses fetch/CORS entirely)

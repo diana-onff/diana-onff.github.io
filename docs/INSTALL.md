@@ -229,9 +229,9 @@ the published site, not just from the Worker's own `/status` endpoint.
 - Live spots and the agenda appear on the Spots screen (confirms
   `spots.wwff.co`'s static files are reachable — they always have been, no
   Worker involved in reading them).
-- The Heatmap screen shows colours (confirms the published Google Sheet is
-  reachable; if not, it should say so and fall back to
-  `data/onff-activity.json` instead of showing nothing).
+- The Nearby screen lists references with distances and QSO counts (confirms
+  `data/onff-activity.json` was built and shipped; without it the distances
+  still appear but every reference reads as having no figures).
 - Self-spotting and announcing an activation both complete with a real
   confirmation (confirms the Worker, step 9-10).
 - Opening the Admin panel, testing the connection, and doing one real

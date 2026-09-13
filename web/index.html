@@ -218,6 +218,44 @@
 
   <div class="card">
     <h4 style="margin:0 0 10px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
+        data-i18n="self.chipstitle">Snelknoppen bij een spot</h4>
+    <p class="hint" style="margin:0 0 10px" data-i18n="self.chipslead">Vijf woorden die je met één tik aan de opmerking van een spot hangt. Vul in wat bij jouw station past; een leeg veld geeft gewoon geen knop.</p>
+    <div class="fgrid">
+      <label class="fld"><span>1</span><input id="setChip1" type="text" maxlength="24" autocomplete="off"></label>
+      <label class="fld"><span>2</span><input id="setChip2" type="text" maxlength="24" autocomplete="off"></label>
+    </div>
+    <div class="fgrid">
+      <label class="fld"><span>3</span><input id="setChip3" type="text" maxlength="24" autocomplete="off"></label>
+      <label class="fld"><span>4</span><input id="setChip4" type="text" maxlength="24" autocomplete="off"></label>
+    </div>
+    <label class="fld"><span>5</span><input id="setChip5" type="text" maxlength="24" autocomplete="off"></label>
+  </div>
+
+  <div class="card">
+    <h4 style="margin:0 0 10px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
+        data-i18n="set.neartitle">In de buurt</h4>
+    <p class="hint" style="margin:0 0 10px" data-i18n="set.nearlead">Hoe ver rond je positie het scherm "In de buurt" kijkt.</p>
+    <div class="segs" id="setNearKm">
+      <button class="seg" data-km="10">10 km</button>
+      <button class="seg on" data-km="25">25 km</button>
+      <button class="seg" data-km="50">50 km</button>
+      <button class="seg" data-km="100">100 km</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h4 style="margin:0 0 10px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
+        data-i18n="set.bandstitle">Bandenlijst bij aankondigen</h4>
+    <p class="hint" style="margin:0 0 10px" data-i18n="set.bandslead">Welke banden het keuzelijstje op het aankondigingsscherm aanbiedt.</p>
+    <div class="segs" id="setBands">
+      <button class="seg on" data-bands="full" data-i18n="set.bandsfull">Alle banden</button>
+      <button class="seg" data-bands="short" data-i18n="set.bandsshort">Alleen HF</button>
+    </div>
+    <p class="hint" style="margin:8px 0 0" data-i18n="set.bandsnote">Alle banden: 160m tot 23cm. Alleen HF: 80, 40, 30, 20, 15 en 10m.</p>
+  </div>
+
+  <div class="card">
+    <h4 style="margin:0 0 10px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
         data-i18n="set.worldtitle">Andere WWFF-gebieden</h4>
     <p class="hint" style="margin:0 0 10px" data-i18n="set.worldlead">Referentiepunten uit de wereldwijde WWFF-lijst, buiten België — altijd als punt, nooit als grens (die hebben we alleen voor ONFF). Standaard toont Diana ze allemaal; kies hieronder een land om te beperken.</p>
     <label class="fld"><span data-i18n="set.worldcountry">Alleen dit land tonen</span>
@@ -292,11 +330,7 @@
     <label class="fld"><span data-i18n="self.remarks">Opmerking (optioneel)</span>
       <input id="spRemarks" type="text" maxlength="100" placeholder="QRV tot 16u"></label>
     <div class="fb"><span id="spCount">0/100</span></div>
-    <div class="chips">
-      <button type="button" class="chip" data-add="5W QRP">+ 5W QRP</button>
-      <button type="button" class="chip" data-add="EFHW">+ EFHW</button>
-      <button type="button" class="chip" data-add="QSY soon">+ QSY soon</button>
-    </div>
+    <div class="chips" id="spChips"></div>
     <p class="warn" data-i18n="self.warn">Geen bedankjes of bandverzoeken hier. Elke spot gaat naar het DX-cluster; opmerkingen die daar niet horen zijn ruis. Spotline filtert bovendien op ongepaste taal.</p>
   </div>
 
@@ -330,7 +364,13 @@
     <div class="fb" id="fbAgWhen"></div>
     <div class="fgrid">
       <label class="fld"><span data-i18n="ag.band">Band (optioneel)</span>
-        <input id="agBand" type="text" autocomplete="off" placeholder="20m"></label>
+        <select id="agBand">
+          <option value="">—</option>
+          <option>160m</option><option>80m</option><option>60m</option><option>40m</option>
+          <option>30m</option><option>20m</option><option>17m</option><option>15m</option>
+          <option>12m</option><option>10m</option><option>6m</option><option>4m</option>
+          <option>2m</option><option>70cm</option><option>23cm</option>
+        </select></label>
       <label class="fld"><span data-i18n="self.mode">Mode</span>
         <select id="agMode">
           <option value="">—</option>
@@ -380,21 +420,18 @@
   <p class="privacy">🔒 <span data-i18n="sess.privacy">Je track blijft op dit toestel. Er gaat niets naar een server tot je zelf exporteert.</span></p>
 </section>
 
-<section class="view panel" id="viewHeat">
-  <div class="grip"></div>
-  <div class="peek" data-i18n="heat.peek">Heatmap — tik om te openen</div>
-  <h1 data-i18n="heat.title">Activatie-heatmap</h1>
-  <p class="sub" data-i18n="heat.sub">Welke gebieden hebben aandacht nodig?</p>
-  <div class="segs" id="heatMetric">
-    <button class="seg on" data-metric="recency" data-i18n="heat.byrecency">Laatst actief</button>
-    <button class="seg" data-metric="qso" data-i18n="heat.byqso">Aantal QSO's</button>
+<section class="view" id="viewNearby">
+  <h1 data-i18n="near.title">In de buurt</h1>
+  <p class="sub" data-i18n="near.sub">De dichtstbijzijnde referenties vanaf waar je staat</p>
+  <div class="segs" id="nearMetric">
+    <button class="seg on" data-metric="dist" data-i18n="near.bydist">Afstand</button>
+    <button class="seg" data-metric="recency" data-i18n="near.byrecency">Laatst actief</button>
+    <button class="seg" data-metric="qso" data-i18n="near.byqso">Aantal QSO's</button>
   </div>
-  <div id="heatBox"><p class="hint" data-i18n="heat.loading">Statusdata laden…</p></div>
-  <div id="heatNeg" hidden>
-    <h4 style="margin:14px 0 4px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
-        data-i18n="heat.neglected">Meest verwaarloosde gebieden</h4>
-    <div id="negList"></div>
-  </div>
+  <div id="nearBox"></div>
+  <div class="card"><div id="nearList" style="margin:0 -4px"></div></div>
+  <button class="btn ghost" id="nearMore" hidden>Toon 100 meer</button>
+  <p class="hint" data-i18n="near.source">Aantal QSO's en laatste activatie komen uit de WWFF-directory, meegeleverd met deze versie.</p>
 </section>
 
 <section class="view" id="viewRules">
@@ -420,11 +457,11 @@
   <button data-view="viewSpots"><span class="ic">((·))</span><span data-i18n="nav.spots">Spots</span></button>
   <button data-view="viewSelf"><span class="ic">✚</span><span data-i18n="nav.self">Meld</span></button>
   <button data-view="viewAgendaNew"><span class="ic">▤</span><span data-i18n="spots.tabagenda">Agenda</span></button>
-  <button data-view="viewSet"><span class="ic">⚙</span><span data-i18n="nav.settings">Instellingen</span></button>
-  <button data-view="viewAdmin"><span class="ic">⛭</span><span data-i18n="nav.admin">Beheer</span></button>
   <button data-view="viewSession"><span class="ic">◉</span><span data-i18n="nav.session">Sessie</span></button>
-  <button data-view="viewHeat"><span class="ic">▦</span><span data-i18n="nav.heat">Heatmap</span></button>
+  <button data-view="viewNearby"><span class="ic">◎</span><span data-i18n="nav.nearby">In de buurt</span></button>
   <button data-view="viewRules"><span class="ic">☰</span><span data-i18n="nav.rules">Regels</span></button>
+  <button data-view="viewAdmin"><span class="ic">⛭</span><span data-i18n="nav.admin">Beheer</span></button>
+  <button data-view="viewSet"><span class="ic">⚙</span><span data-i18n="nav.settings">Instellingen</span></button>
 </nav>
 
 <!-- ================= splash screen =================
@@ -478,7 +515,7 @@
 <script src="js/agenda.js" defer></script>
 <script src="js/session.js" defer></script>
 <script src="js/rules.js" defer></script>
-<script src="js/heatmap.js" defer></script>
+<script src="js/nearby.js" defer></script>
 <script src="js/offline.js" defer></script>
 <script src="js/geo.js" defer></script>
 </body>

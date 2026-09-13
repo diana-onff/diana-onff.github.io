@@ -10,13 +10,17 @@ def ok(c, m):
         fails.append(m)
 
 
+import time
+NOW = int(time.time())
+# Deliberately out of order, and deliberately not all the same age: the list
+# has to put the newest on top, whether or not a GPS fix is in.
 SPOTS = [
     {"id": 1, "reference": "ONFF-0001", "activator": "ON1TEST", "latitude": 50.85, "longitude": 4.35,
-     "frequency_khz": 14285, "mode": "SSB", "spot_time": 9999999999},
+     "frequency_khz": 14285, "mode": "SSB", "spot_time": NOW - 25 * 60},
     {"id": 2, "reference": "PAFF-0123", "activator": "PA1TEST", "latitude": 52.1, "longitude": 5.1,
-     "frequency_khz": 7130, "mode": "SSB", "spot_time": 9999999999},
+     "frequency_khz": 7130, "mode": "SSB", "spot_time": NOW - 2 * 60},
     {"id": 3, "reference": "VKFF-0456", "activator": "VK1TEST", "latitude": -35.3, "longitude": 149.1,
-     "frequency_khz": 21200, "mode": "SSB", "spot_time": 9999999999},
+     "frequency_khz": 21200, "mode": "SSB", "spot_time": NOW - 12 * 60},
 ]
 
 
@@ -99,7 +103,26 @@ with sync_playwright() as p:
     country_reset = pg.evaluate("() => document.getElementById('setSpotCountry').value")
     ok(country_reset == "", "the country dropdown is empty again after 'Worldwide'")
 
-    print("\n[9] no JS errors")
+    print("\n[9] the list reads newest first, and says how old each spot is")
+    # This used to sort by distance the moment a GPS fix came in — and the age
+    # was pushed off the row to make room for the bearing, so in the field you
+    # could not tell a two-minute spot from a fifty-minute one. On a list that
+    # only holds the last hour, that is the one thing you are reading it for.
+    pg.evaluate("() => { spotFilter='all'; here=null; renderSpots(); }")
+    pg.wait_for_timeout(200)
+    order = pg.evaluate("() => [...document.querySelectorAll('#spotList .spot')].map(r=>r.dataset.id)")
+    ok(order == ["2", "3", "1"], f"without a fix: newest first ({order})")
+
+    pg.evaluate("() => { here = {lat:50.85, lon:4.35}; renderSpots(); }")
+    pg.wait_for_timeout(200)
+    order = pg.evaluate("() => [...document.querySelectorAll('#spotList .spot')].map(r=>r.dataset.id)")
+    ok(order == ["2", "3", "1"], f"with a fix on top of spot 1: still newest first ({order})")
+
+    rows = pg.evaluate("() => [...document.querySelectorAll('#spotList .spot .d')].map(d=>d.textContent)")
+    ok(all("′" in r for r in rows), f"every row carries its age ({rows[0]!r})")
+    ok(any("km" in r or " m" in r for r in rows), f"and the distance is there too ({rows[0]!r})")
+
+    print("\n[10] no JS errors")
     real = [e for e in errs if "Failed to load resource" not in e]
     ok(not real, "no page errors: " + (real[0][:160] if real else "ok"))
 

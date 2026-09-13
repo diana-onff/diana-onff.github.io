@@ -90,8 +90,8 @@ tell you whether you are "inside" one, and shows no surface area for it. They
 are searchable (marked `◌` in the result list) and can be switched off under
 the layers button like any other layer.
 
-Panels at the bottom of the screen — a zone's details, a spot's details, the
-heatmap panel — close by **swiping them down**, as well as with the × button.
+Panels at the bottom of the screen — a zone's details, a spot's details —
+close by **swiping them down**, as well as with the × button.
 
 **Spots are always on the map** — there is no switch to lose them behind: a
 green pulsing icon for each currently active spot, with the callsign set larger
@@ -222,12 +222,25 @@ and GPS-accuracy extensions) plus a text summary — useful as activation
 proof. The GPS track is generated and downloaded entirely on your device and
 is never uploaded anywhere by Diana.
 
-### Heatmap (▦)
-Colours every zone by either recency of last activation or total QSO count,
-sourced from the published ONFF activation-history sheet. This colouring
-only applies while you're on this screen — leaving it returns the map to its
-normal single theme colour, so the Heatmap screen doesn't change what the
-Map screen looks like.
+### Nearby (◎)
+The twenty-five references closest to where you are standing, with the
+distance and bearing to each, its total number of QSOs, and when it was last
+activated. Meant for planning: you can order that list by distance, by how
+long a reference has gone untouched, or by QSO count — the last two sorted so
+that the neglected ones come first. Tapping a reference opens it on the map
+with its full panel, including the button to go and spot yourself there.
+
+Diana needs to know where you are for this: a GPS fix if you have granted
+access, otherwise the Maidenhead locator from Settings. Without either it says
+so rather than showing an empty list.
+
+The figures come from the WWFF directory as it stood when this version was
+built, so they need no network and work offline. Where the directory has
+nothing on a reference, the screen says that too — it never presents a gap in
+its source as "never activated".
+
+This screen replaced the activation Heatmap in v1.8.0; the reasoning is in
+[ARCHITECTURE.md §2.2](ARCHITECTURE.md#22-the-onff-activation-history-sheet-and-why-it-is-no-longer-used).
 
 ### Rules (☰)
 The IARU Region 1 bandplan per band, with CW/Digi/SSB/FM segments drawn as a
@@ -299,13 +312,12 @@ window, also clears these settings.
 activation session exists only as the download it produces — save it
 somewhere you'll keep it.
 
-**Live data depends on third parties Diana doesn't control.** Spots, the
-agenda, and the activation-history heatmap all come from WWFF Spotline and a
-Google Sheet maintained by the ONFF coordinator (see
+**Live data depends on a third party Diana doesn't control.** Spots and the
+agenda come from WWFF Spotline (see
 [ARCHITECTURE.md §2](ARCHITECTURE.md#2-where-the-apps-own-data-comes-from)).
-If either is unavailable or changes shape, the relevant screen says so
-rather than showing stale data silently — but there's nothing Diana itself
-can do to bring either one back online.
+If it is unavailable or changes shape, the Spots screen says so rather than
+showing stale data silently — but there's nothing Diana itself can do to bring
+it back online. Everything else, Nearby included, ships with the release.
 
 **Not every zone has full details.** Roughly half of the 932 mapped ONFF
 zones have no attributes beyond a name and reference number — this is a gap

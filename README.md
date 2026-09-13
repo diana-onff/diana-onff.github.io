@@ -64,7 +64,7 @@ Starting from inside `web/` does not work: the app fetches `../data/onff.geojson
 and that falls outside the server root.
 
 The bottom bar covers Map, Spots, self-spotting, announcing an activation,
-an activation Session, the activation Heatmap, the band-plan Rules, and
+an activation Session, Nearby, the band-plan Rules, and
 Settings — every screen explained in full in
 [docs/USER_GUIDE.md §3](docs/USER_GUIDE.md#3-the-screens). Seven languages
 (English, Dutch, French, German, Danish, Italian, Spanish, Portuguese), and a service
@@ -101,11 +101,11 @@ polygon part — and ONFF-0329 consists of 67 separate parcels.
 Full parameter reference and a live example:
 [docs/USER_GUIDE.md §5](docs/USER_GUIDE.md#5-embedding-diana-on-another-page).
 
-**Two external, third-party sources**, each with a visible fallback if it's
-unreachable rather than a silent gap: live spots and the agenda come from
-`spots.wwff.co`, and the heatmap from a published ONFF Google Sheet, falling
-back to `data/onff-activity.json` when that sheet can't be reached. Both are
-plain cross-origin reads — confirmed working, no proxy needed for reading.
+**One external, third-party source**: live spots and the agenda come from
+`spots.wwff.co`, as a plain cross-origin read — confirmed working, no proxy
+needed for reading, and with a visible message rather than a silent gap if it
+is unreachable. Everything else Diana shows ships with the release, including
+the QSO counts and last-activation dates behind the Nearby screen.
 *Writing* (self-spotting, announcing) is the part that needs the Worker
 above, because that's the part that needs the API key. Full detail in
 [docs/ARCHITECTURE.md §2](docs/ARCHITECTURE.md#2-where-the-apps-own-data-comes-from).
@@ -171,7 +171,7 @@ Takes about half a minute. Options:
 |---|---|---|
 | `data/onff.geojson` | 3.7 MB (1.0 MB gzipped) | one MultiPolygon per reference, with name, province, area and whatever attributes are known |
 | `data/onff-points.geojson` | small | references that *are* in the WWFF directory but have no boundary in the KMZ, as a point. The app shows them as a dotted ring and deliberately does not run an "am I inside" test on them |
-| `data/onff-activity.json` | 39 kB | per reference the number of QSOs and the date of the last activation, from the WWFF directory. The heatmap uses this when the ONFF sheet is unreachable |
+| `data/onff-activity.json` | 39 kB | per reference the number of QSOs and the date of the last activation, from the WWFF directory. This is what the Nearby screen and the zone panel show |
 | `data/onff-index.json` | 210 kB | the same list without geometry, plus the points. It is *not* loaded by the app — that builds its own index from the two geojson files. Meant for reports and tooling alongside |
 | `data/meta.json` | small | provenance: which source file, which release, which settings, and how many references without a boundary have been placed |
 

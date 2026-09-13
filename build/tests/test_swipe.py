@@ -53,26 +53,22 @@ with sync_playwright() as p:
     ok("open" in pg.evaluate("() => document.getElementById('sheet').className"), "stays open at 8 px")
     pg.evaluate("() => closeSheet()")
 
-    print("\n[4] heatmap screen: swiping brings you back to the map")
-    pg.evaluate("() => document.querySelector('#nav button[data-view=\"viewHeat\"]').click()")
+    print("\n[4] Nearby is an ordinary screen, not a panel you can half tuck away")
+    # It used to be: the heatmap sat in a panel you could swipe half away, so the
+    # colours it painted on the areas stayed visible underneath. Those colours
+    # are gone with the heatmap itself, and with them the reason for the panel.
+    pg.evaluate("() => document.querySelector('#nav button[data-view=\"viewNearby\"]').click()")
     pg.wait_for_timeout(700)
-    ok(pg.evaluate("() => document.getElementById('viewHeat').classList.contains('on')"), "heatmap open")
-    swipe(pg, "#viewHeat"); pg.wait_for_timeout(600)
-    # New behaviour: swiping down puts the panel away, but leaves the heatmap up.
-    # The colours on the map are the whole point; only tapping Map closes it.
-    ok(pg.evaluate("() => document.getElementById('viewHeat').classList.contains('minimized')"),
-       "swipe down → panel put away")
-    ok(pg.evaluate("() => document.getElementById('viewHeat').classList.contains('on')"),
-       "the heatmap screen stays active")
-    ok(pg.evaluate("() => heatOnMap === true"), "the areas keep their colour")
-    pg.evaluate("() => document.getElementById('viewHeat').click()"); pg.wait_for_timeout(400)
-    ok(not pg.evaluate("() => document.getElementById('viewHeat').classList.contains('minimized')"),
-       "tapping the strip brings the panel back")
+    ok(pg.evaluate("() => document.getElementById('viewNearby').classList.contains('on')"), "Nearby opens")
+    ok(not pg.evaluate("() => document.getElementById('viewNearby').classList.contains('panel')"),
+       "it is not a panel")
+    swipe(pg, "#viewNearby"); pg.wait_for_timeout(600)
+    ok(pg.evaluate("() => document.getElementById('viewNearby').classList.contains('on')"),
+       "swiping down over it does nothing — a full screen has nothing to tuck away")
     pg.evaluate("() => document.querySelector('#nav button[data-view=\"map\"]').click()")
     pg.wait_for_timeout(400)
-    ok(not pg.evaluate("() => document.getElementById('viewHeat').classList.contains('on')"),
-       "only tapping Map brings you back to the ordinary map")
-    ok(pg.evaluate("() => heatOnMap === false"), "and switches the colours off")
+    ok(not pg.evaluate("() => document.getElementById('viewNearby').classList.contains('on')"),
+       "the Map button closes it")
     ok(pg.evaluate("() => document.querySelector('#nav button[data-view=\"map\"]').classList.contains('on')"), "the map button is back on")
 
     print("\n[5] spot panel: same gesture")
