@@ -129,12 +129,18 @@ function checkGrid(){
   checkGrid();
   saveSettings();
 }));
+/* Same trap as the ◎ button had: a locator square is only a few kilometres
+   across, and a first fix off a wifi network can be further out than that. So
+   this waits for a real one too — bestFix lives in geo.js, which loads later,
+   but this only ever runs from a click. */
 $('setGridGps').onclick = () => {
   if(!navigator.geolocation) return;
-  navigator.geolocation.getCurrentPosition(pos => {
+  $('setGridGps').disabled = true;
+  const done = () => { $('setGridGps').disabled = false; };
+  bestFix(pos => {
     cfg.grid = locator(pos.coords.latitude, pos.coords.longitude);
-    $('setGrid').value = cfg.grid; checkGrid(); saveSettings();
-  });
+    $('setGrid').value = cfg.grid; checkGrid(); saveSettings(); done();
+  }, null, done);
 };
 
 /* ---------- locator → coordinates ---------- */
