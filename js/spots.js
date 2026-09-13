@@ -63,10 +63,6 @@ async function fetchSpots(){
   paintSpots(); renderSpots();
 }
 
-// A WWFF reference is always "<PROGRAMME>-<number>" and the programme itself
-// already ends in "FF" (ONFF, PAFF, VKFF, …) — so the part before the first
-// hyphen is the programme code, worldwide, with no separate table needed.
-const refProgram = r => (typeof r === 'string' ? r.toUpperCase().split('-')[0] : '');
 function spotVisible(ref){
   if(spotFilter === 'all') return true;
   return refProgram(ref) === spotFilter;         // one specific country
@@ -388,23 +384,26 @@ $('spotTab').addEventListener('click', e=>{
 function setSpotFilter(value){
   spotFilter = value;
   remember('spotFilter2', spotFilter);
+  // Worldwide is not a country, so it does not overwrite which country is yours.
+  if(value !== 'all') remember('homeprog', value);
   syncSpotFilterUI();
   paintSpots(); renderSpots();
 }
-/* Which country the first button in the filter stands for. Whatever you have
-   chosen, if that is a country; otherwise the programme that goes with your
-   callsign; otherwise ONFF, which is the one country Diana carries boundaries
-   for today. So a Dutch operator opens the app on PAFF without having to say
-   so, and the button follows along the moment you pick a different country in
-   Settings. */
+/* Which country the first button in the filter stands for.
+ *
+ * Deliberately NOT the same thing as "which filter is on". Tapping Worldwide
+ * says you want to see everything for a moment; it does not say you have
+ * stopped caring about the Netherlands. The first version got that wrong: on
+ * Worldwide the button fell straight back to the country of your callsign, so
+ * a Belgian who had picked the Netherlands and glanced at Worldwide found
+ * Belgium waiting when he came back. The country you chose is therefore
+ * remembered on its own, and only then does the callsign get a say. */
 function homeProgram(){
   if(spotFilter !== 'all') return spotFilter;
-  const call = (cfg.call || cfg.callp || '').toUpperCase().split('/')[0];
-  for(const len of [3,2,1]){
-    const p = PREFIX_PROGRAM[call.slice(0,len)];
-    if(p) return p;
-  }
-  return 'ONFF';
+  return recall('homeprog')                     // the last country you actually picked
+      || programForCall(cfg.call || cfg.callp)  // else the one your callsign suggests
+      || loadedPrograms[0]                      // else whatever boundaries are on board
+      || 'ONFF';
 }
 
 function syncSpotFilterUI(){

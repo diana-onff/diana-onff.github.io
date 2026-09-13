@@ -15,9 +15,16 @@ let noPoly = {type:'FeatureCollection', features:[]};
 const noPolyByRef = new Map();
 
 /* Worldwide WWFF programmes → country, for the spots filter. Empty until
-   loadData() has fetched it; "ONFF only" and "worldwide" work without this list
-   too, only "one specific country" needs it. */
+   loadData() has fetched it; a single country and "worldwide" work without this
+   list too, only "one specific country" needs it. */
 let wwffPrograms = [];
+
+/* Which countries Diana has boundaries for, and which of those are in memory.
+   Diana began as a Belgian app with one pair of data files; it now reads a
+   manifest instead, so that a second country is a file in data/ rather than a
+   change to the code. */
+let countries = [];        // what data/countries.json offers
+let loadedPrograms = [];   // what is actually in zones/index right now
 let activity = {};
 
 /* Activity for a single reference, ready to display. The directory contains one
@@ -83,26 +90,95 @@ async function loadMeta(){
   }
 }
 
+/* When published, the data sits next to index.html; in the repo it sits one
+   level up. Both work, with no build step needed for local use. */
+const dataURL = rel => ['./data/' + rel, '../data/' + rel];
+
+/* The manifest the build writes: one entry per programme that has boundaries,
+   with the files that belong to it. A data set from before the manifest
+   existed does not have one, and then this stands in — the single pair of ONFF
+   files Diana always loaded, under the names they had. So the app and the data
+   can be updated in either order without a window in which the map is empty. */
+const LEGACY_ONFF = {
+  program: 'ONFF', country: 'Belgium', legacy: true,
+  files: {zones: 'onff.geojson', points: 'onff-points.geojson', activity: 'onff-activity.json'},
+};
+
+async function loadCountries(){
+  try{
+    const doc = await fetchFirst(dataURL('countries.json'));
+    const list = (doc.countries || []).filter(c => c.program && c.files && c.files.zones);
+    if(list.length) return list;
+  }catch{}
+  return [LEGACY_ONFF];
+}
+
+/* Which of them go into memory. An explicit choice wins; otherwise the country
+   that goes with your callsign, if we have it; otherwise the first on the list.
+   Never all of them: one country is megabytes, and there is no reason to carry
+   Sweden around while you are standing in Flanders. */
+function wantedPrograms(list){
+  const have = list.map(c => c.program);
+  try{
+    const saved = JSON.parse(recall('countries') || '[]');
+    const keep = Array.isArray(saved) ? saved.filter(p => have.includes(p)) : [];
+    if(keep.length) return keep;
+  }catch{}
+  const mine = programForCall(recall('call') || recall('callp'));
+  if(mine && have.includes(mine)) return [mine];
+  return have.slice(0, 1);
+}
+
+async function loadCountry(c){
+  const out = {zones: [], points: [], activity: {}};
+  out.zones = (await fetchFirst(dataURL(c.files.zones))).features || [];
+  // Points without a boundary, and the activity figures, are both allowed to be
+  // missing — older data, or a build without a reference list. The boundaries
+  // are what the country is for.
+  if(c.files.points){
+    try{ out.points = (await fetchFirst(dataURL(c.files.points))).features || []; }catch{}
+  }
+  if(c.files.activity){
+    try{ out.activity = (await fetchFirst(dataURL(c.files.activity))).refs || {}; }catch{}
+  }
+  return out;
+}
+
 async function loadData(){
+  countries = await loadCountries();
+  loadedPrograms = [];
+
   if (window.DIANA_ZONES){            // baked into the standalone preview build
     zones = window.DIANA_ZONES;
+    if (window.DIANA_POINTS) noPoly = window.DIANA_POINTS;
   } else {
-    // When published, the data sits next to index.html; in the repo it sits one
-    // level up. Both work, with no build step needed for local use.
-    zones = await fetchFirst(['./data/onff.geojson','../data/onff.geojson']);
+    zones  = {type:'FeatureCollection', features: []};
+    noPoly = {type:'FeatureCollection', features: []};
+    activity = {};
+    for(const prog of wantedPrograms(countries)){
+      const c = countries.find(x => x.program === prog);
+      try{
+        const got = await loadCountry(c);
+        zones.features.push(...got.zones);
+        noPoly.features.push(...got.points);
+        Object.assign(activity, got.activity);
+        loadedPrograms.push(prog);
+      }catch(err){
+        // One country that will not load must not take the others down with it.
+        console.warn('country ' + prog + ' did not load:', err);
+      }
+    }
   }
+  if(!loadedPrograms.length){
+    loadedPrograms = [...new Set((zones.features || [])
+      .map(f => refProgram(f.properties && f.properties.ref)).filter(Boolean))];
+  }
+
   index = zones.features.map(f => {
     const b = bboxOf(f.geometry);
     return {...f.properties, bbox:b};
   });
 
-  // Points without a boundary live in a separate file. If it is missing (older
-  // data, or a build without a reference list), the app simply carries on.
-  if (window.DIANA_POINTS) noPoly = window.DIANA_POINTS;
-  else {
-    try{ noPoly = await fetchFirst(['./data/onff-points.geojson','../data/onff-points.geojson']); }
-    catch{ noPoly = {type:'FeatureCollection', features:[]}; }
-  }
   noPolyByRef.clear();
   for(const f of (noPoly.features||[])){
     noPolyByRef.set(f.properties.ref, f);
@@ -120,16 +196,11 @@ async function loadData(){
   // / one country / everywhere). If the file is missing (older data), then
   // "one specific country" simply stays empty; ONFF and Worldwide work anyway.
   try{
-    const doc = await fetchFirst(['./data/wwff-programs.json','../data/wwff-programs.json']);
+    const doc = await fetchFirst(dataURL('wwff-programs.json'));
     wwffPrograms = (doc.programs || []).slice().sort((a,b)=>a.country.localeCompare(b.country));
   }catch{ wwffPrograms = []; }
-  // Number of QSOs and the last activation per reference. Small file, loaded
-  // up front because both the detail panel and the Nearby screen want to be
-  // able to show it straight away.
-  try{
-    const doc = await fetchFirst(['./data/onff-activity.json','../data/onff-activity.json']);
-    activity = doc.refs || {};
-  }catch{ activity = {}; }
+  // The QSO counts and last activations came in with each country above —
+  // the detail panel and the Nearby screen both want them straight away.
   populateSpotCountries();
   populateWorldCountries();
 }

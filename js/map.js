@@ -141,9 +141,19 @@ async function loadWorldPoints(){
   return worldLoading;
 }
 
+/* A reference we have a boundary for must not also appear as a bare point —
+   that is the same area drawn twice, and the point is the worse of the two.
+   The build already leaves out the countries it made boundaries for, but a
+   country can be loaded that an older world file still lists, so it is checked
+   here as well. */
 function worldFilteredData(){
-  if(worldFilter === 'all') return worldPoints;
-  const feats = worldPoints.features.filter(f => refProgram(f.properties.ref) === worldFilter);
+  const own = new Set(loadedPrograms);
+  const keep = f => !own.has(refProgram(f.properties.ref));
+  if(worldFilter === 'all'){
+    return own.size ? {type:'FeatureCollection', features: worldPoints.features.filter(keep)}
+                    : worldPoints;
+  }
+  const feats = worldPoints.features.filter(f => refProgram(f.properties.ref) === worldFilter && keep(f));
   return {type:'FeatureCollection', features:feats};
 }
 
