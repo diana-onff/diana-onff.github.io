@@ -22,7 +22,8 @@ let activity = {};
 
 /* Activity for a single reference, ready to display. The directory contains one
    impossible date (year 1059); we leave that out rather than present it as
-   fact — the same check the heatmap was already doing. */
+   fact. The Nearby screen reads this same function, so the rule lives here
+   only. */
 function activityOf(ref){
   const a = activity[ref];
   if(!a) return null;
@@ -122,10 +123,9 @@ async function loadData(){
     const doc = await fetchFirst(['./data/wwff-programs.json','../data/wwff-programs.json']);
     wwffPrograms = (doc.programs || []).slice().sort((a,b)=>a.country.localeCompare(b.country));
   }catch{ wwffPrograms = []; }
-  // Number of QSOs and the last activation per reference. Small file, and the
-  // detail panel wants to be able to show it straight away — not only after
-  // someone happens to open the heatmap, which until now was the only thing
-  // that fetched it.
+  // Number of QSOs and the last activation per reference. Small file, loaded
+  // up front because both the detail panel and the Nearby screen want to be
+  // able to show it straight away.
   try{
     const doc = await fetchFirst(['./data/onff-activity.json','../data/onff-activity.json']);
     activity = doc.refs || {};

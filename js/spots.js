@@ -315,13 +315,18 @@ function renderSpots(){
     meta.textContent = spotsAt ? `${t('spots.updated')} ${spotsAt.toLocaleTimeString(locale(),{hour:'2-digit',minute:'2-digit'})}` : '';
     return;
   }
-  const rows = visibleSpots().sort((a,b)=>{
-    if(here) return dist(a)-dist(b);
-    return (b.spot_time||0)-(a.spot_time||0);
-  });
+  /* Newest first, always. This used to sort by distance as soon as a GPS fix
+     was in — and worse, the age then disappeared from the row to make room for
+     the bearing, so in the field you could not see whether a spot was one
+     minute or fifty minutes old. On a list that refreshes every 30 s and only
+     holds the last hour, when someone was heard is the thing you are reading
+     it for; how far away they are is the second question, and it now sits on
+     the line below instead of pushing the first one out. */
+  const rows = visibleSpots().sort((a,b)=>(b.spot_time||0)-(a.spot_time||0));
   list.innerHTML = rows.length ? rows.map(s=>{
-    const d = here ? `<b>${Math.round(bearing(here.lat,here.lon,s.latitude,s.longitude))}°</b>${fmtKm(dist(s))}`
-                   : `<b>${Math.max(0,Math.round(ageMin(s)))}′</b>${s.mode||''}`;
+    const age = `<b>${Math.max(0,Math.round(ageMin(s)))}′</b>`;
+    const d = here ? `${age}${Math.round(bearing(here.lat,here.lon,s.latitude,s.longitude))}° · ${fmtKm(dist(s))}`
+                   : `${age}${s.mode||''}`;
     return `<div class="spot${ageMin(s)>30?' stale':''}" data-id="${s.id}">
       <span class="sig">((·))</span>
       <span class="who"><div class="c">${s.activator||'?'}</div>
@@ -415,7 +420,6 @@ $('setWorldCountry').addEventListener('change', e=>{
 function openSpot(id){
   const s = spots.find(x=>Number(x.id)===Number(id)); if(!s) return;
   closeSheet();
-  if($('viewHeat').classList.contains('on')) $('viewHeat').classList.add('tucked');
   $('spCall').textContent = s.activator || '?';
   $('spAgo').textContent  = agoText(s) + (s.spotter ? ` door ${s.spotter}` : '');
   $('spRef').textContent  = s.reference || '';
@@ -446,6 +450,5 @@ function openSpot(id){
 $('closeSpot').onclick = ()=>{
   $('spotSheet').classList.remove('open');
   document.body.classList.remove('sheet-open');
-  $('viewHeat').classList.remove('tucked');
 };
 

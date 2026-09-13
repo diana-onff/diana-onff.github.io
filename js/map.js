@@ -237,7 +237,7 @@ function populateWorldCountries(){
 }
 
 /* The data stands apart from the map. If the background map drops out — no
-   network, nothing in the cache yet — then search, session, rules and heatmap
+   network, nothing in the cache yet — then search, session, rules and Nearby
    all keep working. Only the tiles are missing. */
 $('splashVer').textContent = 'v' + APP_VERSION;
 $('setVer').textContent = `${APP_VERSION} · ${BUILD_TXT}`;
@@ -375,7 +375,6 @@ function redrawOverlays(){
       if(showWorld) paintWorld();
       applyVisibility();
       reselect();
-      if(heatOnMap) applyHeatPaint(true);
     }catch(err){ console.warn('hertekenen kaart:', err); }
   })(0);
 }
@@ -505,8 +504,6 @@ function select(ref, alsoIn){
 }
 
 function openSheet(){
-  // Two panels at the bottom at once is unreadable on a phone.
-  if($('viewHeat').classList.contains('on')) $('viewHeat').classList.add('tucked');
   const el = $('sheet');
   el.classList.add('open');
   // The height varies with the number of facts, so measure after rendering.
@@ -516,7 +513,6 @@ function openSheet(){
 function closeSheet(){
   $('sheet').classList.remove('open');
   document.body.classList.remove('sheet-open');
-  $('viewHeat').classList.remove('tucked');
 }
 $('closeSheet').onclick = closeSheet;
 $('zoneSpot').onclick = () => {

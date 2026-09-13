@@ -354,13 +354,40 @@ $('spRemarks').addEventListener('input', e => {
   vergeetControle();
   validateSelf();
 });
-document.querySelectorAll('.chip[data-add]').forEach(c => c.onclick = () => {
+/* The quick words under the remark field. They used to be three fixed ones
+ * ("5W QRP", "EFHW", "QSY soon"), which is fine right up to the moment your
+ * station is 10 W and a vertical. So they come out of Settings now — five of
+ * them, yours to fill in — and the ⚙ at the end of the row is the way there,
+ * because a setting you cannot find from the screen it affects may as well not
+ * exist. An empty field gives no button. */
+const escHtml = s => String(s).replace(/[&<>"]/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function renderChips(){
+  const box = $('spChips'); if(!box) return;
+  box.innerHTML = cfg.chips.filter(v => v).map(v =>
+      `<button type="button" class="chip" data-add="${escHtml(v)}">+ ${escHtml(v)}</button>`).join('')
+    + `<button type="button" class="chip gear" id="spChipsEdit"
+               title="${escHtml(t('self.chipsedit'))}" aria-label="${escHtml(t('self.chipsedit'))}">⚙</button>`;
+}
+renderChips();
+
+$('spChips').addEventListener('click', e => {
+  if(e.target.closest('#spChipsEdit')){
+    document.querySelector('#nav button[data-view="viewSet"]').click();
+    // Land on the card itself rather than at the top of a long settings page.
+    requestAnimationFrame(() => $('setChip1').scrollIntoView({block:'center'}));
+    return;
+  }
+  const c = e.target.closest('.chip[data-add]'); if(!c) return;
   const el = $('spRemarks');
   const add = c.dataset.add;
   if(el.value.includes(add)) return;
   el.value = (el.value ? el.value.replace(/\s*$/, ', ') : '') + add;
   el.value = el.value.slice(0, 100);
   $('spCount').textContent = `${el.value.length}/100`;
+  vergeetControle();
+  validateSelf();
 });
 
 /* The old send handler used to sit here, posting the form straight to

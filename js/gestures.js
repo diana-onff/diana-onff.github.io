@@ -50,22 +50,5 @@ function swipeToClose(el, close){
 
 swipeToClose($('sheet'),     closeSheet);
 swipeToClose($('spotSheet'), () => $('closeSpot').onclick());
-// The heatmap panel is a screen, not a panel: swiping down takes you back to
-// the map, just like tapping the map button.
-// Swiping down tucks the heatmap panel away without closing the heatmap: the
-// tab stays Heatmap and the areas keep their colour. That is the whole point of
-// the heatmap — the text is secondary, the map is the main event.
-swipeToClose($('viewHeat'),  () => minimizeHeat(true));
-
-function minimizeHeat(aan){
-  $('viewHeat').classList.toggle('minimized', !!aan);
-}
-
-// Tapping the strip brings it back.
-$('viewHeat').addEventListener('click', e => {
-  if(!$('viewHeat').classList.contains('minimized')) return;
-  e.stopPropagation();
-  minimizeHeat(false);
-});
 
 

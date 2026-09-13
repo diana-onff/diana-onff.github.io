@@ -13,7 +13,7 @@
  * Map tiles get a cache of their own with a rough LRU limit, so a downloaded area
  * stays put but storage does not grow without bound.
  */
-const VERSION   = 'diana-3d72046';
+const VERSION   = 'diana-3beb62d';
 const SHELL     = `${VERSION}-shell`;
 const TILES     = `${VERSION}-tiles`;
 const TILE_MAX  = 3000;               // roughly 60 MB of vector tiles
@@ -29,7 +29,7 @@ const SHELL_FILES = [
   './js/core.js', './js/i18n-strings.js', './js/i18n.js', './js/map-data.js',
   './js/map.js', './js/spots.js', './js/install.js', './js/gestures.js',
   './js/nav.js', './js/settings.js', './js/admin.js', './js/self-spot.js',
-  './js/agenda.js', './js/session.js', './js/rules.js', './js/heatmap.js',
+  './js/agenda.js', './js/session.js', './js/rules.js', './js/nearby.js',
   './js/offline.js', './js/geo.js',
   './icon-192.png', './icon-512.png', './apple-touch-icon.png', './start.jpg', './logo.png',
   './vendor/maplibre-gl.js', './vendor/maplibre-gl.css',

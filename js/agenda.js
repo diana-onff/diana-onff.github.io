@@ -14,6 +14,31 @@ let agGecontroleerd = false;
  * from, not a hardcoded one. Set by whichever entry point opens the screen. */
 let agOrigin = 'viewSpots';
 
+/* The band on an announcement is a label, not a frequency: Spotline shows it
+ * as text and nothing is computed with it. So this is a plain list of names,
+ * deliberately separate from BANDS in rules.js — that one carries band edges
+ * and WWFF frequencies for the band plan and the spot check, and stops at 10m
+ * because there is no HF band plan above it. Activations on 2m and 70cm do
+ * happen, and they have to be announceable.
+ *
+ * Which of the two lists you get is a choice in Settings. */
+const BAND_LIST_FULL  = ['160m','80m','60m','40m','30m','20m','17m','15m',
+                         '12m','10m','6m','4m','2m','70cm','23cm'];
+const BAND_LIST_SHORT = ['80m','40m','30m','20m','15m','10m'];
+
+function fillBandOptions(){
+  const sel = $('agBand'); if(!sel) return;
+  const keep = sel.value;
+  const list = cfg.bands === 'short' ? BAND_LIST_SHORT : BAND_LIST_FULL;
+  sel.innerHTML = '<option value="">—</option>'
+                + list.map(b => `<option>${b}</option>`).join('');
+  // Something already filled in that the shorter list does not contain stays
+  // selectable. Losing what you had picked because you changed a setting is
+  // worse than one extra line in the list.
+  if(keep && !list.includes(keep)) sel.insertAdjacentHTML('beforeend', `<option>${keep}</option>`);
+  sel.value = keep;
+}
+
 function checkAgReference(){
   const v = $('agReference').value.trim().toUpperCase();
   const fb = $('fbAgReference');
@@ -228,7 +253,6 @@ $('agRemarks').addEventListener('input', e => {
  * screen, not from the bottom nav — gaNaarView() does by hand what the nav's
  * own click handler does for its buttons. */
 function gaNaarView(id, extra){
-  $('viewHeat').classList.remove('minimized');
   document.querySelectorAll('#nav button').forEach(c => c.classList.remove('on'));
   document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
   $(id).classList.add('on');
@@ -238,6 +262,7 @@ function gaNaarView(id, extra){
 }
 
 function agendaOpen(){
+  fillBandOptions();
   const ref = selected;
   const z = ref && zones && zones.features.find(f => f.properties.ref === ref);
   if(z){ $('agReference').value = z.properties.ref; checkAgReference(); }
@@ -247,6 +272,10 @@ function agendaOpen(){
   renderAgendaSaved();
   validateAgenda();
 }
+
+/* Filled once at start-up as well, so the field is never an empty dropdown for
+   anything that reaches it before the screen has been opened by hand. */
+fillBandOptions();
 
 $('agNewOpen').onclick = () => { agOrigin = 'viewSpots'; gaNaarView('viewAgendaNew', agendaOpen); };
 $('agFromSelf').onclick = () => { agOrigin = 'viewSelf'; gaNaarView('viewAgendaNew', agendaOpen); };
