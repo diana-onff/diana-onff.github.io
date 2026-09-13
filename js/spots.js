@@ -9,7 +9,13 @@ const AGENDA_ALL = 'https://spots.wwff.co/static/agendas.json';
 const REFRESH_MS = 30000;
 
 let spots = [], agenda = [], spotsAt = null, spotsError = null;
-// 'all' (worldwide), 'onff', or a programme code such as 'PAFF' (one country).
+// 'all' (worldwide) or a programme code such as 'ONFF' or 'PAFF' (one
+// country). There used to be a separate 'onff' value as well, which did
+// exactly what the code 'ONFF' already did — a special case for the one
+// country Diana happened to start with. It is gone: the first button in the
+// filter now carries a real programme code, the one that goes with your
+// callsign unless you pick another. Anything saved under the old value is
+// read as 'ONFF' below.
 // Worldwide is the factory setting; anyone who once chose something else gets
 // that back on every subsequent start — see Settings → Spots filter.
 // The key was deliberately renamed from 'arcs' to 'arcs2': the lines should be
@@ -18,6 +24,7 @@ let spots = [], agenda = [], spotsAt = null, spotsError = null;
 // meant to make.
 let showArcs = recall('arcs2') !== '0';
 let showSpots = recall('spots') !== '0', spotFilter = recall('spotFilter2') || 'all', spotTab = 'spots', spotTimer = null, here = null;
+if(spotFilter === 'onff') spotFilter = 'ONFF';        // from before the filter spoke programme codes
 
 // Bring the menu switches in line right after reading the preferences.
 // applyVisibility() does this too, but it bails out as long as the map layers
@@ -56,14 +63,12 @@ async function fetchSpots(){
   paintSpots(); renderSpots();
 }
 
-const isONFF = r => typeof r === 'string' && r.toUpperCase().startsWith('ONFF');
 // A WWFF reference is always "<PROGRAMME>-<number>" and the programme itself
 // already ends in "FF" (ONFF, PAFF, VKFF, …) — so the part before the first
 // hyphen is the programme code, worldwide, with no separate table needed.
 const refProgram = r => (typeof r === 'string' ? r.toUpperCase().split('-')[0] : '');
 function spotVisible(ref){
   if(spotFilter === 'all') return true;
-  if(spotFilter === 'onff') return isONFF(ref);
   return refProgram(ref) === spotFilter;         // one specific country
 }
 const visibleSpots = () => spots
@@ -386,12 +391,32 @@ function setSpotFilter(value){
   syncSpotFilterUI();
   paintSpots(); renderSpots();
 }
+/* Which country the first button in the filter stands for. Whatever you have
+   chosen, if that is a country; otherwise the programme that goes with your
+   callsign; otherwise ONFF, which is the one country Diana carries boundaries
+   for today. So a Dutch operator opens the app on PAFF without having to say
+   so, and the button follows along the moment you pick a different country in
+   Settings. */
+function homeProgram(){
+  if(spotFilter !== 'all') return spotFilter;
+  const call = (cfg.call || cfg.callp || '').toUpperCase().split('/')[0];
+  for(const len of [3,2,1]){
+    const p = PREFIX_PROGRAM[call.slice(0,len)];
+    if(p) return p;
+  }
+  return 'ONFF';
+}
+
 function syncSpotFilterUI(){
-  [...$('spotFilter').children].forEach(c=>c.classList.toggle('on', c.dataset.filter===spotFilter));
-  const seg = $('setSpotFilter');
-  if(seg) [...seg.children].forEach(c=>c.classList.toggle('on', c.dataset.filter===spotFilter));
+  const prog = homeProgram();
+  for(const bar of ['spotFilter','setSpotFilter']){
+    const el = $(bar); if(!el) continue;
+    const home = el.querySelector('[data-home]');
+    if(home){ home.dataset.filter = prog; home.textContent = prog; }
+    [...el.children].forEach(c=>c.classList.toggle('on', c.dataset.filter===spotFilter));
+  }
   const sel = $('setSpotCountry');
-  if(sel) sel.value = (spotFilter!=='all' && spotFilter!=='onff') ? spotFilter : '';
+  if(sel) sel.value = spotFilter !== 'all' ? spotFilter : '';
 }
 function populateSpotCountries(){
   const sel = $('setSpotCountry'); if(!sel) return;
@@ -412,6 +437,8 @@ $('setSpotFilter').addEventListener('click', e=>{
 $('setSpotCountry').addEventListener('change', e=>{
   setSpotFilter(e.target.value || 'all');
 });
+/* The callsign decides the first button, so changing it has to redraw one. */
+['setCall','setCallP'].forEach(id => $(id).addEventListener('input', () => syncSpotFilterUI()));
 $('setWorldCountry').addEventListener('change', e=>{
   setWorldFilter(e.target.value || 'all');
 });
