@@ -26,18 +26,43 @@ const BAND_LIST_FULL  = ['160m','80m','60m','40m','30m','20m','17m','15m',
                          '12m','10m','6m','4m','2m','70cm','23cm'];
 const BAND_LIST_SHORT = ['80m','40m','30m','20m','15m','10m'];
 
+/* An announcement covers an afternoon, not a single frequency, so it takes as
+ * many bands as you like — unlike a spot, which is one signal on one band at
+ * one moment. Spotline's own agenda feed shows this is how the field is used
+ * everywhere: nearly every entry in it reads "40m, 20m, 17m, 15m", comma and
+ * a space, in descending wavelength. We send exactly that, in the order of the
+ * band list rather than the order you happened to tap. */
+let agBandSel = [];
+
 function fillBandOptions(){
-  const sel = $('agBand'); if(!sel) return;
-  const keep = sel.value;
+  const box = $('agBands'); if(!box) return;
   const list = cfg.bands === 'short' ? BAND_LIST_SHORT : BAND_LIST_FULL;
-  sel.innerHTML = '<option value="">—</option>'
-                + list.map(b => `<option>${b}</option>`).join('');
-  // Something already filled in that the shorter list does not contain stays
-  // selectable. Losing what you had picked because you changed a setting is
-  // worse than one extra line in the list.
-  if(keep && !list.includes(keep)) sel.insertAdjacentHTML('beforeend', `<option>${keep}</option>`);
-  sel.value = keep;
+  // A band already picked that the shorter list does not contain stays on
+  // screen. Losing a choice because you changed a setting is worse than one
+  // extra chip in the row.
+  const extra = agBandSel.filter(b => !list.includes(b));
+  box.innerHTML = list.concat(extra).map(b =>
+    `<button type="button" class="chip${agBandSel.includes(b) ? ' on' : ''}" data-band="${b}">${b}</button>`
+  ).join('');
 }
+
+/* In band-list order, so the announcement reads the way everyone else's does. */
+function agBandValue(){
+  const order = BAND_LIST_FULL.concat(BAND_LIST_SHORT.filter(b => !BAND_LIST_FULL.includes(b)));
+  return agBandSel.slice()
+    .sort((a,b) => order.indexOf(a) - order.indexOf(b))
+    .join(', ');
+}
+
+$('agBands').addEventListener('click', e => {
+  const b = e.target.closest('.chip[data-band]'); if(!b) return;
+  const band = b.dataset.band;
+  if(agBandSel.includes(band)) agBandSel = agBandSel.filter(x => x !== band);
+  else agBandSel.push(band);
+  b.classList.toggle('on', agBandSel.includes(band));
+  vergeetControleAg();
+  validateAgenda();
+});
 
 function checkAgReference(){
   const v = $('agReference').value.trim().toUpperCase();
@@ -111,7 +136,7 @@ function agendaVelden(){
     utc_end:        new Date($('agEnd').value).toISOString(),
     pin:            $('agPin').value.trim(),
   };
-  const band = $('agBand').value.trim(); if(band) uit.band = band;
+  const band = agBandValue(); if(band) uit.band = band;
   const mode = $('agMode').value;        if(mode) uit.mode = mode;
   const rem  = $('agRemarks').value.trim(); if(rem) uit.remarks = rem;
   return uit;
@@ -215,7 +240,8 @@ $('agSend').onclick = async () => {
       fb.className = 'fb good';
       showStatus('in', t('ag.ok'), `${v.activator_call} · ${v.reference}`);
       $('agReference').value = ''; $('agStart').value = ''; $('agEnd').value = '';
-      $('agBand').value = ''; $('agMode').value = ''; $('agRemarks').value = ''; $('agPin').value = '';
+      agBandSel = []; fillBandOptions();
+      $('agMode').value = ''; $('agRemarks').value = ''; $('agPin').value = '';
       $('agCount').textContent = '0/100';
       $('fbAgReference').textContent = ''; $('fbAgReference').className = 'fb';
     } else {
@@ -239,7 +265,7 @@ $('agSend').onclick = async () => {
     validateAgenda();
   });
 });
-['agStart','agEnd','agBand','agMode','agPin'].forEach(id => $(id).addEventListener('input', () => {
+['agStart','agEnd','agMode','agPin'].forEach(id => $(id).addEventListener('input', () => {
   vergeetControleAg();
   validateAgenda();
 }));

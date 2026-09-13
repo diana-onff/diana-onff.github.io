@@ -1040,3 +1040,52 @@ markdown-links opnieuw geprogrammeerd nagelopen: allemaal geldig.
 it/es ontbreken en daar naar het Nederlands terugvallen (bestond al voor deze
 ronde), en punt 2 van de GPS-fix (`watchPosition()` met een
 nauwkeurigheidsdrempel, voor het koude-fix-probleem uit Waasmunster).
+
+---
+
+**Uitgevoerd op 2026-09-13 — v1.9.0.** Punt 2 van de GPS-fix, plus twee dingen
+die eruit volgden.
+
+- **De positie zelf, niet de rand** (`geo.js`). Punt 1 (v1.7.1) ging over de
+  foutmarge rond een grens. Dit gaat over de fix die binnenkomt. Diana vroeg
+  met `getCurrentPosition` één keer om een positie en nam het eerste antwoord,
+  met `maximumAge: 5000` erbij, zodat zelfs een fix van seconden oud meetelde.
+  Een GPS-chip die net wakker wordt heeft nog geen satellieten en het
+  antwoord komt dan uit wifi en zendmasten — honderden meters mis, met
+  dezelfde stelligheid gebracht. Dat was Waasmunster: de grenscontrole klopte,
+  de positie niet. Nu `watchPosition` met `maximumAge: 0`: de fixes komen in
+  golven binnen, de marker volgt mee, maar de vraag "sta ik erin" wordt pas
+  beantwoord als de nauwkeurigheid onder 25 m zit, of na 12 s met de scherpste
+  die we kregen — en die gaat dan met haar echte foutmarge door `evaluate()`,
+  dus ±400 m geeft "te dichtbij om te zeggen" in plaats van een stellige
+  leugen. Daarna stopt de watch, anders kost hij de hele namiddag batterij.
+  Nieuw `bestFix()` is de enige manier waarop Diana nog een positie vraagt;
+  ook "locator uit GPS overnemen" in Instellingen liep in dezelfde val en
+  gebruikt hem nu. Onderweg gevonden: nauwkeurigheid `0` las ik eerst als
+  "onbekend", waardoor er 12 s gewacht werd op een fix die volgens de browser
+  al perfect was — nul is een getal, geen ontbrekende waarde.
+- **Straal voor "In de buurt" instelbaar** (10/25/50/100 km, standaard 25).
+  Was een vast aantal van 25 stuks; de kop toonde daardoor de afstand van de
+  verste in plaats van een straal. Boven de honderd rijen kapt het scherm af,
+  en dan staat dat in de kop ("100 / 217") met een knop "Toon 100 meer" die
+  eronder aanvult — geen pagina 2, want wegnavigeren van wat je aan het lezen
+  bent en je plek terugzoeken is op een telefoon in een veld erger dan langer
+  scrollen. Instellingen staat nu ook rechts als laatste in de balk.
+- **Banden op de agenda zijn meervoudig.** Nagekeken in de echte
+  `agendas.json` van Spotline: élke aankondiging daar zet meerdere banden in
+  dat ene veld, komma en spatie, aflopende golflengte ("40m, 20m, 17m, 15m").
+  Eén band was dus de uitzondering, en Diana deed precies dat. Nu een rij
+  aantikbare chips; de selectie vertrekt in bandvolgorde, niet in de volgorde
+  waarin je tikte. Bij spotten blijft het één band — dat is één signaal op één
+  frequentie op één moment.
+
+Tests: nieuw `test_gps_watch.py` (17 checks) met een nagebootste geolocatie die
+van grof naar fijn convergeert, op een punt waar grof en fijn aan
+weerszijden van een echte ONFF-grens vallen; `getCurrentPosition` gooit daarin
+een fout, zodat terugvallen op één keer vragen meteen opvalt. Verder
+uitgebreid: `test_nearby.py` (straal, afkapping, "toon meer"),
+`test_agenda.py` (meerdere banden, bandvolgorde, behoud bij wisselen van
+lijst). Volledige suite groen. `USER_GUIDE.md` en `DEVELOPER.md` bijgewerkt.
+
+**Nog open:** de 17 `adm.*`-sleutels die in fr/de/da/it/es naar het Nederlands
+terugvallen (bestond al voor deze ronde).

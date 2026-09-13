@@ -33,32 +33,133 @@ function distanceToZone(lat,lon,f){
     }
   return best;
 }
+/* ---------- getting a position that can be trusted ----------
+ *
+ * Asking the browser where you are is not one question with one answer. A GPS
+ * chip that has just woken up has no satellites yet, and the browser answers
+ * in the meantime from wifi networks and cell masts — a position that can be
+ * hundreds of metres out, handed over with exactly the same air of confidence
+ * as a real one. That is what made Diana report "you are outside" while
+ * standing in the middle of a reserve: the boundary check was right, the
+ * position was wrong. Opening another app that forces a proper fix and coming
+ * back made it correct, which is the tell.
+ *
+ * getCurrentPosition() takes whatever that first answer happens to be, and
+ * maximumAge made it worse by allowing a fix from seconds ago to count.
+ *
+ * So: watch instead of ask. Fixes arrive in waves and the reported accuracy
+ * falls as satellites come in — 1500 m, 400 m, 60 m, 12 m. The marker follows
+ * along, but the question "are you inside this reference" is not answered
+ * until the accuracy is good enough, or until we have waited long enough and
+ * answer with the sharpest fix we got (which, being honestly ±400 m, comes out
+ * of evaluate() as "too close to call" rather than a confident lie). Then the
+ * watch is stopped, because one left running costs battery all afternoon.
+ *
+ * It costs a few seconds. An answer that holds is worth more than an instant
+ * answer that is sometimes wrong.
+ */
+const FIX_GOOD_M  = 25;      // sharp enough to stop early and answer
+const FIX_WAIT_MS = 12000;   // and never keep anyone waiting longer than this
+let fixRun = null;           // the locate() in progress, or null
+
+/* Everything that follows from a new position. `final` separates following
+   along on the map (every wave) from committing to an answer (once). */
+function fixApply(pos, final){
+  const {latitude:lat, longitude:lon, accuracy} = pos.coords;
+  here = {lat, lon};
+  marker.setLngLat([lon,lat]).addTo(map);
+  if(final) map.easeTo({center:[lon,lat], zoom:Math.max(map.getZoom(),12)});
+  renderSpots();
+  // Nearby was drawn from the centre of your locator square until now, or not
+  // at all — a real fix changes every distance on it. A new position is a new
+  // list, so it starts at the first pageful again.
+  nearShown = NEAR_MAX_ROWS;
+  if($('viewNearby').classList.contains('on')) renderNearby();
+  // The arc lines were drawn from the locator square too; redraw them, or they
+  // stay skewed until you happen to switch tabs.
+  if(showSpots) paintSpots();
+  if(final) evaluate(lat, lon, accuracy);
+}
+
+/* The one way to get a position in Diana. onFinal gets the sharpest fix we
+   could get within the budget; onFail only fires when there is nothing at all.
+   Used by the ◎ button, by the map at startup, and by "take my locator from
+   the GPS" in Settings — the same trap catches all three. */
+/* The reported accuracy in metres, or null when the browser did not give a
+   usable one. Zero is a number, not a missing value — reading it as "unknown"
+   is how you end up waiting the full budget for a fix that was already perfect
+   by the browser's own account. */
+function fixAcc(pos){
+  const a = pos && pos.coords ? pos.coords.accuracy : null;
+  return (typeof a === 'number' && isFinite(a) && a >= 0) ? a : null;
+}
+
+function bestFix(onFinal, onProgress, onFail){
+  if(!navigator.geolocation){ if(onFail) onFail(null); return null; }
+  const run = {watch:null, timer:null, best:null, done:false};
+  run.stop = () => {
+    run.done = true;
+    if(run.watch != null) navigator.geolocation.clearWatch(run.watch);
+    if(run.timer != null) clearTimeout(run.timer);
+    run.watch = run.timer = null;
+  };
+  const settle = () => {
+    const best = run.best;
+    run.stop();
+    if(best) onFinal(best);
+    else if(onFail) onFail(null);
+  };
+  run.timer = setTimeout(settle, FIX_WAIT_MS);
+  run.watch = navigator.geolocation.watchPosition(pos => {
+    if(run.done) return;
+    const acc = fixAcc(pos), best = fixAcc(run.best);
+    // Keep the sharpest fix so far, not the most recent one: accuracy does not
+    // only improve, it wanders.
+    if(!run.best || acc == null || best == null || acc < best) run.best = pos;
+    if(onProgress) onProgress(pos);
+    // A browser that will not say how accurate its fix is gives us nothing to
+    // wait for, so waiting would only cost time.
+    if(acc == null || acc <= FIX_GOOD_M) settle();
+  }, err => {
+    if(run.done) return;
+    // A wobble after we already have something usable is not a failure.
+    if(run.best){ settle(); return; }
+    run.stop();
+    if(onFail) onFail(err);
+  }, {enableHighAccuracy:true, timeout:FIX_WAIT_MS, maximumAge:0});
+  return run;
+}
+
 function locate(quiet){
   // quiet: called at startup instead of by a tap on ◎. No searching message and
   // no error message then — anyone who doesn't share their location ought to
   // simply see a map, not a complaint.
   if(!navigator.geolocation){ if(!quiet) showStatus('out', t('gps.none'), t('gps.nonesub')); return; }
+  // A tap while one is already running should not start a second watch — it
+  // should only start showing what the first one is doing.
+  if(fixRun){ if(!quiet) fixRun.quiet = false; return; }
   if(!quiet) showStatus('out', t('gps.searching'), '');
-  navigator.geolocation.getCurrentPosition(pos=>{
-    const {latitude:lat, longitude:lon, accuracy} = pos.coords;
-    here = {lat, lon};
-    marker.setLngLat([lon,lat]).addTo(map);
-    map.easeTo({center:[lon,lat], zoom:Math.max(map.getZoom(),12)});
-    evaluate(lat,lon,accuracy);
-    renderSpots();
-    // Nearby was drawn from the centre of your locator square until now, or not
-    // at all. A real fix changes every distance on it.
-    // A new position is a new list, so it starts at the first pageful again.
-    nearShown = NEAR_MAX_ROWS;
-    if($('viewNearby').classList.contains('on')) renderNearby();
-    // By now the arc lines have already been drawn from the centre of your
-    // locator square — that is the only starting point there is at startup. As
-    // soon as the GPS answers that no longer holds, so we draw them again.
-    // Without this they stay skewed until you happen to switch tabs.
-    if(showSpots) paintSpots();
-  }, err=>{
-    if(!quiet) showStatus('out', t('gps.failed'), err.message);
-  }, {enableHighAccuracy:true, timeout:12000, maximumAge:5000});
+
+  // The token is claimed before the watch starts, so a fix that arrives
+  // immediately cannot finish before we have something to compare against.
+  const mine = {quiet: !!quiet};
+  fixRun = mine;
+  const loud = () => fixRun === mine && !mine.quiet;
+  const release = () => { if(fixRun === mine) fixRun = null; };
+
+  mine.run = bestFix(
+    pos => { release(); fixApply(pos, true); },
+    pos => {
+      const say = loud();
+      fixApply(pos, false);
+      if(say) showStatus('out', t('gps.searching'),
+        t('gps.refining').replace('{a}', Math.round(fixAcc(pos) || 0)));
+    },
+    err => {
+      const say = loud(); release();
+      if(say) showStatus('out', t('gps.failed'), err ? err.message : t('gps.nofix'));
+    });
+  if(!mine.run) release();
 }
 function evaluate(lat,lon,accuracy){
   // Only real boundaries take part in "am I inside it". A point without a

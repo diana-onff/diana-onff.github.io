@@ -78,7 +78,16 @@ zone-detail panel showing only whatever attributes that zone actually has
 (most zones have far less metadata than you'd expect — see
 [ARCHITECTURE.md §2.1](ARCHITECTURE.md#21-the-onff-kmz-one-layer-further-back)), and GPS "am I
 inside this zone right now" with a warning when your GPS accuracy is poor
-enough that the answer could flip. Zone reference numbers are shown as
+enough that the answer could flip.
+
+Finding your position takes a few seconds on purpose. A phone that has just
+woken its GPS answers from wifi and cell masts first, and that position can be
+hundreds of metres out — which is how Diana used to report "outside" while you
+stood in the middle of a reserve. So it keeps listening while the accuracy
+improves, shows what it has so far ("sharpening the fix… ±380 m"), and only
+answers the inside-or-outside question once the fix is good enough, or after
+twelve seconds with the sharpest one it got. If that one is still coarse, the
+answer says so rather than sounding certain. Zone reference numbers are shown as
 labels by default. When a spot or zone panel is open, on a phone-sized
 screen only one bottom panel is ever visible at a time — opening one tucks
 the other out of the way automatically.
@@ -165,8 +174,15 @@ separate — someone else can announce on an activator's behalf), the WWFF
 reference (checked against Diana's own data, exactly as in self-spotting),
 start and end time in **your own local time** — Diana converts to UTC before
 it leaves your device, so you never have to do that arithmetic — and
-optionally a band, a mode, and a remark. You also choose a **PIN**, at least
-four characters.
+optionally the bands, a mode and a remark. You also choose a **PIN**, at
+least four characters.
+
+**Bands are a multiple choice here**, unlike on the spot screen: an
+announcement covers an afternoon, and Spotline's agenda is used that way
+almost everywhere — entries read "40m, 20m, 17m". Tap as many as you expect
+to work and they travel as one field in band order, whatever order you tapped
+them in. Whether the row offers every band from 160m to 23cm or only the six
+HF bands is a choice in Settings.
 
 Diana itself limits you to 16 announcements a day from the same device (the
 screen says so) — that is Diana protecting the shared Spotline budget from a

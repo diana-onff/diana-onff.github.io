@@ -25,6 +25,7 @@ python3 build/tests/test_new.py      # etc.
 | `test_agenda.py` | announcing an activation: the date rules, local time going out as UTC, the PIN kept on the device, and all three ways into the screen |
 | `test_visual.py` | that the screens actually look right, by taking and inspecting screenshots |
 | `test_split.py` | that `web/js/*.js` stays loadable: every file has a `<script>` tag, every file is in `SHELL_FILES`, nothing throws at load, and the files can still see each other's declarations |
+| `test_gps_watch.py` | how a position is obtained: that a coarse first fix does not get to answer, that the sharp one does, that the watch is closed again, that a cached fix is refused (`maximumAge: 0`), and that nothing falls back to asking once with `getCurrentPosition` |
 | `test_gps_accuracy.py` | "am I inside this zone?" treats the GPS's reported accuracy the same way on both sides of a boundary — just outside by less than the accuracy is "too close to call", exactly like just inside already was |
 
 The style-switch test in `test_swipe.py` is the most important one: that is where

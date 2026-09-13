@@ -81,7 +81,7 @@ character for character, apart from one line noted in `map.js`.
 | `rules.js` | the band plan and the rules screen (Screen 6) |
 | `nearby.js` | Nearby: the closest references and their activation history (Screen 7) |
 | `offline.js` | service worker registration, the update flow, downloading an area |
-| `geo.js` | point-in-polygon, distance, `locate()`, the status bar, the locate button |
+| `geo.js` | point-in-polygon, distance, `bestFix()`/`locate()`, the status bar, the locate button |
 
 They are **ordinary scripts, not ES modules**, so they share one global scope
 exactly as the single file did — what `core.js` declares is what `spots.js`
