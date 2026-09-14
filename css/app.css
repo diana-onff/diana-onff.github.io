@@ -86,6 +86,9 @@
   /* Used for "this country's boundaries are on board": the one hint that
      reports something good rather than explaining something. */
   .hint.good{color:var(--green-2)}
+  /* And its opposite: a position too coarse to be trusted. Not red — nothing
+     is broken, it is simply not good enough to draw a conclusion from. */
+  .hint.warn{color:#b45309}
 
   /* ---------- search ---------- */
   .search{

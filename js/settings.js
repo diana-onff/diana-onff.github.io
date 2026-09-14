@@ -68,6 +68,7 @@ function loadSettingsUI(){
   [...$('setNearKm').children].forEach(b => b.classList.toggle('on', +b.dataset.km === cfg.nearkm));
   syncSpotFilterUI();
   syncCountryUI();
+  syncFixUI();
   [...$('setLang').children].forEach(b => b.classList.toggle('on', b.dataset.lang === langPref));
   checkGrid();
 }
@@ -136,11 +137,15 @@ function checkGrid(){
 $('setGridGps').onclick = () => {
   if(!navigator.geolocation) return;
   $('setGridGps').disabled = true;
+  // The answer can be overturned by a sharper fix a few seconds later, so the
+  // locator is written again then — and the button stays disabled until the
+  // watch closes, or it would invite a second one while the first is still
+  // making up its mind.
   const done = () => { $('setGridGps').disabled = false; };
   bestFix(pos => {
     cfg.grid = locator(pos.coords.latitude, pos.coords.longitude);
-    $('setGrid').value = cfg.grid; checkGrid(); saveSettings(); done();
-  }, null, done);
+    $('setGrid').value = cfg.grid; checkGrid(); saveSettings();
+  }, null, done, done);
 };
 
 /* ---------- locator → coordinates ---------- */
