@@ -64,11 +64,16 @@ function distanceToZone(lat,lon,f){
  *
  * You cannot tell those apart at the moment they arrive. So we stopped trying:
  * the first good-looking fix still answers straight away, but the watch keeps
- * running for the rest of the budget, and a later fix that is BOTH sharper AND
- * disagrees by more than its own error margin replaces it — marker, verdict
- * and all. Outdoors, where the first fix is already the real one, nothing
+ * running for the rest of the budget and the answer is revised as more readings
+ * come in. Outdoors, where the first fix is already the real one, nothing
  * changes and you notice nothing. Indoors, the answer corrects itself a few
  * seconds later instead of quietly being wrong.
+ *
+ * Which reading wins is NOT decided by the accuracy it claims for itself —
+ * that was the next thing to fail, and it failed on the same phone that
+ * reported ±5 m while its answers stood fifty metres apart. The readings are
+ * judged against each other instead; see "what the readings TOGETHER say"
+ * below.
  *
  * And an accuracy the browser will not state is never treated as a good one.
  * "Unknown" used to come out of evaluate() as nought metres — which reads as
@@ -76,13 +81,6 @@ function distanceToZone(lat,lon,f){
  */
 const FIX_GOOD_M  = 25;      // sharp enough to answer on
 const FIX_WAIT_MS = 12000;   // and never keep anyone waiting longer than this
-/* How much sharper a later fix has to be before it may overturn the answer.
-   A metre of improvement is not evidence of anything: indoors the accuracy
-   wanders by a few metres from wave to wave, and letting that move the marker
-   makes it dance across the street while the app looks broken. Three tenths
-   better is a real step — and the case this is all for, a wifi fix claiming
-   20 m replaced by a satellite fix of 8 m, clears it with room to spare. */
-const FIX_BETTER = 0.7;
 let fixRun = null;           // the locate() in progress, or null
 /* The last position we committed to, for the readout in Settings: there is no
    other way to tell a sharp fix from a coarse one after the fact, and "it put
@@ -92,11 +90,110 @@ let lastFix = null;
    with it. Drives the ring on the map; see fixApply() for why it is not the
    same thing as lastFix. */
 let ringFix = null;
+/* Whether the readings behind the current answer contradicted each other. Set
+   where the verdict is made, read where the verdict is worded. */
+let fixScattered = false;
 
 /* How far apart two fixes are, in metres. */
 function fixApart(a, b){
   return haversine(a.coords.latitude, a.coords.longitude,
                    b.coords.latitude, b.coords.longitude);
+}
+
+/* ---------- what the readings TOGETHER say ----------
+ *
+ * Five readings from one spot in Hoboken, two minutes apart at most: 773 m
+ * ±6, 820 m ±11, 768 m ±10, 776 m ±8, 767 m ±5 to the same reference. Four of
+ * those ten pairs are mutually impossible — 820 ±11 against 767 ±5 differ by
+ * 53 m where their own margins allow 16. The phone was not a little
+ * optimistic; it claimed ±8 while scattering over fifty metres.
+ *
+ * No rule that reads the stated accuracy can catch that, because the stated
+ * accuracy is the thing that is wrong. But the readings catch each other: if
+ * several of them, taken seconds apart, land further apart than they claim to
+ * be able to, then that claim is refuted by the phone's own evidence. So the
+ * margin Diana reports is the larger of what the phone says and what its
+ * answers actually do.
+ *
+ * Two things keep this from overreacting:
+ *   - only fixes of comparable quality are weighed against each other. A wifi
+ *     fix claiming 20 m and a satellite fix claiming 8 m do not "disagree" —
+ *     one is simply better, and the coarse one is dropped rather than allowed
+ *     to inflate the margin to the distance between them.
+ *   - the position becomes the most central of the readings rather than the
+ *     first or the last, which is what makes a single wild outlier harmless.
+ */
+const FIX_WINDOW_MS = 45000;   // readings older than this say nothing about now
+const FIX_CREDIBLE  = 2;       // within 2x of the best stated accuracy counts
+const FIX_WALK_MPS  = 1.4;     // you could honestly have walked this far meanwhile
+const FIX_SCATTER   = 1.5;     // beyond this much of the stated margin: scattered
+
+/* Every reading of the last minute, across taps — not per run. Those five
+   readings were five separate presses of the ◎ button, so a history that
+   started fresh each time would never see them disagree. */
+let fixLog = [];
+
+function fixRemember(lat, lon, acc, at){
+  fixLog.push({lat, lon, acc, at: at || Date.now()});
+  const cut = Date.now() - FIX_WINDOW_MS;
+  fixLog = fixLog.filter(f => f.at >= cut).slice(-16);
+}
+
+/* The readings worth weighing against each other: recent, and not obviously
+   worse than the best one in hand. */
+function fixCredible(now){
+  const fresh = fixLog.filter(f => now - f.at <= FIX_WINDOW_MS);
+  if(!fresh.length) return [];
+  const best = Math.min(...fresh.map(f => f.acc));
+  return fresh.filter(f => f.acc <= Math.max(best * FIX_CREDIBLE, best + 5));
+}
+
+/* Where the readings agree you are, and how far out that can be.
+   Returns {lat, lon, acc, scattered} or null. */
+function fixVerdict(now){
+  now = now == null ? Date.now() : now;
+  const set = fixCredible(now);
+  if(!set.length) return null;
+  const sharp = set.reduce((a, b) => (b.acc < a.acc ? b : a));
+  if(set.length === 1) return {lat:sharp.lat, lon:sharp.lon, acc:sharp.acc, scattered:false};
+
+  // The medoid: the reading with the least total distance to the others. Not an
+  // average — averaging two clusters puts you in the street between them, where
+  // no reading ever said you were.
+  let mid = set[0], midSum = Infinity;
+  for(const a of set){
+    let sum = 0;
+    for(const b of set) sum += haversine(a.lat, a.lon, b.lat, b.lon);
+    if(sum < midSum){ midSum = sum; mid = a; }
+  }
+  // How far the readings stand apart beyond what they could honestly explain:
+  // their own margins, plus the walking you might have done in between. What is
+  // left over is scatter, and scatter is error the phone did not own up to.
+  let reach = mid.acc;
+  for(const b of set){
+    const walked = FIX_WALK_MPS * Math.abs(b.at - mid.at) / 1000;
+    const onverklaard = haversine(mid.lat, mid.lon, b.lat, b.lon) - walked;
+    if(onverklaard > reach) reach = onverklaard;
+  }
+  // Consistent readings leave the sharpest one to speak for itself; only when
+  // they genuinely contradict each other does the middle of the cloud become
+  // the better answer, with the width of the cloud as the margin.
+  if(reach <= sharp.acc * FIX_SCATTER)
+    return {lat:sharp.lat, lon:sharp.lon, acc:sharp.acc, scattered:false};
+  return {lat:mid.lat, lon:mid.lon, acc:Math.round(reach), scattered:true};
+}
+
+/* A verdict dressed as a Position, so that everything downstream — fixApply,
+   evaluate, the ring — keeps taking one kind of thing. */
+function fixAsPos(v){
+  return {coords:{latitude:v.lat, longitude:v.lon, accuracy:v.acc}, timestamp:Date.now()};
+}
+
+/* Worth telling the user about again? A metre of drift is not. */
+function fixMoved(a, b){
+  if(!a) return true;
+  return haversine(a.lat, a.lon, b.lat, b.lon) > 5 ||
+         Math.abs(a.acc - b.acc) > Math.max(5, a.acc * 0.25);
 }
 
 /* Everything that follows from a new position. `final` separates following
@@ -163,7 +260,13 @@ function bestFix(onFinal, onProgress, onFail, onEnd){
     const alwaar = run.answered;
     run.stop();
     if(!alwaar){
-      if(best) onFinal(best);
+      // Nothing was good enough to answer on. Whatever we did collect still
+      // has to be judged together — a reading with no stated accuracy, or one
+      // too coarse to commit to, is exactly the case where the readings as a
+      // whole know more than any one of them.
+      const verdict = fixVerdict();
+      if(verdict){ fixScattered = verdict.scattered; onFinal(fixAsPos(verdict)); }
+      else if(best) onFinal(best);
       else if(onFail) onFail(null);
     }
   }, FIX_WAIT_MS);
@@ -187,21 +290,30 @@ function bestFix(onFinal, onProgress, onFail, onEnd){
     // does not know how good it is.
     if(acc == null) return;
 
+    // Into the log, and then let ALL the recent readings decide together —
+    // this one included. That is what turns "the phone says ±5 m" into "the
+    // phone's last four answers stand 50 m apart, so ±5 m is not true".
+    fixRemember(pos.coords.latitude, pos.coords.longitude, acc);
+    const verdict = fixVerdict();
+    if(!verdict) return;
+
     if(!run.answered){
-      if(acc <= FIX_GOOD_M){ run.answered = pos; onFinal(pos); }
+      // Still as quick as before: one usable reading is enough to answer on.
+      if(verdict.acc <= FIX_GOOD_M || acc <= FIX_GOOD_M){
+        run.answered = verdict;
+        fixScattered = verdict.scattered;
+        onFinal(fixAsPos(verdict));
+      }
       return;
     }
-    // Answered already. Being meaningfully sharper is the whole test, and it
-    // is enough on its own: a better fix is better evidence whether or not it
-    // moves you, and if it does not move you it still shrinks the circle drawn
-    // around you and can change a verdict that was hedged for lack of
-    // precision. What it is NOT allowed to be is a fix that is barely better —
-    // that is the wander, not the satellites, and following it is what makes
-    // the marker hop about indoors.
-    const had = fixAcc(run.answered);
-    if(had == null || acc <= had * FIX_BETTER){
-      run.answered = pos;
-      onFinal(pos);
+    // Answered already, and now there is more evidence. Re-answer whenever the
+    // picture has really changed — the position moved, or the margin turned out
+    // to be wider or narrower than we said. No test on this single fix being
+    // "better": the whole point is that a fix cannot be trusted to rate itself.
+    if(fixMoved(run.answered, verdict)){
+      run.answered = verdict;
+      fixScattered = verdict.scattered;
+      onFinal(fixAsPos(verdict));
     }
   }, err => {
     if(run.done) return;
@@ -276,8 +388,9 @@ function evaluate(lat,lon,accuracy){
   // marker looks equally certain at ±6 m and at ±80 m, and a position that
   // wanders eighty metres between refreshes reads as a fault in the app rather
   // than as what the phone can manage indoors.
-  const note = acc == null ? ' · ' + t('gps.noacc')
-                           : ' · ' + t('gps.accis').replace('{a}', acc);
+  const note = (acc == null ? ' · ' + t('gps.noacc')
+                            : ' · ' + t('gps.accis').replace('{a}', acc))
+             + (fixScattered ? ' · ' + t('gps.scatter') : '');
   if(inside.length){
     // Edge case: are you so close to the boundary that the GPS error could flip the answer?
     const edge = Math.min(...inside.map(f=>distanceToZone(lat,lon,f)));
