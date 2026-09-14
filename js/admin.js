@@ -119,16 +119,40 @@ $('admTest').onclick = async () => {
     }
     fb.innerHTML = uit.join('<br>') + (alles ? '' : `<br>⚠ ${t('adm.noperm')}`);
     fb.className = 'fb ' + (alles ? 'good' : 'bad');
-    $('admSend').disabled = !($('admFile').files && $('admFile').files.length);
+    vulProgrammas();
+    $('admSend').disabled = !magVersturen();
   }catch(err){
     fb.textContent = '✗ ' + err.message; fb.className = 'fb bad';
     $('admSend').disabled = true;
   }
 };
 
-$('admFile').addEventListener('change', () => {
-  $('admSend').disabled = !($('admFile').files.length && adm.repo && adm.token);
-});
+/* Which country a KMZ belongs to cannot be read from the file: the ONFF export
+ * carries its reference numbers in folder names, and there is no reason another
+ * country's export does the same. So it is asked, and asked deliberately — no
+ * preselection, because a wrong answer here would put a German release in the
+ * Belgian folder and overwrite it. Nothing is sent until a country is chosen.
+ *
+ * The list is every WWFF programme there is, with the ones Diana already has
+ * boundaries for at the top: those are the ones being re-uploaded most. */
+function vulProgrammas(){
+  const sel = $('admProgram'); if(!sel) return;
+  const keep = sel.value;
+  const have = new Set((countries || []).map(c => c.program));
+  const mine = (wwffPrograms || []).filter(p => have.has(p.program));
+  const rest = (wwffPrograms || []).filter(p => !have.has(p.program));
+  const opt = p => `<option value="${p.program}">${p.program} — ${p.country}</option>`;
+  sel.innerHTML = `<option value="">${t('adm.countrypick')}</option>`
+    + (mine.length ? `<optgroup label="${t('adm.countryhas')}">${mine.map(opt).join('')}</optgroup>` : '')
+    + (rest.length ? `<optgroup label="${t('adm.countrynew')}">${rest.map(opt).join('')}</optgroup>` : '');
+  sel.value = keep;
+}
+
+function magVersturen(){
+  return !!($('admFile').files.length && $('admProgram').value && adm.repo && adm.token);
+}
+$('admFile').addEventListener('change', () => { $('admSend').disabled = !magVersturen(); });
+$('admProgram').addEventListener('change', () => { $('admSend').disabled = !magVersturen(); });
 
 /* Large files to base64 in chunks — done in one go, the call stack overflows. */
 function toBase64(buf){
@@ -186,25 +210,30 @@ async function wachtOpBranch(branch, vanaf){
   return false;
 }
 
-async function opentPr(branch, bestand){
+async function opentPr(branch, bestand, program){
   let rapport = '';
   try{
     rapport = await ghRuw(`/repos/${adm.repo}/contents/report.md?ref=${encodeURIComponent(branch)}`);
   }catch{}
   return gh(`/repos/${adm.repo}/pulls`, {
     method:'POST', body: JSON.stringify({
-      title:`Nieuwe ONFF-release: ${bestand}`, head: branch, base: adm.branch,
-      body:`Omgezet uit \`incoming/${bestand}\` in de bron-repo, gestart vanuit het beheerscherm van Diana.\n\n`
-         + `Kijk naar de preview vóór je merget. Publiceer je, dan verhuist het bronbestand van \`incoming/\` naar \`source/\`.\n\n`
+      title:`Nieuwe ${program || 'ONFF'}-release: ${bestand}`, head: branch, base: adm.branch,
+      body:`Omgezet uit \`incoming/${program ? program + '/' : ''}${bestand}\` in de bron-repo, `
+         + `gestart vanuit het beheerscherm van Diana.\n\n`
+         + `Kijk naar de preview vóór je merget. Publiceer je, dan verhuist het bronbestand naar `
+         + `\`source/${program ? program + '/' : ''}\`.\n\n`
          + (rapport ? `---\n\n${rapport}` : '')})});
 }
 
 $('admSend').onclick = async () => {
   const file = $('admFile').files[0];
-  if(!file) return;
+  const prog = $('admProgram').value;
+  if(!file || !prog) return;
   $('admSend').disabled = true;
   const bron   = bronRepo();
-  const path   = (adm.path.replace(/^\/|\/$/g,'') + '/' + file.name).replace(/^\//,'');
+  // A folder per country, in the waiting room and in source/ alike. That is
+  // what keeps a new German release from landing on top of the Belgian one.
+  const path   = (adm.path.replace(/^\/|\/$/g,'') + '/' + prog + '/' + file.name).replace(/^\//,'');
   const stamp  = new Date().toISOString().slice(0,16).replace(/[-:T]/g,'');
   const branch = `diana-data-${stamp}`;
   let step = 0;
@@ -242,21 +271,21 @@ $('admSend').onclick = async () => {
     // From here on there is work under way that outlives the app. Anyone who
     // closes the app while the build is running finds it again on the next
     // opening via hervatUpload().
-    bewaarBezig({branch, file: file.name, at: new Date().toISOString()});
+    bewaarBezig({branch, file: file.name, program: prog, at: new Date().toISOString()});
 
     drawSteps(++step);                                          // 8 wait for the branch
     const er = await wachtOpBranch(branch);
     if(!er){ drawSteps(7, t('adm.buildslow')); showStatus('out', t('adm.failed'), t('adm.buildslow')); return; }
 
     drawSteps(++step);                                          // 9 pull request
-    const pr = await opentPr(branch, file.name);
+    const pr = await opentPr(branch, file.name, prog);
 
     drawSteps(STEPS.length);
     bewaarBezig(null);
     $('admSteps').innerHTML += `<div class="step done"><span class="mk">→</span>
       <a href="${pr.html_url}" target="_blank" rel="noopener">${t('adm.openpr')} #${pr.number}</a></div>`;
     showStatus('in', t('adm.done'), `#${pr.number} · ${file.name}`);
-    bewaarPr(pr, file.name);
+    bewaarPr(pr, file.name, prog);
     toonPr().catch(()=>{});
   }catch(err){
     drawSteps(step, err.message);
@@ -277,14 +306,14 @@ async function hervatUpload(){
     // Maybe there is already a pull request for this branch — then just pick it up.
     const bestaand = await gh(`/repos/${adm.repo}/pulls?state=open&head=${adm.repo.split('/')[0]}:${encodeURIComponent(bezig.branch)}`);
     if(bestaand && bestaand.length){
-      bewaarPr(bestaand[0], bezig.file); bewaarBezig(null);
+      bewaarPr(bestaand[0], bezig.file, bezig.program); bewaarBezig(null);
       showStatus('in', t('adm.resumed'), `#${bestaand[0].number}`);
       toonPr().catch(()=>{});
       return;
     }
     await gh(`/repos/${adm.repo}/git/ref/heads/${bezig.branch}`);   // does the branch exist yet?
-    const pr = await opentPr(bezig.branch, bezig.file);
-    bewaarPr(pr, bezig.file); bewaarBezig(null);
+    const pr = await opentPr(bezig.branch, bezig.file, bezig.program);
+    bewaarPr(pr, bezig.file, bezig.program); bewaarBezig(null);
     showStatus('in', t('adm.resumed'), `#${pr.number}`);
     toonPr().catch(()=>{});
   }catch{
@@ -304,10 +333,18 @@ async function hervatUpload(){
  * ================================================================== */
 let prPoll = null;
 
-function bewaarPr(pr, bestand){
+/* Where a pull request's source file sits in the waiting room. Older records
+   have no country on them; those are from the flat layout and are still moved
+   correctly by their bare filename. */
+function bronPad(opgeslagen){
+  if(!opgeslagen || !opgeslagen.file) return '';
+  return opgeslagen.program ? `${opgeslagen.program}/${opgeslagen.file}` : opgeslagen.file;
+}
+
+function bewaarPr(pr, bestand, program){
   const gegevens = pr ? JSON.stringify({
     number: pr.number, branch: pr.head.ref, url: pr.html_url,
-    file: bestand || '', at: new Date().toISOString()
+    file: bestand || '', program: program || '', at: new Date().toISOString()
   }) : '';
   remember('adm.pr', gegevens);
 }
@@ -360,7 +397,7 @@ async function toonPr(){
     let bijschrift = '';
     let verplaatst = true;
     try{
-      if(await verplaatsBron(opgeslagen.file, !!pr.merged)){
+      if(await verplaatsBron(bronPad(opgeslagen), !!pr.merged)){
         bijschrift = ' · ' + t(pr.merged ? 'adm.promoted' : 'adm.discarded');
       }
     }catch{
@@ -467,11 +504,17 @@ $('admPrRefresh').onclick = () => toonPr().catch(err => showStatus('out', err.me
  * stays put in incoming/. Annoying, not dangerous — the nightly build never
  * looks there. The next upload or clean-up puts it right.
  */
-async function verplaatsBron(bestand, naarSource){
-  if(!bestand) return false;
+async function verplaatsBron(pad, naarSource){
+  if(!pad) return false;
   const bron = bronRepo();
-  const vanaf = `${adm.path.replace(/^\/|\/$/g,'')}/${bestand}`;
-  const naar  = `source/${bestand}`;
+  // `pad` is relative to the waiting room and usually starts with the country
+  // folder ("ONFF/ONFF 20260101.kmz"). Publishing therefore lands it in
+  // source/ONFF/, beside the previous release of that same country and nowhere
+  // near anyone else's. A bare filename — the old, Belgium-only layout — still
+  // works and still ends up directly in source/.
+  const rel   = String(pad).replace(/^\/+/, '');
+  const vanaf = `${adm.path.replace(/^\/|\/$/g,'')}/${rel}`;
+  const naar  = `source/${rel}`;
 
   const ref  = await gh(`/repos/${bron}/git/ref/heads/${adm.branch}`);
   const base = ref.object.sha;
@@ -488,8 +531,8 @@ async function verplaatsBron(bestand, naarSource){
   const commit = await gh(`/repos/${bron}/git/commits`, {
     method:'POST', body: JSON.stringify({
       message: naarSource
-        ? `bron: ${bestand} goedgekeurd en naar source/ verplaatst`
-        : `bron: ${bestand} afgewezen en uit de wachtruimte verwijderd`,
+        ? `bron: ${rel} goedgekeurd en naar source/ verplaatst`
+        : `bron: ${rel} afgewezen en uit de wachtruimte verwijderd`,
       tree: tree.sha, parents:[base]})});
   await gh(`/repos/${bron}/git/refs/heads/${adm.branch}`, {
     method:'PATCH', body: JSON.stringify({sha: commit.sha})});
@@ -509,8 +552,15 @@ async function lijstWachtruimte(){
   const pad  = adm.path.replace(/^\/|\/$/g,'');
   if(!bron || !adm.token || !pad) return [];
   try{
-    const items = await gh(`/repos/${bron}/contents/${pad}?ref=${encodeURIComponent(adm.branch)}`);
-    return (Array.isArray(items) ? items : []).filter(x => x.type === 'file' && /\.kmz$/i.test(x.name));
+    // One tree call rather than one per country folder: the waiting room holds
+    // a folder per country now, and a listing that only looked at the top level
+    // would report it empty while files sat in it.
+    const ref  = await gh(`/repos/${bron}/git/ref/heads/${adm.branch}`);
+    const commit = await gh(`/repos/${bron}/git/commits/${ref.object.sha}`);
+    const boom = await gh(`/repos/${bron}/git/trees/${commit.tree.sha}?recursive=1`);
+    return (boom.tree || [])
+      .filter(x => x.type === 'blob' && x.path.startsWith(pad + '/') && /\.kmz$/i.test(x.path))
+      .map(x => ({ path: x.path.slice(pad.length + 1), name: x.path.split('/').pop() }));
   }catch{
     return [];   // no incoming/ yet, or nothing readable — same as "nothing to clean up"
   }
@@ -523,10 +573,10 @@ async function renderCleanup(){
   card.hidden = false;
   $('admCleanupList').innerHTML = bestanden.length ? bestanden.map(b => `
     <div style="margin:10px 0;padding:10px;border:1px solid var(--line);border-radius:10px">
-      <div style="font-weight:650;margin-bottom:8px;word-break:break-all">${b.name}</div>
+      <div style="font-weight:650;margin-bottom:8px;word-break:break-all">${b.path}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn ghost" data-promote="${b.name}">${t('adm.cleanuppromote')}</button>
-        <button class="btn ghost" data-discard="${b.name}">${t('adm.cleanupdiscard')}</button>
+        <button class="btn ghost" data-promote="${b.path}">${t('adm.cleanuppromote')}</button>
+        <button class="btn ghost" data-discard="${b.path}">${t('adm.cleanupdiscard')}</button>
       </div>
     </div>`).join('') : `<p class="hint">${t('adm.cleanupempty')}</p>`;
 }
@@ -568,7 +618,7 @@ $('admPrMerge').onclick = async () => {
     // published.
     let bijschrift = `#${opgeslagen.number}`;
     try{
-      if(await verplaatsBron(opgeslagen.file, true)) bijschrift += ` · ${t('adm.promoted')}`;
+      if(await verplaatsBron(bronPad(opgeslagen), true)) bijschrift += ` · ${t('adm.promoted')}`;
       showStatus('in', t('adm.prmerged'), bijschrift);
       bewaarPr(null); bewaarBezig(null); stopPrPoll();
       $('admPrCard').hidden = true;
@@ -599,7 +649,7 @@ $('admPrClose').onclick = async () => {
     // Otherwise it is still there a month later and nobody remembers why.
     let bijschrift = `#${opgeslagen.number}`;
     try{
-      if(await verplaatsBron(opgeslagen.file, false)) bijschrift += ` · ${t('adm.discarded')}`;
+      if(await verplaatsBron(bronPad(opgeslagen), false)) bijschrift += ` · ${t('adm.discarded')}`;
       showStatus('in', t('adm.prclosed'), bijschrift);
       bewaarPr(null); bewaarBezig(null); stopPrPoll();
       $('admPrCard').hidden = true;

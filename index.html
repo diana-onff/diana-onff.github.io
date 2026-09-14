@@ -129,7 +129,10 @@
     <h4 class="ch" data-i18n="adm.upload">Bestand uploaden</h4>
     <label class="fld"><span data-i18n="adm.target">Wachtruimte in de bron-repo</span>
       <input id="admPath" type="text" autocomplete="off" spellcheck="false" placeholder="incoming/"></label>
-    <input type="file" id="admFile" style="margin:6px 0 10px">
+    <label class="fld"><span data-i18n="adm.country">Voor welk land is dit bestand?</span>
+      <select id="admProgram"><option value="" data-i18n="adm.countrypick">— kies een land —</option></select></label>
+    <p class="hint" style="margin:6px 2px 0" data-i18n="adm.countryhint">Elk land heeft zijn eigen map in de bron-repo, zodat een nieuw bestand alleen het vorige van datzelfde land vervangt.</p>
+    <input type="file" id="admFile" style="margin:10px 0">
     <div class="steps" id="admSteps" hidden></div>
     <button class="btn amber" id="admSend" disabled data-i18n="adm.send">Uploaden en omzetten</button>
     <p class="hint" data-i18n="adm.uploadhint">Het bestand komt in de wachtruimte van de bron-repo. Daarna draait de omzetting en komt het resultaat als pull request met preview te staan. Pas jouw publicatie zet het live en verplaatst het bronbestand naar source/.</p>
