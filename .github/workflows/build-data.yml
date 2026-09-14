@@ -218,23 +218,39 @@ jobs:
           # job on purpose: half-converted data that looks complete is worse
           # than a build that visibly did not finish, and every country's
           # previous files are still on disk untouched.
+          #
+          # A conversion that stops does so with a reason in its own report —
+          # "this file is DLFF, you sent it as OZFF" is the usual one. That
+          # reason is the whole point, so it is collected before the job is
+          # allowed to fail, instead of being left behind in a file nobody
+          # reads.
           : > report.md
+          MISLUKT=""
           while IFS=$'\t' read -r PROG KMZ; do
             echo "::group::$PROG — $(basename "$KMZ")"
+            CODE=0
             python build/kmz2geojson.py \
               --kmz "$KMZ" \
               --program "$PROG" \
               --refs-csv "$REFS" \
               --report "report-$PROG.md" \
-              $STRICT
+              $STRICT || CODE=$?
             {
               echo "### $PROG — \`$(basename "$KMZ")\`"
               echo ""
-              cat "report-$PROG.md"
+              cat "report-$PROG.md" 2>/dev/null || echo "_nothing was written_"
               echo ""
             } >> report.md
             echo "::endgroup::"
+            if [ "$CODE" != "0" ]; then
+              echo "::error::$PROG: $(basename "$KMZ") was not converted — $(head -c 400 "report-$PROG.md" 2>/dev/null | tr '\n' ' ')"
+              MISLUKT="$MISLUKT $PROG"
+            fi
           done < countries.tsv
+          if [ -n "$MISLUKT" ]; then
+            echo "::error::nothing has been changed; failed:$MISLUKT"
+            exit 1
+          fi
           echo "DIANA_COUNTRIES=$(cut -f1 countries.tsv | paste -sd, -)" >> "$GITHUB_ENV"
 
       # The question is not whether the files exist, but whether there is
