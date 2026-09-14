@@ -92,6 +92,18 @@ with sync_playwright() as p:
     ok(spot is not None, f"found a point truly inside a real reference ({spot and spot['ref']})")
     ref, lat, lon = spot["ref"], spot["lat"], spot["lon"]
     coarse_lat, coarse_lon = lat + 0.006, lon + 0.006      # ≈ 800 m away
+    # ... and it has to be genuinely outside the polygon, or "the wrong answer"
+    # in [3b] is not wrong at all. Walk outwards until it really is.
+    outside = pg.evaluate(f"""() => {{
+        const f = zones.features.find(x => x.properties.ref === {ref!r});
+        for(let k = 1; k < 60; k++){{
+          const la = {lat} + 0.002*k, lo = {lon} + 0.002*k;
+          if(!pointInGeom(lo, la, f.geometry)) return {{lat: la, lon: lo}};
+        }}
+        return null;
+    }}""")
+    ok(outside is not None, "found a point just outside that same reference")
+    coarse_lat, coarse_lon = outside["lat"], outside["lon"]
 
     # The app locates itself once at startup, quietly. With no sequence set that
     # run just sits there until its budget expires, and locate() rightly refuses
@@ -125,14 +137,86 @@ with sync_playwright() as p:
     pos = pg.evaluate("() => here")
     ok(abs(pos["lat"] - lat) < 1e-6, "the position kept is the sharp one, not the coarse one")
 
-    print("\n[3] and it stops watching, rather than draining the battery all afternoon")
+    print("\n[3] the watch stays open after answering, and is asked for properly")
+    # It used to close the moment it had an answer. It no longer does: indoors
+    # the first good-looking fix is often a wifi position that is confidently
+    # wrong, and the only way to find that out is to keep listening. It closes
+    # on the budget instead — [4] is where that is checked.
     geo = pg.evaluate("() => window.__GEO")
     ok(geo["watches"] - base["w"] == 1, f"exactly one watch was opened (got {geo['watches'] - base['w']})")
-    ok(len(geo["cleared"]) - base["c"] == 1, f"and it was cleared (cleared: {geo['cleared']})")
+    ok(len(geo["cleared"]) - base["c"] == 0,
+       f"and is still open, listening for something better (cleared: {geo['cleared']})")
     ok(geo["opts"][-1].get("maximumAge") == 0,
        f"a cached fix is refused outright (maximumAge: {geo['opts'][-1].get('maximumAge')})")
     ok(geo["opts"][-1].get("enableHighAccuracy") is True, "and high accuracy is asked for")
     ok(not geo["usedGetCurrent"], "nothing went back to asking once with getCurrentPosition")
+    pg.evaluate("() => { if(fixRun && fixRun.run) fixRun.run.stop(); }")
+    ok(len(pg.evaluate("() => window.__GEO.cleared")) - base["c"] == 1,
+       "and closing it really does clear the watch")
+
+    print("\n[3b] a confident wifi fix is overturned by a sharper one that disagrees")
+    # The report from the field: indoors, no satellite lock, and the browser
+    # answers off the wifi network claiming twenty metres — because that is how
+    # accurate the wifi DATABASE thinks it is, not this answer. The operator
+    # landed in the cemetery beside his house. So: answer at once, keep
+    # listening, and let a sharper fix that genuinely disagrees take over.
+    pg.evaluate(f"""() => {{
+      window.__SEQ = [
+        {{t: 50,   lat: {coarse_lat}, lon: {coarse_lon}, acc: 20}},   // wifi, wrong, confident
+        {{t: 1500, lat: {lat}, lon: {lon}, acc: 8}},                  // the satellites arrive
+      ];
+      hideStatus(); if(fixRun && fixRun.run) fixRun.run.stop(); locate();
+    }}""")
+    pg.wait_for_timeout(600)
+    first = pg.evaluate("() => here")
+    cls = pg.evaluate("() => document.getElementById('status').className")
+    ok(abs(first["lat"] - coarse_lat) < 1e-6, "it answers straight away on the wifi fix")
+    ok("in" not in cls.split(), "and that answer is the wrong one — outside the reference")
+    pg.wait_for_timeout(1400)
+    after = pg.evaluate("() => here")
+    cls = pg.evaluate("() => document.getElementById('status').className")
+    ok(abs(after["lat"] - lat) < 1e-6, "the sharper fix takes over the position")
+    ok("in" in cls.split(), f"and the verdict is put right ({cls})")
+    ok(ref in pg.evaluate("() => document.getElementById('stT2').textContent"),
+       f"naming {ref} after all")
+
+    print("\n[3c] ordinary jitter does not move the answer around")
+    # A metre or two of wander is not a disagreement. If every wobble re-ran the
+    # verdict the marker would dance and the message would flicker.
+    pg.evaluate(f"""() => {{
+      window.__SEQ = [
+        {{t: 50,  lat: {lat}, lon: {lon}, acc: 12}},
+        {{t: 700, lat: {lat + 0.00003}, lon: {lon}, acc: 10}},   // ~3 m away, ±10 m
+      ];
+      hideStatus(); if(fixRun && fixRun.run) fixRun.run.stop(); locate();
+    }}""")
+    pg.wait_for_timeout(1100)
+    held = pg.evaluate("() => lastFix")
+    ok(held and abs(held["lat"] - lat) < 1e-6,
+       "a sharper fix within its own error margin leaves the answer alone")
+    ok(abs(pg.evaluate("() => here")["lat"] - lat) < 1e-6,
+       "and the marker does not wander off to it either")
+
+    print("\n[3d] an accuracy the browser will not state is not treated as perfect")
+    # This was real: evaluate() read the accuracy as `accuracy || 0`, so a fix
+    # with no stated accuracy came out as nought metres — which every comparison
+    # below reads as "no doubt whatsoever". Unknown got the most confident
+    # answer of the lot.
+    pg.evaluate(f"""() => {{
+      window.__SEQ = [{{t: 50, lat: {lat}, lon: {lon}}}];   // no accuracy at all
+      hideStatus(); if(fixRun && fixRun.run) fixRun.run.stop(); locate();
+    }}""")
+    pg.wait_for_timeout(600)
+    cls = pg.evaluate("() => document.getElementById('status').className")
+    ok("in" not in cls.split(),
+       "it does not answer on a fix whose accuracy is unknown")
+    pg.wait_for_timeout(12000)
+    cls = pg.evaluate("() => document.getElementById('status').className")
+    txt = pg.evaluate("() => document.getElementById('stT2').textContent")
+    ok("show" in cls, f"after the budget it does answer ({cls})")
+    ok("in" not in cls.split(), "but never with a confident 'you are inside'")
+    ok(len(txt) > 20 and ref in txt,
+       f"it names the reference and says the accuracy is missing ({txt[:80]!r})")
 
     print("\n[4] a fix that never sharpens still gets an answer — an honest one")
     # Only coarse fixes, and the budget cut short so the test does not sit for
@@ -156,14 +240,15 @@ with sync_playwright() as p:
        "that watch was cleared too")
 
     print("\n[5] tapping twice does not start a second watch")
+    before_taps = pg.evaluate("() => window.__GEO.watches")
     pg.evaluate(f"""() => {{
       window.__SEQ = [{{t: 400, lat: {lat}, lon: {lon}, acc: 10}}];
       if(fixRun && fixRun.run) fixRun.run.stop(); fixRun = null;
       locate(); locate(); locate();
     }}""")
     pg.wait_for_timeout(800)
-    ok(pg.evaluate("() => window.__GEO.watches") == geo["watches"] + 2,
-       "three taps after two earlier runs: two more watches in total, not four")
+    ok(pg.evaluate("() => window.__GEO.watches") == before_taps + 1,
+       "three taps in a row open one watch, not three")
 
     print("\n[6] nothing thrown along the way")
     real = [e for e in errs if "getCurrentPosition" not in e]

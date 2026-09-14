@@ -1360,3 +1360,51 @@ zat. `test_worldpoints.py` en `test_spotsfilter.py` aangepast aan de
 samengevoegde keuze. Volledige suite: 20 bestanden, 443 checks, allemaal tot
 "ALL OK"; `test_directory.py` slaat zichzelf over zolang er geen lokale
 `wwff_directory.csv` is.
+
+---
+
+**Uitgevoerd op 2026-09-14 — v1.13.1.** Een melding uit het veld: bij ON3VZ
+klopt de positie tot op twee meter, bij een collega stond hij midden op het
+kerkhof naast zijn huis.
+
+De locator was het niet — zijn hok JO21cc ligt 3 km oost-zuidoost van zijn
+huis, en het kerkhof ligt ten noordwesten. Wat hij zag, kwam dus van zijn
+browser. En dan is er binnenshuis één verklaring die alles dekt: geen
+satellietontvangst, dus antwoordt de browser binnen een seconde vanaf het
+wifi-netwerk, met een geclaimde nauwkeurigheid van twintig meter. Dat getal
+zegt hoe nauwkeurig de wifi-databank zichzelf vindt, niet hoe nauwkeurig dít
+antwoord is. Staat de router op een oud adres geregistreerd, dan krijg je een
+overtuigende positie een paar straten verderop.
+
+Bij het nakijken bleken er drie dingen mis:
+
+- **We namen de eerste fix die zei dat hij goed was** en stopten met kijken.
+  Precies het geval hierboven. Nu antwoordt Diana even snel als vroeger, maar
+  blijft de watch de rest van de twaalf seconden open: een latere fix die
+  **zowel scherper is als verder weg ligt dan zijn eigen foutmarge** neemt het
+  over — marker, kaart en uitspraak. Die twee voorwaarden samen betekenen dat
+  de posities het echt oneens zijn en de nieuwe het betere bewijs is; gewone
+  jitter van een paar meter zakt op de tweede voorwaarde, dus de marker danst
+  niet. Buiten merk je er niets van, want daar is de eerste fix al de goede.
+- **Onbekende nauwkeurigheid werd als perfect gelezen.** In `evaluate()` stond
+  `accuracy || 0`, en nul meter betekent overal daaronder "geen enkele
+  twijfel". Een browser die niet wil zeggen hoe goed zijn fix is, kreeg
+  daardoor het meest stellige antwoord van allemaal. Nu is onbekend echt
+  onbekend: geen stellige uitspraak, en een zin erbij die zegt dat de telefoon
+  geen nauwkeurigheid opgaf. Zo'n fix mag ook het zoeken niet meer afbreken en
+  mag een scherpe fix niet meer verdringen.
+- **Na het antwoord liep de marker nog achter elke nieuwe fix aan.** Dat kwam
+  pas boven bij het testen: de volgende wifi-golf sleepte hem terug naar de
+  verkeerde plek, nadat de satellieten hem net hadden rechtgezet. Meelopen
+  hoort bij het zoeken; daarna verzet alleen een correctie de marker nog.
+
+Daarbij, omdat je dit niet kán nakijken vanaf een schermafbeelding: in
+Instellingen staat nu onder je station wat de laatste positie werkelijk was —
+±meters, hoe lang geleden, en of er überhaupt een GPS-positie is of dat de
+afstanden uit het midden van je locatorvak komen. Bij een grove fix staat er
+meteen bij dat het te grof is om te zeggen of je binnen een gebied staat.
+
+`test_gps_watch.py` uitgebreid van 17 naar 30 checks, met het kerkhofgeval als
+scenario: een wifi-fix die zichzelf op twintig meter schat en 800 m ernaast
+ligt, gevolgd door een echte van acht meter. Volledige suite: 20 bestanden,
+456 checks, allemaal tot "ALL OK".

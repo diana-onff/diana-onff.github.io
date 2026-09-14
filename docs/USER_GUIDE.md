@@ -87,7 +87,26 @@ stood in the middle of a reserve. So it keeps listening while the accuracy
 improves, shows what it has so far ("sharpening the fix… ±380 m"), and only
 answers the inside-or-outside question once the fix is good enough, or after
 twelve seconds with the sharpest one it got. If that one is still coarse, the
-answer says so rather than sounding certain. Zone reference numbers are shown as
+answer says so rather than sounding certain.
+
+Indoors there is a second trap, and Diana handles it differently. A wifi
+position often arrives within a second claiming twenty metres — that is how
+accurate the wifi database believes itself to be, not how accurate this
+particular answer is, and if the router is registered at an old address you get
+a confident position several streets away. Diana therefore answers on that fix
+straight away, but **keeps listening for the rest of the twelve seconds**: a
+later fix that is both sharper and further away than its own error margin
+replaces it, marker and verdict together. Outdoors you never notice, because
+the first fix is already the real one. Indoors the answer corrects itself a few
+seconds in. Ordinary wobble of a few metres changes nothing — the marker does
+not dance.
+
+If you want to see the figures behind it, **Settings → your station** shows
+what the last position actually was: the accuracy in metres, how long ago, and
+— when there is no GPS position at all — that the distances are coming from the
+centre of your locator square instead. That last one is worth knowing: a
+six-character locator is a box of roughly five kilometres, and a four-character
+one is over a hundred. Zone reference numbers are shown as
 labels by default. When a spot or zone panel is open, on a phone-sized
 screen only one bottom panel is ever visible at a time — opening one tucks
 the other out of the way automatically.
