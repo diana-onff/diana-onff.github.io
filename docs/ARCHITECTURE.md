@@ -48,7 +48,7 @@ it does not introduce a new data source.
 | `data/zones/onff-points.geojson` | small | the map, on load (optional — a missing file is not an error) | one `Point` per reference that exists on the ONFF list but has **no boundary** in the KMZ |
 | `data/zones/onff-activity.json` | 39 kB | the zone detail panel (on load) and the Nearby screen | QSO count and last-activation date per reference, taken from the WWFF directory. Since v1.8.0 this is the **only** source of activation figures — see §2.2 |
 | `data/wwff-programs.json` | 7.5 kB | the Spots screen and Settings, to fill the "one specific country" list | every WWFF programme in the directory (worldwide) mapped to its country — has nothing to do with which zones the map draws |
-| `data/wwff-world.geojson` | 9.4 MB (≈1.4 MB gzipped) | the map, on load (optional — a missing file just leaves the layer empty) | one `Point` per **active, non-ONFF** WWFF reference worldwide (~64,700 of them), with only `ref` and `name` — never a boundary, for the same reason `onff-points.geojson` never invents one |
+| `data/wwff-world.geojson` | 9.4 MB (≈1.4 MB gzipped) | the map, on load (optional — a missing file just leaves the layer empty) | one `Point` per active WWFF reference worldwide (~64,700 of them, and that count includes countries that already have boundaries elsewhere — see §2.1b), with only `ref` and `name` — never a boundary, for the same reason `onff-points.geojson` never invents one. The client, not this file, leaves out the one country whose boundaries it actually has loaded |
 | `data/zones/onff-index.json` | 210 kB | **not loaded by the app** — it exists for tooling, reports and anything built alongside Diana | the zone list **without geometry**: reference, name, province, area, centroid, bounding box, plus a `points` array covering the boundary-less references (including those with no known coordinate, which therefore appear in no other file) |
 | `data/meta.json` | small | not shown to the user; provenance only | which source KMZ, which release date, which build settings, and how many boundary-less references were placed or left unplaced |
 
@@ -183,25 +183,27 @@ recorded in `onff-index.json`. As of the current data there are none.
 
 ### 2.1.3 Other WWFF areas, worldwide
 
-The map itself only ever draws ONFF (Belgium). Everything else in the WWFF
-directory — roughly 64,700 active references across ~180 other programmes —
-is available as a separate, optional layer sourced from `data/wwff-world.geojson`
-(§2.1.1). Points only, same "point ≠ boundary" rule as §2.1.2, and drawn with
-MapLibre's built-in `cluster:true` GeoJSON clustering so a world-zoom view
-shows a manageable number of circles instead of 64,700 overlapping dots;
-clicking a cluster zooms in, clicking an individual point shows its reference
-and name in a popup.
+The map only ever loads **your** country's boundaries — see §2.1b. Everything
+else in the WWFF directory — roughly 64,700 active references across ~185
+other programmes, including countries that have boundaries too, just not
+loaded into this session — is available as a separate, optional layer sourced
+from `data/wwff-world.geojson` (§2.1.1). Points only, same "point ≠ boundary"
+rule as §2.1.2, and drawn with MapLibre's built-in `cluster:true` GeoJSON
+clustering so a world-zoom view shows a manageable number of circles instead
+of tens of thousands of overlapping dots; clicking a cluster zooms in,
+clicking an individual point shows its reference and name in a popup.
 
 On by default (`showWorld = true`), matching the "everything worldwide"
-default chosen for spots — see §2.3. It can be narrowed to one country from
-Settings (`worldFilter`, stored under `localStorage['diana.worldFilter']`),
-reusing the same `data/wwff-programs.json` lookup and the same `refProgram()`
-helper as the spots filter, deliberately kept as a **separate** setting from
-it: showing "other WWFF areas" on the map and filtering which live spots
-appear are two different questions, even though they draw on the same
-underlying data. An embed (`?embed=1`) keeps this layer off unless the page
-explicitly opts in with `?world=1`, so an already-published `<iframe>` never
-changes appearance just because Diana's own default changed.
+default chosen for spots — see §2.3. It follows the one country setting
+(`homeCountry()`/`diana.homeprog`, §2.1b) via `worldFilteredData()` in map.js,
+not a dropdown of its own: on Worldwide you get every other country's dots
+around your own boundaries; narrow the spots filter to one country and only
+that country's dots remain. Either way, the one country whose boundaries are
+actually loaded is left out here — a boundary beats a point — which is why
+that exclusion has to happen client-side, per viewer, rather than once at
+build time (§2.1b explains why). An embed (`?embed=1`) keeps this layer off
+unless the page explicitly opts in with `?world=1`, so an already-published
+`<iframe>` never changes appearance just because Diana's own default changed.
 
 ### 2.1b One country per file, and a manifest over them
 
@@ -234,12 +236,22 @@ is the one shared file, so it is also the one place where a careless rewrite
 could make Belgium vanish — hence a test that does nothing but build two
 countries and check that the first survives the second.
 
-**A boundary beats a point.** `wwff-world.geojson` carries every WWFF reference
-that has no boundary anywhere, as a bare point. Every programme in the manifest
-is left out of it, or the same reserve would appear twice: once as an outline
-and once as a dot in the middle of it. The app checks this a second time at
-draw time, because a world file built before a country had boundaries would
-otherwise still list them.
+**A boundary beats a point — but only your own.** `wwff-world.geojson` carries
+every active WWFF reference worldwide, including ones that have a boundary
+elsewhere: a build only leaves out the programme it is building right now, not
+every programme already in the manifest. That is deliberate, and it took a
+second country to notice why the wider version was wrong. Every viewer only
+ever has *one* country's boundaries loaded — their own — so it is the app,
+at draw time, that leaves that one country's points out (`worldFilteredData()`
+in map.js, via `loadedPrograms`), never the build. With one boundaried country
+this made no visible difference: ONFF was always the one loaded, so ONFF being
+permanently gone from the world file was invisible. The moment Germany also
+had boundaries, whichever of the two was *not* the viewer's own country turned
+up nowhere at all — no boundary, because it was not the one loaded, and no
+point, because the build had already stripped it out for everyone, everywhere.
+So the build now only ever removes its own programme, and the client decides,
+per viewer, which one country to leave off the dots because it already has the
+real outline on screen.
 
 What the app does with all this: it reads the manifest and loads **your
 country**, and only that one. Loading everything is not an option; one country
@@ -251,18 +263,31 @@ the worldwide points were narrowed to (`diana.worldFilter`, its own dropdown in
 Settings), and the one whose boundaries were in memory (never asked at all: it
 went by your callsign). Picking the Netherlands in Settings therefore changed
 the spots and left the map Belgian. There is one value now, `diana.homeprog`,
-and all three read it:
+read by:
 
-- `wantedPrograms()` loads it, if the manifest has boundaries for it. If it does
-  not, nothing is loaded — and the worldwide points are then the only place
-  that country's references exist at all, which is exactly what stays on the
-  map. Settings says so in as many words, because a map showing nothing but
+- `wantedPrograms()`, which loads it if the manifest has boundaries for it. If
+  it does not, nothing is loaded — and the worldwide points are then the only
+  place that country's references exist at all, which is exactly what stays on
+  the map. Settings says so in as many words, because a map showing nothing but
   dots is otherwise indistinguishable from a map that is broken.
-- `homeProgram()` in spots.js offers it as the one country button next to
-  Worldwide. Tapping Worldwide does not change it — glancing at everything for
-  a moment is not the same as moving abroad.
-- `worldFilteredData()` in map.js draws every *other* country's points on
-  Worldwide, and none of them when you are looking at your own country.
+- `worldFilteredData()` in map.js, which leaves this one country's points out
+  of the worldwide layer — because its polygons are already on screen — and
+  draws every other country's points regardless of the spots filter.
+
+Settings' country picker (`setHomeCountry()`) touches `diana.homeprog` and
+nothing else. It used to also drag the spots filter along with it — picking a
+country here would silently narrow the spots and points to just that country,
+unless the filter was already on Worldwide. That read as a bug the moment
+there was a reason to load a country's boundaries without also wanting spots
+narrowed to it: looking at Germany's polygons should not hide Belgium's
+spots. So the filter (`diana.spotFilter2`, read by `homeProgram()` in
+spots.js) is its own, separate choice now, changed only by the quick filter
+itself (Worldwide / your country) — never as a side effect of picking a
+country in Settings. `homeProgram()` offers whichever programme the filter is
+actually narrowed to; once you tap Worldwide it falls back to `homeCountry()`,
+because glancing at everything for a moment is not the same as moving abroad,
+and it does not stay pinned to a narrowing you made before switching your
+country either.
 
 Changing it swaps the boundaries while the app is running: `switchCountry()`
 loads the new country, rebuilds the index, lets go of any selection from the

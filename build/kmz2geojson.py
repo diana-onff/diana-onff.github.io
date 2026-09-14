@@ -1323,19 +1323,28 @@ def main() -> int:
         indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"→ {manifest_path.name}: {', '.join(sorted(entries))}", file=sys.stderr)
 
-    # The "other WWFF areas" layer: every active reference outside --program, as a
-    # bare point. A reference that has a boundary must not also be a point, so
-    # the programme being built is left out here — and the app leaves out every
-    # country it has loaded, which covers the case of a world file built before
-    # that country had boundaries at all. Only written if the directory could genuinely be read (otherwise
-    # this would overwrite an empty or wildly outdated file with something that
-    # looks emptier still); otherwise the previous version simply stays put.
-    # Every country in the manifest, not just the one built now: after a build
-    # for the Netherlands the Belgian references would otherwise come back as
-    # points, because that run only knew to leave out its own.
-    world_features = [f for f in world_features
-                      if str(f.get("properties", {}).get("ref", "")).split("-")[0] not in entries]
-
+    # The "other WWFF areas" layer: every active reference worldwide, as a bare
+    # point — including references whose programme already has a boundary
+    # elsewhere. This file is shared by every viewer, and each one only ever has
+    # ONE country's boundaries loaded at a time: their own. The app itself
+    # already leaves that one country's points out, dynamically, per viewer (see
+    # worldFilteredData() in map.js) — so this file has to keep everyone else's
+    # points in, always, or nobody could ever see them.
+    #
+    # This used to also strip out every country already in the manifest, not
+    # just the one being built (point_refs() above already leaves out --program
+    # for this run). That was harmless as long as Diana only ever had boundaries
+    # for one country: ONFF was always the one loaded, so ONFF being permanently
+    # gone from here made no difference. The moment a second country got
+    # boundaries, that stopped being true — whichever of the two was NOT the
+    # viewer's own home country had nowhere left to appear at all: no boundary,
+    # because it was not the one loaded, and no point, because it was stripped
+    # out here for everyone. So nothing beyond point_refs()'s own-programme
+    # filter happens here any more.
+    #
+    # Only written if the directory could genuinely be read (otherwise this
+    # would overwrite an empty or wildly outdated file with something that looks
+    # emptier still); otherwise the previous version simply stays put.
     if world_features and not directory_failed:
         (args.out / "wwff-world.geojson").write_text(
             json.dumps({"type": "FeatureCollection",

@@ -1495,3 +1495,45 @@ uitschieter, grove-naast-scherpe, en wandelen. De testsecties wissen nu elk hun
 eigen meetgeschiedenis — die loopt in de app bewust over drukken heen, en liet
 scenario's anders in elkaar overlopen. Volledige suite: 20 bestanden, 468
 checks, allemaal tot "ALL OK".
+
+**Uitgevoerd op 2026-09-14 — v1.16.0.** Duitsland ingeladen als eigen land,
+en drie dingen klopten niet: België's polygonen verdwenen zonder dat er
+punten voor in de plaats kwamen, Duitsland zelf leek nergens te bestaan, en
+"wereldwijd" moest telkens met de hand teruggezet worden om weer alle spots
+te zien.
+
+Nagetrokken op de echte, live data in plaats van gegokt: DLFF stond keurig
+in `countries.json` (1325 zones, correct gepubliceerd), maar
+`wwff-world.geojson` bevatte nul DLFF- én nul ONFF-punten. De bouwstap
+(`kmz2geojson.py`) haalde bij elke build ELK land met grenzen uit dat
+gedeelde puntenbestand — niet alleen het land dat net gebouwd werd. Met
+ONFF als enige land met grenzen viel dat nooit op: dat was toch altijd het
+enige geladen land. Zodra een tweede land grenzen kreeg, werd wie dan ook
+niet je eigen land was nergens meer zichtbaar: geen polygoon (niet geladen)
+én geen punt (al bij het bouwen overal geschrapt) — voor iedereen, ongeacht
+welk land ze zelf ingesteld hadden.
+
+- **De bouwstap laat voortaan alleen het land dat ze zelf net bouwt uit het
+  wereldbestand** — niet meer elk land dat al grenzen heeft. De browser deed
+  al precies het juiste: per toestel het ene geladen land uit de
+  wereldwijde stippen weglaten (`worldFilteredData()`). Die twee taken
+  overlapten, en de bouwstap deed de zijne te grof.
+- **Je land instellen raakt voortaan alleen de polygonen, nooit meer de
+  spots-filter.** Die twee schoven vorige ronde mee met elkaar — een land
+  kiezen om de polygonen te laden sleepte de spots-filter ongevraagd mee,
+  tenzij die al op wereldwijd stond. Duitsland's polygonen even bekijken
+  hoort niet stilletjes elk ander land se spots weg te filteren. De
+  spots-filter (`diana.spotFilter2`) heeft nu zijn eigen, onafhankelijke
+  keuze — enkel de snelfilter zelf verandert hem nog, nooit een landkeuze in
+  Instellingen.
+
+`test_countries.py`: de oude aanname ("geen enkel land met grenzen in het
+wereldbestand") is vervangen door de juiste — het net gebouwde land niet,
+een ander land met grenzen wél. `test_country.py` kreeg een nieuwe sectie
+die expliciet natrekt dat een landkeuze de spots-filter met rust laat.
+`test_spotsfilter.py`'s secties over de Instellingen-landkiezer herschreven
+rond hetzelfde: de kiezer verandert het land, nooit de filter, en beide
+overleven een herlaad onafhankelijk van elkaar. Volledige suite: 20
+bestanden, 481 checks, allemaal tot "ALL OK" — op één test na
+(`test_directory.py`) die de echte WWFF-directory nodig heeft en hier geen
+netwerktoegang had; onveranderd door deze ronde en ongemoeid gelaten.

@@ -69,52 +69,65 @@ with sync_playwright() as p:
     vis_onff = pg.evaluate("() => visibleSpots().map(s=>s.reference)")
     ok(vis_onff == ["ONFF-0001"], f"only ONFF-0001 (got {vis_onff})")
 
-    print("\n[5] one specific country via Settings")
-    # The picker lists "Netherlands — PAFF" and is grouped by whether Diana has
-    # boundaries for a country, so it is looked up by value, not by its label.
+    print("\n[5] Settings' country picker only changes the polygons now, not the filter")
+    # This used to also narrow the spots filter to whatever you picked here —
+    # so loading a country's boundaries just to have a look silently hid every
+    # other country's spots you were watching. The two are independent choices
+    # now: this picker decides which polygons load, full stop. The picker lists
+    # "Netherlands — PAFF" and is grouped by whether Diana has boundaries for a
+    # country, so it is looked up by value, not by its label.
     pg.evaluate("""() => {
         const sel = document.getElementById('setSpotCountry');
         sel.value = 'PAFF'; sel.dispatchEvent(new Event('change'));
     }""")
     pg.wait_for_timeout(900)
-    vis_nl = pg.evaluate("() => visibleSpots().map(s=>s.reference)")
-    ok(vis_nl == ["PAFF-0123"], f"only the Dutch spot (got {vis_nl})")
+    ok(pg.evaluate("() => homeCountry()") == "PAFF", "the country itself did change")
+    ok(pg.evaluate("() => spotFilter") == "ONFF", "but the spots filter is exactly where it was")
+    vis_still = pg.evaluate("() => visibleSpots().map(s=>s.reference)")
+    ok(vis_still == ["ONFF-0001"], f"still only ONFF-0001 visible (got {vis_still})")
 
-    print("\n[6] the two screens stay in sync")
-    # This used to read "no button active once a country has been chosen",
-    # because the first button was hardwired to ONFF and could not represent
-    # anything else. It carries a real programme code now, so picking the
-    # Netherlands in Settings is something the quick bar can show — and does.
+    print("\n[6] the two quick-filter bars still agree — with each other, not the country picker")
+    # Both read whichever programme the filter is actually narrowed to, which is
+    # no longer guaranteed to be the same thing as your country.
     home = pg.evaluate("() => document.querySelector('#spotFilter [data-home]').textContent")
-    ok(home == "PAFF", f"the quick button followed the choice ({home})")
+    ok(home == "ONFF", f"the quick button still reads the active filter, not the new country ({home})")
     ok(pg.evaluate("() => document.querySelector('#spotFilter [data-home]').classList.contains('on')"),
        "and is the active one")
-    ok(pg.evaluate("() => document.querySelector('#setSpotFilter [data-home]').textContent") == "PAFF",
+    ok(pg.evaluate("() => document.querySelector('#setSpotFilter [data-home]').textContent") == "ONFF",
        "the same in Settings")
+    ok(pg.evaluate("() => document.getElementById('setSpotCountry').value") == "PAFF",
+       "while the country picker itself keeps showing what it was actually set to")
 
-    print("\n[7] the choice survives a reload")
+    print("\n[7] both choices survive a reload, independently")
     # Key renamed to spotFilter2 when 'worldwide' became the factory setting: an
     # old choice left hanging around during testing was not allowed to keep
-    # overruling it.
-    saved = pg.evaluate("() => localStorage.getItem('diana.spotFilter2')")
-    ok(saved == "PAFF", f"'PAFF' saved (got '{saved}')")
+    # overruling it. It has its own storage key, separate from the country.
+    ok(pg.evaluate("() => localStorage.getItem('diana.homeprog')") == "PAFF", "'PAFF' saved as the country")
+    ok(pg.evaluate("() => localStorage.getItem('diana.spotFilter2')") == "ONFF",
+       "'ONFF' saved as the filter, not overwritten by the country choice")
     pg.reload(wait_until="load")
     pg.wait_for_timeout(2000)
-    after_reload = pg.evaluate("() => spotFilter")
-    ok(after_reload == "PAFF", f"filter still 'PAFF' after a reload (got '{after_reload}')")
+    ok(pg.evaluate("() => homeCountry()") == "PAFF", "still the Netherlands as your country")
+    ok(pg.evaluate("() => spotFilter") == "ONFF", "and the filter still narrowed to Belgium")
     sel_after = pg.evaluate("() => document.getElementById('setSpotCountry').value")
     ok(sel_after == "PAFF", "the country dropdown shows the saved choice after a reload")
 
     print("\n[8] back to worldwide via the quick filter")
     # The picker used to blank out here, because it was the filter in dropdown
-    # form. It is your country now — the one setting behind the spots, the
-    # boundaries on the map and the foreign points — and looking at the world
-    # for a moment does not mean you have stopped living somewhere.
+    # form. It is your country now — the one setting behind the boundaries and
+    # the foreign points — and looking at the world for a moment does not mean
+    # you have stopped living somewhere, regardless of what you had narrowed
+    # the spots to before.
     pg.evaluate("() => document.querySelector('#spotFilter [data-filter=\"all\"]').click()")
     pg.wait_for_timeout(200)
     country_kept = pg.evaluate("() => document.getElementById('setSpotCountry').value")
     ok(country_kept == "PAFF", f"the picker still names your country ({country_kept})")
     ok(pg.evaluate("() => spotFilter") == "all", "while the filter itself is worldwide")
+    # With the filter back on Worldwide, "your country" for the quick bar's own
+    # button is no longer pinned to the stale ONFF narrowing — it falls back to
+    # the country that is actually yours.
+    ok(pg.evaluate("() => document.querySelector('#spotFilter [data-home]').textContent") == "PAFF",
+       "and the quick button now offers the country you actually have set")
 
     print("\n[8b] without a choice, the country comes from your callsign")
     # "Without a choice" has to mean it: a country picked earlier is remembered

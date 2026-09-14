@@ -207,7 +207,26 @@ with sync_playwright() as p:
     pg.wait_for_timeout(2500)
     ok(pg.evaluate("() => loadedPrograms") == ["ONFF"], "and back to Belgium in one step")
 
-    print("\n[9] nothing thrown along the way")
+    print("\n[9] choosing a country does not touch the spots filter")
+    # These two used to move together: picking a country in Settings dragged
+    # the spots filter along with it unless it was already on Worldwide. That
+    # meant loading a country's boundaries just to look at them silently
+    # narrowed away every other country's spots you were watching. Settings'
+    # country picker is only about the polygons now — see setHomeCountry() in
+    # spots.js.
+    pg.evaluate("() => setSpotFilter('ONFF')")
+    pg.wait_for_timeout(300)
+    ok(pg.evaluate("() => spotFilter") == "ONFF", "spots narrowed to Belgium, on purpose")
+    pg.evaluate("() => setHomeCountry('PAFF')")
+    pg.wait_for_timeout(1200)
+    ok(pg.evaluate("() => spotFilter") == "ONFF",
+       "picking a different country for the polygons left the spots filter alone")
+    ok(pg.evaluate("() => loadedPrograms") == ["PAFF"], "while the boundaries did switch to it")
+    wait_source(pg, "PAFF")
+    ok(source_refs(pg) == ["PAFF"], "on the map as well")
+    pg.evaluate("() => setSpotFilter('all')")   # leave it tidy for the next check
+
+    print("\n[10] nothing thrown along the way")
     ok(not errs, f"no page errors: {errs[:2] or 'ok'}")
 
     print("\n" + ("ALL OK" if not fails else f"{len(fails)} PROBLEMS"))

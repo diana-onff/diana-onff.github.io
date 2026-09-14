@@ -263,12 +263,16 @@ Declining the location permission costs you nothing and produces no complaint:
 the map falls back to your locator, then your callsign's country, then all zones
 — never a blank world view.
 
-This is also where you set **your country**, and that one setting decides three
-things at once: which spots and agenda items you see, which country's
-boundaries Diana loads onto the map, and which other countries appear as points.
-Diana fills it in from your callsign until you pick one yourself. Under it,
-**Tonen / Show** is the same Worldwide-or-your-country choice as the control on
-the Spots screen, kept in sync with it.
+This is also where you set **your country**, and that decides which country's
+boundaries Diana loads onto the map, and which other countries appear as points
+instead of full areas. Diana fills it in from your callsign until you pick one
+yourself. Choosing a country here never changes which spots or agenda items
+you see — that is the separate Worldwide-or-your-country choice, **Tonen /
+Show**, right under it, which is kept in sync with the same control on the
+Spots screen. The two used to move together — picking a country here also
+narrowed the spots to it, unless you were already on Worldwide — but loading a
+country's boundaries just to have a look should not silently hide every other
+country's spots you were watching, so the two are independent now.
 
 A line under the picker says what Diana has for the country you chose: how many
 areas came in with boundaries, or that there are none and you will see points

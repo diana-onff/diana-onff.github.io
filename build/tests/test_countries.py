@@ -110,12 +110,20 @@ with tempfile.TemporaryDirectory() as tmp:
     ok([c["program"] for c in man["countries"]] == ["ONFF", "PAFF"],
        "the manifest gained a country instead of being replaced")
 
-    print("\n[4] a reference with a boundary is not also a bare point")
+    print("\n[4] a reference with a boundary is not also a bare point — but only its own")
+    # This run built PAFF, so PAFF's own references are left out of the file it
+    # just wrote — the same reference must not be both a polygon and a dot. ONFF
+    # is a different matter: it has boundaries too, but they were not built just
+    # now, and a Dutch viewer (home country PAFF) has never loaded them — so
+    # without a dot here, Belgium would not exist anywhere on their map at all.
+    # That was the actual bug: a build used to strip every boundaried country,
+    # not just its own, which was invisible with one country and broke the
+    # moment a second one existed.
     world = json.loads((out / "wwff-world.geojson").read_text())
     progs = {f["properties"]["ref"].split("-")[0] for f in world["features"]}
-    ok("ONFF" not in progs and "PAFF" not in progs,
-       f"neither country is in the worldwide points layer ({sorted(progs)})")
-    ok("DLFF" in progs, "while a country without boundaries still is")
+    ok("PAFF" not in progs, f"the country just built is not in the worldwide points layer ({sorted(progs)})")
+    ok("ONFF" in progs, "but another country that already has boundaries still is")
+    ok("DLFF" in progs, "and so does a country without boundaries at all")
 
     print("\n[5] a rebuild of the first country does not drop the second")
     kmz(work / "ONFF 20260301.kmz", "ONFF",
@@ -129,6 +137,12 @@ with tempfile.TemporaryDirectory() as tmp:
     ok([c["program"] for c in man["countries"]] == ["ONFF", "PAFF"], "both still in the manifest")
     onff = next(c for c in man["countries"] if c["program"] == "ONFF")
     ok(onff["source_file"] == "ONFF 20260301.kmz", "with Belgium's entry pointing at the new release")
+
+    print("\n[5b] the rebuild's own world file leaves the other country's points alone")
+    world = json.loads((out / "wwff-world.geojson").read_text())
+    progs = {f["properties"]["ref"].split("-")[0] for f in world["features"]}
+    ok("ONFF" not in progs, "the country just rebuilt is not in the worldwide points layer")
+    ok("PAFF" in progs, "while the other one, built earlier and untouched just now, still is")
 
     print("\n[6] a programme code that is not one is refused")
     r = build(work, out, "ONFF 20260301.kmz", "Belgium")
