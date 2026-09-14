@@ -1178,3 +1178,43 @@ weggooit — dat mag zodra die eerste build geslaagd is.
 
 Ronde 2 (tweede land, inlaadscherm, offline-keuze) wacht op een
 voorbeeldbestand; ronde 3 is de adminpagina met verplichte landkeuze.
+
+---
+
+**Uitgevoerd op 2026-09-13 — v1.11.0. Ronde 3 vervroegd: de adminpagina vraagt
+nu naar het land.** Naar aanleiding van de vraag "heb je al iets voor de
+adminpagina" — het antwoord was nee, maar bij het nakijken bleek er een
+valstrik te zijn ontstaan. Na ronde 1 leest de build een los KMZ in de
+wachtruimte als ONFF. Upload je daar een Duits bestand, dan zou dat als
+Belgisch omgezet worden. Het loopt stuk in plaats van rommel te maken (nul
+gevonden referenties → de uitvoercontrole faalt), maar het hoort niet te
+kunnen, en de landkeuze hangt niet af van het voorbeeldbestand. Dus meteen
+gedaan.
+
+- **Landkeuze bij het uploaden, verplicht.** Elk WWFF-programma staat in de
+  lijst, met de landen die Diana al heeft bovenaan. Bewust géén
+  voorselectie: een verkeerde gok zet de release van het ene land boven op
+  die van het andere. Zolang er geen land gekozen is, blijft de verzendknop
+  dicht.
+- **Een map per land**, aan beide kanten: het bestand belandt in
+  `incoming/<PROG>/` en verhuist bij publiceren naar `source/<PROG>/`. De
+  verplaatsfunctie werkt nu op een pad binnen de wachtruimte in plaats van op
+  een kale bestandsnaam, dus de landmap reist vanzelf mee. Een bestand van
+  vóór deze indeling — kale naam — gaat nog altijd rechtstreeks naar
+  `source/`.
+- **De opruimkaart kijkt in de landmappen.** Die luisterde alleen naar het
+  bovenste niveau van `incoming/` en zou met landmappen leeg gebleven zijn
+  terwijl er bestanden stonden te wachten. Nu één boomopvraging die alles
+  vindt, op welke diepte dan ook.
+- De pull request draagt het land in titel en tekst.
+- De workflow hoefde niet aangepast: de landontdekking uit ronde 1 loopt al
+  over `<map>/*/` en vindt `incoming/DLFF/` vanzelf.
+
+Nieuwe test `test_adminupload.py` (14 checks): GitHub is vervangen door een
+recorder, dus geen token en geen netwerk, en er wordt gecontroleerd wélke
+paden de pagina schrijft — een fout daarin schrijft in de verkeerde map van
+een echte repo. Volledige suite groen: 18 bestanden, 371 checks.
+
+Blijft over voor ronde 2: het inlaadscherm om landen te kiezen, de bewuste
+offline-keuze per land, en het tweede land zelf — dat wacht op een
+voorbeeldbestand.

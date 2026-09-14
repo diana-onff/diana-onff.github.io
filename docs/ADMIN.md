@@ -65,7 +65,7 @@ published app do not belong in the same place:
 | App repo (public) | `owner/repo`, e.g. `diana-onff/diana-onff.github.io` — the app, the data and the workflows |
 | Source repo (private) | e.g. `diana-onff/diana-source` — the ONFF KMZ files, and nothing else |
 | Main branch | usually `main`, and the same name in both |
-| Staging folder | where an uploaded file waits for approval — `incoming/` |
+| Staging folder | where an uploaded file waits for approval — `incoming/`. The country you pick becomes a folder inside it |
 | Access token | a GitHub **fine-grained personal access token** |
 | "Remember the token on this device" | see the security note below — unticked by default |
 
@@ -103,12 +103,13 @@ is read-only, and stays read-only.
 Pick the file, then **Upload and convert**. Diana shows the nine steps this
 actually takes, each ticking off as it completes:
 
+0. Choosing the country the file is for — see below
 1. Reading the base branch (of the source repo)
 2. Reading the file, in your browser, before sending
 3. Sending the file to GitHub as a blob
 4. Updating the tree
 5. Creating the commit
-6. Writing to the staging folder — `incoming/` on `main` of the source repo
+6. Writing to the staging folder — `incoming/<country>/` on `main` of the source repo
 7. Starting the conversion in the app repo
 8. Waiting for the conversion (a minute or two; the counter tells you where it is)
 9. Opening the pull request
@@ -122,6 +123,23 @@ Steps 8 and 9 survive you closing the app: the branch is built on GitHub
 regardless, and the next time you open the Admin panel Diana notices the
 unfinished upload and opens the pull request then.
 
+**Why you have to pick a country.** A KMZ does not say which programme it
+belongs to. The ONFF export carries its reference numbers in the names of its
+folders, and nothing says a German or Dutch export does the same — so the only
+reliable way to know is to be told. The panel therefore offers every WWFF
+programme, with the ones Diana already has boundaries for at the top, and
+sends nothing until you have chosen. There is deliberately no preselection: a
+wrong guess here would put one country's release in another country's folder,
+on top of the file that was already there.
+
+The country becomes a folder: the upload lands in `incoming/<country>/`, and
+publishing moves it to `source/<country>/`. Each country's newest file is
+converted on its own, so a release for one country can never affect another's
+data — see
+[ARCHITECTURE.md §2.1b](ARCHITECTURE.md#21b-one-country-per-file-and-a-manifest-over-them).
+(A file left over from before this existed, lying loose in `incoming/` or
+`source/`, is still read — as ONFF.)
+
 **Why `incoming/` and not `source/` directly.** The nightly build always
 picks the newest KMZ in `source/`. If an uploaded file went straight there,
 then rejecting the change would achieve nothing — the next night's build
@@ -131,11 +149,11 @@ that the nightly build never looks at. A file only becomes a source once you
 have published it.
 
 **What publishing does.** Merging the pull request takes the new data live.
-Diana then moves the KMZ from `incoming/` to `source/` in the source repo,
+Diana then moves the KMZ from `incoming/<country>/` to `source/<country>/`,
 using your own token — the file itself is not re-uploaded, only the tree
 entry is rewritten, so this is a handful of small API calls rather than
 another twenty megabytes. Rejecting closes the pull request, deletes the
-branch, and removes the file from `incoming/`.
+branch, and removes the file from the staging folder.
 
 If you close the app in the seconds between merging and the move, the file
 stays in `incoming/`. That is untidy but harmless: nothing reads that folder
