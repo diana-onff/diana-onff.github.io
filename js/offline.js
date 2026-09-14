@@ -43,7 +43,7 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
 }
 
 function meldNieuweVersie(){
-  showStatus('in', t('app.newversion'), t('app.taptoreload'));
+  showStatus('in', t('app.newversion'), t('app.taptoreload'), true);
   const box = $('status');
   if(!box) return;
   box.style.cursor = 'pointer';
@@ -68,9 +68,9 @@ $('btnRefresh').onclick = async () => {
       await swReg.update();
       if(swReg.waiting || swReg.installing){ meldNieuweVersie(); return; }
     }
-    showStatus('in', t('app.uptodate'), 'v' + APP_VERSION);
+    showStatus('in', t('app.uptodate'), 'v' + APP_VERSION, true);
   }catch(err){
-    showStatus('out', t('app.uptodate'), err.message || '');
+    showStatus('out', t('app.uptodate'), err.message || '', true);
   }finally{
     btn.disabled = false;
   }

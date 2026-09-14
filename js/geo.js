@@ -81,10 +81,6 @@ function fixApply(pos, final){
   if(final) evaluate(lat, lon, accuracy);
 }
 
-/* The one way to get a position in Diana. onFinal gets the sharpest fix we
-   could get within the budget; onFail only fires when there is nothing at all.
-   Used by the ◎ button, by the map at startup, and by "take my locator from
-   the GPS" in Settings — the same trap catches all three. */
 /* The reported accuracy in metres, or null when the browser did not give a
    usable one. Zero is a number, not a missing value — reading it as "unknown"
    is how you end up waiting the full budget for a fix that was already perfect
@@ -94,6 +90,10 @@ function fixAcc(pos){
   return (typeof a === 'number' && isFinite(a) && a >= 0) ? a : null;
 }
 
+/* The one way to get a position in Diana. onFinal gets the sharpest fix we
+   could get within the budget; onFail only fires when there is nothing at all.
+   Used by the ◎ button, by the map at startup, and by "take my locator from
+   the GPS" in Settings — the same trap catches all three. */
 function bestFix(onFinal, onProgress, onFail){
   if(!navigator.geolocation){ if(onFail) onFail(null); return null; }
   const run = {watch:null, timer:null, best:null, done:false};
@@ -223,9 +223,12 @@ function evaluate(lat,lon,accuracy){
       `${t('gps.nearest')}: ${best.ref} ${best.name} — ${dist}${f?'':' ('+t('zone.nopoly')+')'}.`);
   }
 }
-function showStatus(kind,t1,t2){
+/* top: this message is not about the map but about the app, so it has to be
+   readable from whatever screen you are standing on. Everything else stays
+   under the screens — see .status.top in the stylesheet. */
+function showStatus(kind,t1,t2,top){
   const el=$('status');
-  el.className='status show '+kind;
+  el.className='status show '+kind+(top?' top':'');
   $('stT1').textContent=t1; $('stT2').textContent=t2;
 }
 /* Every message has to be dismissable — it sits over the map. */

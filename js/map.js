@@ -430,11 +430,31 @@ function featureIdOf(ref){ return zones.features.findIndex(f=>f.properties.ref==
 
 function reselect(){ if(selected) markSelected(selected); }
 
-function clearSelection(){
+/* Back to the overview. "Map" in the bottom bar is the way home, and home has
+   nothing picked out: a reference left outlined from the screen you came from
+   reads as "this is the one", which it no longer is. Selecting on the map
+   itself does not go through here, so tapping a zone still works as it did. */
+/* Takes the outline off whatever was outlined, and nothing more. Named for
+   what it does: selectPoint() calls it while setting a selection of its own —
+   a reference without a boundary has nothing to outline — so a function called
+   "clearSelection" that also forgot which reference was picked would undo the
+   very thing its caller had just done. That confusion cost an afternoon once;
+   the two jobs have two names now. */
+function clearOutline(){
   if(map._lastSel!=null && map.getSource('onff')){
     map.setFeatureState({source:'onff',id:map._lastSel},{sel:false});
     map._lastSel = null;
   }
+}
+
+/* Back to the overview: no outline and no reference picked. "Map" in the
+   bottom bar is the way home, and home has nothing singled out — a reference
+   left outlined from the screen you came from reads as "this is the one",
+   which it no longer is. Selecting on the map itself does not come through
+   here, so tapping a zone still works as it always did. */
+function clearSelection(){
+  clearOutline();
+  selected = null;
 }
 
 /* A reference without a boundary. The same panel, but without an area figure and
@@ -443,7 +463,7 @@ function clearSelection(){
 function selectPoint(f){
   const p = f.properties;
   selected = p.ref;
-  clearSelection();
+  clearOutline();
 
   $('badges').innerHTML =
     `<span class="pill">${p.ref}</span>` +
