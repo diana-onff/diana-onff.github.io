@@ -148,11 +148,176 @@ function vulProgrammas(){
   sel.value = keep;
 }
 
-function magVersturen(){
-  return !!($('admFile').files.length && $('admProgram').value && adm.repo && adm.token);
+/* ---------- is this file what it has been said to be? ----------
+ *
+ * A KMZ carries no country marker, so the panel asks — and took the answer on
+ * trust. Pick the wrong country and a German release goes into the Danish
+ * folder; the conversion then finds nothing, writes nothing, and you learn
+ * that from a failed build twenty-five megabytes later.
+ *
+ * So the file is read here first, before any of it leaves the device. A KMZ is
+ * a zip with a KML in it and the reference numbers are plain text in there, so
+ * this is a matter of unpacking one entry and reading along until the question
+ * is settled. Certainty only runs one way: finding numbers of ANOTHER
+ * programme proves the file is not this country's, and only that case closes
+ * the send button. Finding nothing, an unreadable zip, a browser without
+ * DecompressionStream — all of those are said out loud and left to the
+ * person. A check that cannot be trusted to be right must not be trusted to
+ * say no.
+ */
+const ZIP_EOCD = 0x06054b50, ZIP_CD = 0x02014b50, ZIP_LOCAL = 0x04034b50;
+const SCAN_MAX   = 120e6;   // a KML is large; it is not unbounded
+const SCAN_GENOEG = 20;     // hits past which there is nothing left to doubt
+
+/* Where the KML sits inside the KMZ: start, length, and whether it is
+   deflated. Read out of the zip's own index rather than guessed at — a KMZ
+   may hold images as well, and the first entry is not always the map. */
+async function kmzEntry(file){
+  const staartLen = Math.min(file.size, 66000);   // max zip comment + the record
+  const staart = new DataView(await file.slice(file.size - staartLen).arrayBuffer());
+  let eocd = -1;
+  for(let i = staart.byteLength - 22; i >= 0; i--){
+    if(staart.getUint32(i, true) === ZIP_EOCD){ eocd = i; break; }
+  }
+  if(eocd < 0) return null;
+  const cdLen = staart.getUint32(eocd + 12, true);
+  const cdOff = staart.getUint32(eocd + 16, true);
+  if(cdOff === 0xffffffff || cdLen === 0xffffffff) return null;   // zip64: not ours to guess at
+  const cd = new DataView(await file.slice(cdOff, cdOff + cdLen).arrayBuffer());
+  const tekst = new TextDecoder();
+  let p = 0, beste = null;
+  while(p + 46 <= cd.byteLength && cd.getUint32(p, true) === ZIP_CD){
+    const nLen = cd.getUint16(p + 28, true);
+    const eLen = cd.getUint16(p + 30, true);
+    const cLen = cd.getUint16(p + 32, true);
+    const naam = tekst.decode(new Uint8Array(cd.buffer, cd.byteOffset + p + 46, nLen));
+    if(/\.kml$/i.test(naam) && (!beste || /(^|\/)doc\.kml$/i.test(naam))){
+      beste = {naam, method: cd.getUint16(p + 10, true),
+               comp: cd.getUint32(p + 20, true), local: cd.getUint32(p + 42, true)};
+    }
+    p += 46 + nLen + eLen + cLen;
+  }
+  if(!beste) return null;
+  // The local header repeats the name and the extra field, and not always at
+  // the same lengths as the index says. The data begins after both.
+  const kop = new DataView(await file.slice(beste.local, beste.local + 30).arrayBuffer());
+  if(kop.getUint32(0, true) !== ZIP_LOCAL) return null;
+  beste.start = beste.local + 30 + kop.getUint16(26, true) + kop.getUint16(28, true);
+  return beste;
 }
-$('admFile').addEventListener('change', () => { $('admSend').disabled = !magVersturen(); });
-$('admProgram').addEventListener('change', () => { $('admSend').disabled = !magVersturen(); });
+
+async function keurBestand(file, prog){
+  if(!/^[A-Z0-9]{1,3}FF$/.test(prog)) return {staat:'onbekend'};
+  let entry = null;
+  try{ entry = await kmzEntry(file); }catch{ entry = null; }
+  if(!entry || (entry.method !== 0 && entry.method !== 8)) return {staat:'onbekend'};
+  if(entry.method === 8 && typeof DecompressionStream !== 'function') return {staat:'onbekend'};
+  if(typeof TextDecoderStream !== 'function') return {staat:'onbekend'};
+
+  const mijne = new RegExp(prog + '-\\d{4}', 'g');
+  const ieder = /\b[A-Z0-9]{1,3}FF-\d{3,5}\b/g;
+  const vreemd = new Map();
+  let raak = 0, gelezen = 0, staart = '', lezer = null;
+  try{
+    let stroom = file.slice(entry.start, entry.start + entry.comp).stream();
+    if(entry.method === 8) stroom = stroom.pipeThrough(new DecompressionStream('deflate-raw'));
+    lezer = stroom.pipeThrough(new TextDecoderStream('utf-8')).getReader();
+    for(;;){
+      const {value, done} = await lezer.read();
+      if(done) break;
+      gelezen += value.length;
+      // Carry the last few characters over into the next chunk: a reference
+      // cut in half by a chunk boundary is precisely the one you would miss.
+      // The overlap has to be longer than a reference for that to work, which
+      // means one sitting entirely inside it is seen twice. That costs a count
+      // that can be one too high, and buys not missing one at all.
+      const ruw = staart + value;
+      staart = ruw.slice(-16);
+      const stuk = ruw.toUpperCase();
+      raak += (stuk.match(mijne) || []).length;
+      if(!raak){
+        for(const m of stuk.matchAll(ieder)){
+          const p = m[0].split('-')[0];
+          if(p !== prog) vreemd.set(p, (vreemd.get(p) || 0) + 1);
+        }
+      }
+      if(raak >= SCAN_GENOEG || gelezen > SCAN_MAX) break;
+    }
+  }catch{
+    return {staat:'onbekend'};
+  }finally{
+    if(lezer) lezer.cancel().catch(()=>{});
+  }
+  if(raak) return {staat:'goed', raak};
+  if(gelezen > SCAN_MAX) return {staat:'onbekend'};
+  if(vreemd.size){
+    const top = [...vreemd.entries()].sort((a, b) => b[1] - a[1])[0];
+    return {staat:'ander', ander: top[0], raak: top[1]};
+  }
+  return {staat:'leeg'};
+}
+
+/* t() leaves the placeholders to the caller, and every caller until now had
+   one of each. These messages name the programme twice over ("this is not a
+   DLFF file … send the DLFF release"), and String.replace only ever replaces
+   the first one. */
+const vulIn = (tekst, waarden) =>
+  Object.keys(waarden).reduce((s, k) => s.split('{' + k + '}').join(waarden[k]), tekst);
+
+/* Only a file proven to belong to another country closes the button —
+   and the button also stays shut while the reading is still going on, because
+   "check the connection" re-opens it from its own handler and would otherwise
+   hand you a send button in the middle of a verdict. */
+let keurOk = true, keurLoopt = false, keurBezig = 0;
+
+async function keurEnToon(){
+  const fb = $('admCheck');
+  const file = $('admFile').files[0];
+  const prog = $('admProgram').value;
+  keurOk = true;
+  keurLoopt = false;
+  if(!fb) return;
+  if(!file || !prog){
+    fb.hidden = true;
+    $('admSend').disabled = !magVersturen();
+    return;
+  }
+  keurLoopt = true;
+  // A second choice while the first is still being read must win, however the
+  // two finish: the answer belongs to the file that is selected now.
+  const beurt = ++keurBezig;
+  fb.hidden = false;
+  fb.className = 'fb';
+  fb.textContent = t('adm.checking');
+  $('admSend').disabled = true;
+  const uit = await keurBestand(file, prog);
+  if(beurt !== keurBezig) return;
+  keurLoopt = false;
+
+  if(uit.staat === 'goed'){
+    fb.className = 'fb good';
+    fb.textContent = vulIn(t('adm.checkok'),
+      {prog, n: uit.raak >= SCAN_GENOEG ? SCAN_GENOEG + '+' : uit.raak});
+  }else if(uit.staat === 'ander'){
+    keurOk = false;
+    fb.className = 'fb bad';
+    fb.textContent = vulIn(t('adm.checkwrong'), {prog, other: uit.ander});
+  }else if(uit.staat === 'leeg'){
+    fb.className = 'fb warn';
+    fb.textContent = vulIn(t('adm.checknone'), {prog});
+  }else{
+    fb.className = 'fb';
+    fb.textContent = t('adm.checkfail');
+  }
+  $('admSend').disabled = !magVersturen();
+}
+
+function magVersturen(){
+  return !!($('admFile').files.length && $('admProgram').value && adm.repo && adm.token
+            && keurOk && !keurLoopt);
+}
+$('admFile').addEventListener('change', () => { keurEnToon(); });
+$('admProgram').addEventListener('change', () => { keurEnToon(); });
 
 /* Large files to base64 in chunks — done in one go, the call stack overflows. */
 function toBase64(buf){
