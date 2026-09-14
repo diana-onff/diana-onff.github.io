@@ -218,6 +218,66 @@ with sync_playwright() as p:
     ok(len(txt) > 20 and ref in txt,
        f"it names the reference and says the accuracy is missing ({txt[:80]!r})")
 
+    print("\n[3e] how sure the position is, said and drawn")
+    # Nine screenshots from Hoboken, a marker wandering eighty metres between
+    # refreshes, and nowhere a word about accuracy: every verdict looked equally
+    # certain. The answers were all correct — "outside, nearest one 7xx m" at
+    # each of those positions — but with nothing to go on, wandering reads as a
+    # fault in the app rather than as what a phone manages indoors.
+    pg.evaluate(f"""() => {{
+      window.__SEQ = [{{t: 50, lat: {lat}, lon: {lon}, acc: 80}}];
+      hideStatus(); if(fixRun && fixRun.run) fixRun.run.stop(); locate();
+    }}""")
+    pg.wait_for_timeout(12500)          # 80 m never answers early; the budget does it
+    txt = pg.evaluate("() => document.getElementById('stT2').textContent")
+    ok("80" in txt, f"the verdict states the accuracy ({txt[-40:]!r})")
+    pg.wait_for_function(
+        "() => { const s = map.getSource('fix-acc');"
+        "        return !!s && s._data.features.length === 1; }", timeout=8000)
+    ring = pg.evaluate("""() => {
+        const r = map.getSource('fix-acc')._data.features[0].geometry.coordinates[0];
+        const la = r.map(c => c[1]), lo = r.map(c => c[0]);
+        return {h: (Math.max(...la) - Math.min(...la)) * 111320};
+    }""")
+    ok(150 < ring["h"] < 170, f"and a ring is drawn at that radius ({ring['h']:.0f} m across)")
+
+    pg.evaluate(f"""() => {{
+      window.__SEQ = [{{t: 50, lat: {lat}, lon: {lon}, acc: 6}}];
+      hideStatus(); if(fixRun && fixRun.run) fixRun.run.stop(); locate();
+    }}""")
+    pg.wait_for_timeout(900)
+    txt = pg.evaluate("() => document.getElementById('stT2').textContent")
+    ok("6" in txt, "a sharp fix says so too")
+    pg.wait_for_function(
+        "() => { const s = map.getSource('fix-acc');"
+        "        return !!s && s._data.features.length === 0; }", timeout=8000)
+    ok(True, "and draws no ring — at six metres it would sit inside the marker")
+
+    print("\n[3f] barely better is not better")
+    # Indoors the accuracy wanders a metre or two from wave to wave. Following
+    # that is what made the marker hop across the street.
+    pg.evaluate(f"""() => {{
+      window.__SEQ = [
+        {{t: 50,  lat: {lat}, lon: {lon}, acc: 25}},
+        {{t: 600, lat: {lat + 0.0006}, lon: {lon}, acc: 24}},   // 67 m away, 1 m better
+      ];
+      hideStatus(); if(fixRun && fixRun.run) fixRun.run.stop(); locate();
+    }}""")
+    pg.wait_for_timeout(1100)
+    ok(abs(pg.evaluate("() => lastFix.lat") - lat) < 1e-6,
+       "a fix one metre sharper does not get to move the answer")
+    pg.evaluate(f"""() => {{
+      window.__SEQ = [
+        {{t: 50,  lat: {lat}, lon: {lon}, acc: 25}},
+        {{t: 600, lat: {lat + 0.0006}, lon: {lon}, acc: 8}},    // the satellites
+      ];
+      hideStatus(); if(fixRun && fixRun.run) fixRun.run.stop(); locate();
+    }}""")
+    pg.wait_for_timeout(1100)
+    moved = pg.evaluate("() => lastFix")
+    ok(abs(moved["lat"] - (lat + 0.0006)) < 1e-6 and moved["acc"] == 8,
+       "a fix three times sharper does")
+
     print("\n[4] a fix that never sharpens still gets an answer — an honest one")
     # Only coarse fixes, and the budget cut short so the test does not sit for
     # twelve seconds. ±800 m against a boundary 300 m away is 'too close to

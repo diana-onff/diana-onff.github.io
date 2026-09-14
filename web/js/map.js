@@ -107,8 +107,18 @@ function addNoPolyIcon(){
                {pixelRatio:dpr});
 }
 
-function paintNoPoly(){
-  if(!map.isStyleLoaded()) return;
+function paintNoPoly(tries){
+  // Adding a source puts the style back into "busy" for a moment, and this one
+  // runs straight after paintZones has added three. Giving up here used to be
+  // permanent — nothing calls this again by itself — so the dots for
+  // references without a boundary would simply never appear, depending on
+  // timing. Wait and come back instead.
+  if(styleSwitching || !map.isStyleLoaded()){
+    tries = tries || 0;
+    if(tries > 100) return;              // ~8 s, then we give up
+    setTimeout(() => paintNoPoly(tries + 1), 80);
+    return;
+  }
   // Same as in paintZones: an existing source gets the new country's points,
   // and that has to happen even when there are none — otherwise the previous
   // country's dots stay behind.
@@ -146,6 +156,72 @@ function paintNoPoly(){
   }
 }
 let npBound = false;
+
+/* ---------- how sure the position is, drawn ----------
+ *
+ * A marker looks exactly as certain at ±6 m as at ±80 m, and that is how a
+ * position wandering half a street between refreshes comes to read as a fault
+ * in the app instead of as what a phone can manage indoors. So the reported
+ * accuracy is drawn: a ring around the marker at that radius, the way every
+ * map application does it. Small and tight means satellites; a ring covering
+ * the whole block means the answer came off a wifi network and should be
+ * treated accordingly.
+ *
+ * Drawn as a real polygon in degrees rather than a circle layer sized in
+ * pixels: then it is correct at every zoom by itself, with no metres-per-pixel
+ * arithmetic to get wrong.
+ */
+const FIX_RING_PTS = 64;
+
+function fixRing(lat, lon, metres){
+  const dLat = metres / 111320;
+  const dLon = metres / (111320 * Math.cos(lat * Math.PI / 180) || 1);
+  const ring = [];
+  for(let i = 0; i <= FIX_RING_PTS; i++){
+    const a = (i / FIX_RING_PTS) * 2 * Math.PI;
+    ring.push([lon + dLon * Math.cos(a), lat + dLat * Math.sin(a)]);
+  }
+  return {type:'FeatureCollection', features:[
+    {type:'Feature', properties:{}, geometry:{type:'Polygon', coordinates:[ring]}}]};
+}
+
+const FIX_RING_EMPTY = {type:'FeatureCollection', features:[]};
+
+function fixRingData(){
+  if(typeof ringFix === 'undefined' || !ringFix || ringFix.acc == null) return FIX_RING_EMPTY;
+  // Only where it says something. Under about ten metres the ring is smaller
+  // than the marker itself and adds nothing but clutter.
+  if(ringFix.acc < 10) return FIX_RING_EMPTY;
+  return fixRing(ringFix.lat, ringFix.lon, ringFix.acc);
+}
+
+function paintFixAcc(tries){
+  // Nothing to draw and nothing drawn yet: leave without touching the style.
+  // This runs from redrawOverlays() too, and at startup — before any fix — it
+  // would otherwise add a fifth source to a style that is already busy digesting
+  // four, which is enough to make the painters after it give up.
+  const src = map.getSource('fix-acc');
+  if(!src && !(typeof ringFix !== 'undefined' && ringFix && ringFix.acc != null)) return;
+  // Doing nothing here does not mean nothing is drawn: it means the PREVIOUS
+  // ring stays, around a position the marker has already left. So wait for the
+  // style and come back, the same way paintWorld does — and not by calling
+  // redrawOverlays(), which is what calls this in the first place.
+  if(styleSwitching || !map.isStyleLoaded()){
+    tries = tries || 0;
+    if(tries > 100) return;              // ~8 s, then we give up
+    setTimeout(() => paintFixAcc(tries + 1), 80);
+    return;
+  }
+  const data = fixRingData();
+  if(src){ src.setData(data); return; }
+  if(!data.features.length) return;      // a sharp fix draws no ring at all
+  map.addSource('fix-acc', {type:'geojson', data});
+  map.addLayer({id:'fix-acc-fill', type:'fill', source:'fix-acc',
+    paint:{'fill-color':'#1b4332', 'fill-opacity':0.10}});
+  map.addLayer({id:'fix-acc-line', type:'line', source:'fix-acc',
+    paint:{'line-color':'#1b4332', 'line-opacity':0.35, 'line-width':1,
+           'line-dasharray':[3,2]}});
+}
 
 /* ---------- other WWFF areas worldwide (from the same CSV) ----------
    Never a boundary — only a point, just like an ONFF reference without a
@@ -421,6 +497,7 @@ function redrawOverlays(){
       // if the source already exists, and the points are loaded after the zones.
       // Otherwise they never get added — the same trap as with the spots earlier.
       paintNoPoly();
+      paintFixAcc();
       if(showSpots) paintSpots();
       if(showWorld) paintWorld();
       applyVisibility();

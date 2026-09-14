@@ -101,6 +101,14 @@ the first fix is already the real one. Indoors the answer corrects itself a few
 seconds in. Ordinary wobble of a few metres changes nothing — the marker does
 not dance.
 
+Every GPS verdict now ends with how good the position was — "· positie ±40 m"
+— and when that margin is more than about ten metres, a dashed ring is drawn
+around the marker at exactly that radius. A tight ring means satellites; a ring
+covering the whole block means the answer came off a wifi network. This is the
+quickest way to tell the two apart, and it explains a marker that moves between
+refreshes: if the ring is eighty metres across, a position that shifts by eighty
+metres is not a fault, it is the phone being honest about what it knows.
+
 If you want to see the figures behind it, **Settings → your station** shows
 what the last position actually was: the accuracy in metres, how long ago, and
 — when there is no GPS position at all — that the distances are coming from the

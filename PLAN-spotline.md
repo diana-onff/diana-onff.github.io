@@ -1408,3 +1408,46 @@ meteen bij dat het te grof is om te zeggen of je binnen een gebied staat.
 scenario: een wifi-fix die zichzelf op twintig meter schat en 800 m ernaast
 ligt, gevolgd door een echte van acht meter. Volledige suite: 20 bestanden,
 456 checks, allemaal tot "ALL OK".
+
+---
+
+**Uitgevoerd op 2026-09-14 — v1.14.0.** Negen schermafbeeldingen uit Hoboken:
+de marker wandelt tachtig meter tussen elke verversing, en nergens staat een
+woord over nauwkeurigheid.
+
+Eerst wat er wél klopte: op alle negen stond "je staat buiten een gebied,
+dichtstbij ONFF-0685 op 7xx m". De afstanden liepen van 721 tot 799 m — een
+spreiding van 78 meter — en het antwoord was bij elke stand correct. De
+grenslogica deed het dus goed. Wat ontbrak was elke aanwijzing hoe zeker die
+positie was, en daardoor leest wandelen als een storing in plaats van als wat
+een telefoon binnenshuis kan.
+
+- **De nauwkeurigheid staat nu in elke uitspraak**, niet alleen in het ene
+  geval waarin je vlak bij een grens staat. "Je staat buiten een gebied ·
+  positie ±40 m".
+- **Een ring om de marker**, op precies die straal, zodra het meer dan tien
+  meter is. Daaronder zou hij binnen de marker vallen en alleen rommel
+  toevoegen. Getekend als echte veelhoek in graden in plaats van een cirkel in
+  pixels: dan klopt hij vanzelf op elk zoomniveau, zonder meters-per-pixel
+  rekenwerk om fout te doen.
+- **De correctiedrempel is strenger**: een latere fix moet merkbaar scherper
+  zijn (0,7×) voor hij het antwoord mag overnemen. Een meter beter is geen
+  bewijs van iets — dat is de wandeling, niet de satellieten, en daar
+  achteraanlopen is precies wat de marker over straat deed hoppen. De
+  afstandsvoorwaarde is verdwenen: een scherpere fix is beter bewijs, ook als
+  hij je niet verplaatst, want hij verkleint de ring en kan een uitspraak die
+  uit voorzichtigheid gehedged was alsnog hard maken.
+
+Twee dingen die de suite ving. Mijn ring voegde een vijfde bron toe aan een
+stijl die er al vier aan het verwerken was, en dat was genoeg om de schilders
+ná hem te laten opgeven: `test_spotsalways` en `test_worldpoints` verloren hun
+lagen. Nu maakt de ring pas een bron aan als er echt iets te tekenen valt.
+Daarbij bleek `paintNoPoly()` definitief op te geven als de stijl even bezig
+was — niets roept die opnieuw aan — zodat de punten zonder grens soms gewoon
+nooit verschenen, afhankelijk van timing. Die wacht nu en komt terug, zoals
+`paintWorld()` al deed. Dat verklaart ook een eerdere wisselvallige
+`test_new`.
+
+`test_gps_watch.py` van 30 naar 36 checks. Volledige suite: 20 bestanden, 462
+checks, allemaal tot "ALL OK"; `test_directory.py` slaat zichzelf over zolang
+er geen lokale `wwff_directory.csv` is.
