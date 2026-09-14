@@ -1,23 +1,25 @@
-name: ONFF-data bouwen
+name: Build map data
 
-# Zet het nieuwste ONFF-KMZ om naar de bestanden in data/ die de app echt laadt.
-# Dat KMZ komt uit de private bron-repo (variable SOURCE_REPO, secret SOURCE_TOKEN);
-# is die niet ingesteld of onbereikbaar, dan valt de build terug op source/ hier.
+# Converts the newest KMZ per country into the files in data/ that the app really
+# loads. One country per conversion, so that a bad file for one of them cannot
+# touch another one's data.
+# That KMZ comes from the private source repo (variable SOURCE_REPO, secret SOURCE_TOKEN);
+# if that is not configured or is unreachable, the build falls back to source/ here.
 #
-#   pull request op een KMZ, overrides.json of build/  → omzetten, resultaat op de
-#                                                        PR-branch committen, het
-#                                                        verschillenrapport eronder plakken
-#   elke nacht om 01:00 UTC                            → dezelfde omzetting tegen het KMZ dat
-#                                                        er al staat, met --strict, en bij een
-#                                                        goede uitkomst rechtstreeks naar main
-#   handmatig (Run workflow)                           → hetzelfde als de nachtelijke run
+#   pull request on a KMZ, overrides.json or build/  → convert, commit the result to
+#                                                      the PR branch, and paste the
+#                                                      diff report underneath it
+#   every night at 01:00 UTC                         → the same conversion against the KMZ
+#                                                      that is already there, with --strict,
+#                                                      and on a good outcome straight to main
+#   manually (Run workflow)                          → the same as the nightly run
 #
-# Waarom de nachtelijke run zichzelf mag publiceren: hij raakt nooit een grens aan
-# — die komt alleen uit een KMZ dat jij met de hand uploadt. Het ergste wat hij kan
-# doen is een referentie hernoemen of verplaatsen. Loopt er iets mis, dan wordt er
-# niets gecommit en komt er een GitHub-issue in de plaats.
+# Why the nightly run is allowed to publish itself: it never touches a boundary
+# — those only ever come from a KMZ you upload by hand. The worst it can do is
+# rename or move a reference. If something goes wrong, nothing is committed and
+# a GitHub issue is opened in its place.
 #
-# EERST INSTELLEN, anders faalt de push met een 403:
+# SET THIS FIRST, or the push fails with a 403:
 #   Settings → Actions → General → Workflow permissions → "Read and write permissions"
 
 on:
@@ -33,11 +35,11 @@ on:
     inputs:
       branch:
         description: >-
-          Branch waarop het resultaat moet komen. Laat leeg voor een gewone
-          verversing die rechtstreeks naar main gaat. Vult het beheerscherm van
-          Diana hier een naam in, dan bouwt deze workflow met het KMZ uit
-          incoming/ en zet hij het resultaat op die branch — main blijft ongemoeid
-          tot de beheerder de pull request merget.
+          Branch the result should land on. Leave empty for an ordinary
+          refresh that goes straight to main. If Diana's admin panel fills in
+          a name here, this workflow builds with the KMZ from incoming/ and
+          puts the result on that branch — main stays untouched until the
+          administrator merges the pull request.
         required: false
         default: ''
 
@@ -51,7 +53,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # Kan zonder de code aan te raken omgezet worden via
+  # Can be changed without touching the code, via
   # Settings → Secrets and variables → Actions → Variables → ONFF_REFS_CSV
   ONFF_REFS_CSV: ${{ vars.ONFF_REFS_CSV }}
   ISSUE_LABEL: diana-nachtelijke-build
@@ -63,9 +65,9 @@ jobs:
       kmz_found: ${{ steps.kmz.outputs.found }}
 
     steps:
-      # Bij een pull request werken we op de PR-branch zelf, want daar moet het
-      # resultaat naartoe. fetch-depth 0 omdat de push naar main eventueel moet
-      # kunnen rebasen als main intussen bewogen is.
+      # On a pull request we work on the PR branch itself, because that is where
+      # the result has to go. fetch-depth 0 because the push to main may need to
+      # be able to rebase if main has moved in the meantime.
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
@@ -77,19 +79,20 @@ jobs:
           cache: pip
           cache-dependency-path: build/requirements.txt
 
-      - name: Python-onderdelen installeren
+      - name: Install the Python dependencies
         run: pip install -r build/requirements.txt
 
-      # ---------------------------------------------------------------- bron
-      # Het bron-KMZ staat niet in deze publieke repo maar in een private repo
-      # van dezelfde organisatie. Reden: ONFF verspreidt dat bestand achter
-      # lidmaatschap via groups.io, en het hoort niet ongevraagd op een publieke
-      # URL te staan. De build mag het lezen met een token dat alleen dát mag.
+      # -------------------------------------------------------------- source
+      # The source KMZ is not in this public repo but in a private repo
+      # belonging to the same organisation. The reason: ONFF distributes that
+      # file behind membership through groups.io, and it has no business sitting
+      # on a public URL unasked. The build may read it with a token that is
+      # allowed to do nothing else.
       #
-      # SOURCE_REPO is een repository variable (Settings → Secrets and variables
-      # → Actions → Variables), zodat de naam van de private repo te wijzigen is
-      # zonder deze workflow aan te raken.
-      - name: Bron-KMZ ophalen uit de private repo
+      # SOURCE_REPO is a repository variable (Settings → Secrets and variables
+      # → Actions → Variables), so that the name of the private repo can be
+      # changed without touching this workflow.
+      - name: Fetch the source KMZ from the private repo
         id: bron
         if: vars.SOURCE_REPO != ''
         continue-on-error: true
@@ -99,168 +102,228 @@ jobs:
           token: ${{ secrets.SOURCE_TOKEN }}
           path: bron
 
-      # Lukt dat niet — geen token, verkeerde naam, repo weg — dan valt de build
-      # terug op een source/-map in deze repo. Dat is de oude situatie, en tijdens
-      # de overzetting is dat precies het vangnet dat je wil. Wel luid gemeld:
-      # stil terugvallen op iets ouds is hoe je een maand met verkeerde data draait.
+      # If that does not work — no token, wrong name, repo gone — the build falls
+      # back on a source/ directory in this repo. That is the old situation, and
+      # during the migration it is exactly the safety net you want. Reported
+      # loudly, though: silently falling back on something old is how you end up
+      # running a month on the wrong data.
       #
-      # incoming/ is de wachtruimte: daar zet het beheerscherm een nieuw KMZ neer
-      # dat nog niemand goedgekeurd heeft. Die map wordt ALLEEN gelezen als er een
-      # branch gevraagd is — dus alleen wanneer een mens op "uploaden" geklikt
-      # heeft. De nachtelijke run kijkt er nooit in, en dat is met opzet: anders
-      # zou een afgewezen bestand de nacht daarna alsnog vanzelf gepubliceerd
-      # worden, langs de bewaking heen.
-      - name: Bronmap bepalen
+      # incoming/ is the waiting room: that is where the admin panel drops a new
+      # KMZ that nobody has approved yet. That directory is read ONLY when a
+      # branch has been asked for — so only when a human has clicked "upload".
+      # The nightly run never looks in it, and that is deliberate: otherwise a
+      # rejected file would still get published by itself the next night, going
+      # around the review.
+      - name: Determine the source directory
         id: bronmap
         env:
           BRANCH: ${{ github.event.inputs.branch }}
         run: |
-          heeft() { [ -d "$1" ] && [ -n "$(find "$1" -maxdepth 1 -name '*.kmz' -print -quit)" ]; }
+          # A KMZ may sit directly in the directory (the old, Belgium-only layout)
+          # or in a folder per country (ONFF/, PAFF/, DLFF/ …), which is what
+          # keeps one country's upload away from another's.
+          heeft() { [ -d "$1" ] && [ -n "$(find "$1" -maxdepth 2 -name '*.kmz' -print -quit)" ]; }
 
           if [ -n "$BRANCH" ] && heeft bron/incoming; then
             echo "dir=bron/incoming" >> "$GITHUB_OUTPUT"
             echo "wacht=1" >> "$GITHUB_OUTPUT"
-            echo "Bron: wachtruimte incoming/ in ${{ vars.SOURCE_REPO }} — resultaat gaat naar branch $BRANCH"
+            echo "Source: waiting room incoming/ in ${{ vars.SOURCE_REPO }} — the result goes to branch $BRANCH"
           elif heeft bron/source; then
             echo "dir=bron/source" >> "$GITHUB_OUTPUT"
-            echo "Bron: private repo ${{ vars.SOURCE_REPO }} (map source/)"
+            echo "Source: private repo ${{ vars.SOURCE_REPO }} (directory source/)"
           elif heeft bron; then
             echo "dir=bron" >> "$GITHUB_OUTPUT"
-            echo "Bron: private repo ${{ vars.SOURCE_REPO }} (wortel)"
+            echo "Source: private repo ${{ vars.SOURCE_REPO }} (root)"
           else
             echo "dir=source" >> "$GITHUB_OUTPUT"
             if [ -n "${{ vars.SOURCE_REPO }}" ]; then
-              echo "::warning::de private bron-repo leverde geen KMZ op — teruggevallen op source/ in deze repo"
+              echo "::warning::the private source repo yielded no KMZ — fell back on source/ in this repo"
             fi
           fi
 
-          if [ -n "$BRANCH" ] && [ -z "$(find bron/incoming -maxdepth 1 -name '*.kmz' -print -quit 2>/dev/null)" ]; then
-            echo "::warning::er is een branch gevraagd maar incoming/ is leeg — er wordt gebouwd met het bestand dat al in source/ staat"
+          if [ -n "$BRANCH" ] && [ -z "$(find bron/incoming -maxdepth 2 -name '*.kmz' -print -quit 2>/dev/null)" ]; then
+            echo "::warning::a branch was asked for but incoming/ is empty — building with the file that is already in source/"
           fi
 
-      - name: Nieuwste KMZ kiezen
+      - name: Which countries are there to build
         id: kmz
         env:
           BRON: ${{ steps.bronmap.outputs.dir }}
         run: |
-          # Op naam sorteren werkt omdat de bestandsnaam de releasedatum draagt
-          # (ONFF YYYYMMDD.kmz). Blijft er per ongeluk een oude release staan,
-          # dan wint de nieuwste in plaats van dat de build stukloopt.
-          KMZ=$(find "$BRON" -maxdepth 1 -type f -name '*.kmz' -print 2>/dev/null | LC_ALL=C sort | tail -n 1)
-          if [ -z "$KMZ" ]; then
-            echo "found=0" >> "$GITHUB_OUTPUT"
-            echo "::warning::geen enkel .kmz in $BRON — niets om om te zetten"
-          else
-            echo "found=1" >> "$GITHUB_OUTPUT"
-            echo "path=$KMZ" >> "$GITHUB_OUTPUT"
-            echo "Gekozen: $KMZ"
-            find "$BRON" -maxdepth 1 -type f -name '*.kmz' -printf '  %f\n' | LC_ALL=C sort
+          # A folder per country is the layout that matters: bron/source/ONFF/,
+          # bron/source/PAFF/, … Each one contributes its newest KMZ and nothing
+          # else. Sorting by name works because the filename carries the release
+          # date; if an old release is left behind, the newest one wins instead
+          # of the build breaking.
+          #
+          # A KMZ lying loose in the directory is the old Belgium-only layout and
+          # is still read, as ONFF — otherwise this release would need the source
+          # repo rearranged on the same day, and those two things should not have
+          # to happen at once.
+          : > countries.tsv
+          for dir in "$BRON"/*/; do
+            [ -d "$dir" ] || continue
+            PROG=$(basename "$dir" | tr '[:lower:]' '[:upper:]')
+            case "$PROG" in
+              *FF) ;;
+              *) echo "::warning::skipping $dir — '$PROG' is not a WWFF programme code"; continue ;;
+            esac
+            KMZ=$(find "$dir" -maxdepth 1 -type f -name '*.kmz' -print | LC_ALL=C sort | tail -n 1)
+            [ -n "$KMZ" ] && printf '%s\t%s\n' "$PROG" "$KMZ" >> countries.tsv
+          done
+          LOS=$(find "$BRON" -maxdepth 1 -type f -name '*.kmz' -print | LC_ALL=C sort | tail -n 1)
+          if [ -n "$LOS" ] && ! grep -q '^ONFF\t' countries.tsv; then
+            printf 'ONFF\t%s\n' "$LOS" >> countries.tsv
+            echo "::notice::$LOS sits loose in $BRON — read as ONFF. A folder per country is the tidier layout."
           fi
 
-      - name: Stoppen als er geen KMZ is
+          if [ ! -s countries.tsv ]; then
+            echo "found=0" >> "$GITHUB_OUTPUT"
+            echo "::warning::not a single .kmz in $BRON — nothing to convert"
+          else
+            echo "found=1" >> "$GITHUB_OUTPUT"
+            echo "Countries to build:"
+            sed 's/^/  /' countries.tsv
+          fi
+
+      - name: Stop if there is no KMZ
         if: steps.kmz.outputs.found != '1' && github.event_name == 'pull_request'
         run: |
-          echo "::error::geen .kmz gevonden — deze pull request kan geen data bouwen"
+          echo "::error::no .kmz found — this pull request cannot build any data"
           exit 1
 
-      # ------------------------------------------------------------- omzetten
-      # --strict alleen als niemand meekijkt: een onbereikbare of afgebroken
-      # directory moet dan de hele build tegenhouden, niet stilletjes uitgeklede
-      # data naar main duwen. Bij een pull request kijkt er wél iemand naar het
-      # rapport, en is doorgaan met minder data juist nuttig.
-      - name: Omzetten
+      # -------------------------------------------------------------- convert
+      # --strict only when nobody is watching: an unreachable or truncated
+      # directory should then hold up the whole build, rather than quietly
+      # pushing stripped-down data to main. On a pull request somebody does look
+      # at the report, and carrying on with less data is actually useful there.
+      - name: Convert
         if: steps.kmz.outputs.found == '1'
         run: |
           REFS="${ONFF_REFS_CSV:-https://wwff.co/wwff-data/wwff_directory.csv}"
           STRICT=""
-          # Streng zijn heeft alleen zin als er niemand meekijkt. Een build voor een
-          # pull request én een build uit de wachtruimte worden allebei door een mens
-          # beoordeeld voor ze ergens terechtkomen.
+          # Being strict only makes sense when nobody is watching. A build for a
+          # pull request and a build from the waiting room are both judged by a
+          # human before they end up anywhere.
           if [ "${{ github.event_name }}" != "pull_request" ] && [ -z "${{ github.event.inputs.branch }}" ]; then
             STRICT="--strict"
           fi
-          # De uitvoercontrole hierna moet weten of dit een onbewaakte run was:
-          # alleen dan is een onbereikbare directory een reden om te stoppen.
+          # The output check further down needs to know whether this was an
+          # unwatched run: only then is an unreachable directory a reason to stop.
           echo "DIANA_STRICT=${STRICT:-nee}" >> "$GITHUB_ENV"
           echo "Directory: $REFS   $STRICT"
-          python build/kmz2geojson.py \
-            --kmz "${{ steps.kmz.outputs.path }}" \
-            --refs-csv "$REFS" \
-            $STRICT
 
-      # De vraag is niet of de bestanden bestaan, maar of er iets zinnigs in staat.
-      # Een build met nul gebieden of een directory waaruit niets gelezen werd, is
-      # een storing die er op schijf uitziet als geldige data.
-      - name: Uitvoer controleren
+          # One conversion per country, each writing only its own files and
+          # merging itself into data/countries.json. A failure stops the whole
+          # job on purpose: half-converted data that looks complete is worse
+          # than a build that visibly did not finish, and every country's
+          # previous files are still on disk untouched.
+          : > report.md
+          while IFS=$'\t' read -r PROG KMZ; do
+            echo "::group::$PROG — $(basename "$KMZ")"
+            python build/kmz2geojson.py \
+              --kmz "$KMZ" \
+              --program "$PROG" \
+              --refs-csv "$REFS" \
+              --report "report-$PROG.md" \
+              $STRICT
+            {
+              echo "### $PROG — \`$(basename "$KMZ")\`"
+              echo ""
+              cat "report-$PROG.md"
+              echo ""
+            } >> report.md
+            echo "::endgroup::"
+          done < countries.tsv
+          echo "DIANA_COUNTRIES=$(cut -f1 countries.tsv | paste -sd, -)" >> "$GITHUB_ENV"
+
+      # The question is not whether the files exist, but whether there is
+      # anything sensible in them. A build with zero zones, or a directory from
+      # which nothing was read, is a failure that looks like valid data on disk.
+      - name: Check the output
         if: steps.kmz.outputs.found == '1'
         run: |
           python - <<'PY'
           import json, os, pathlib, sys
 
-          # Bij een pull request kijkt er iemand naar het rapport, en mag een
-          # onbereikbare WWFF-directory de build niet tegenhouden — de grenzen uit
-          # het KMZ zijn dan nog altijd goed. Alleen de onbewaakte run is streng.
+          # On a pull request somebody looks at the report, and an unreachable
+          # WWFF directory must not hold up the build — the boundaries from the
+          # KMZ are still fine then. Only the unwatched run is strict.
           streng = os.environ.get("DIANA_STRICT", "nee") == "--strict"
+          gebouwd = [p for p in os.environ.get("DIANA_COUNTRIES", "").split(",") if p]
           data = pathlib.Path("data")
           fouten = []
 
-          for naam in ("onff.geojson", "onff-index.json", "meta.json"):
-              p = data / naam
-              if not p.exists() or p.stat().st_size == 0:
-                  fouten.append(f"{naam} ontbreekt of is leeg")
+          manifest = data / "countries.json"
+          if not manifest.exists():
+              fouten.append("countries.json is missing — the app would not know what it has")
+          else:
+              doc = json.loads(manifest.read_text(encoding="utf-8"))
+              entries = {c["program"]: c for c in doc.get("countries") or []}
+              for prog in gebouwd:
+                  entry = entries.get(prog)
+                  if not entry:
+                      fouten.append(f"{prog} was built but is not in countries.json")
+                      continue
+                  zones = data / entry["files"]["zones"]
+                  if not zones.exists() or zones.stat().st_size == 0:
+                      fouten.append(f"{entry['files']['zones']} is missing or empty")
+                      continue
+                  feats = len(json.loads(zones.read_text(encoding="utf-8")).get("features") or [])
+                  if feats < 1:
+                      fouten.append(f"zero boundaries in {entry['files']['zones']}")
+                  elif feats != entry.get("refs"):
+                      fouten.append(f"{entry['files']['zones']} holds {feats} boundaries "
+                                    f"but countries.json says {entry.get('refs')}")
+                  else:
+                      print(f"{prog}: {feats} boundaries · {entry.get('points')} points · "
+                            f"release {entry.get('release')} · from {entry.get('source_file')}")
+              # A country that was already there must still be there. This is the
+              # rule the whole per-country split exists for.
+              kwijt = [p for p in entries if p not in gebouwd and
+                       not (data / entries[p]["files"]["zones"]).exists()]
+              for p in kwijt:
+                  fouten.append(f"{p} is in countries.json but its file is gone")
 
-          if not fouten:
-              meta = json.loads((data / "meta.json").read_text(encoding="utf-8"))
-              zones = meta.get("zones") or 0
-              listed = meta.get("directory_listed") or 0
-              rows = meta.get("directory_rows") or 0
-              geo = json.loads((data / "onff.geojson").read_text(encoding="utf-8"))
-              feats = len(geo.get("features") or [])
-
-              if zones < 1:
-                  fouten.append("nul gebieden in meta.json")
-              if feats < 1:
-                  fouten.append("nul features in onff.geojson")
-              if feats != zones:
-                  fouten.append(f"onff.geojson heeft {feats} features maar meta.json meldt {zones} gebieden")
-              if listed < 1 and rows < 1:
-                  melding = "uit de WWFF-directory is geen enkele rij gelezen"
+          meta = data / "meta.json"
+          if meta.exists():
+              m = json.loads(meta.read_text(encoding="utf-8"))
+              if (m.get("directory_listed") or 0) < 1 and (m.get("directory_rows") or 0) < 1:
+                  melding = "not a single row was read from the WWFF directory"
                   if streng:
                       fouten.append(melding)
                   else:
-                      print(f"::warning::{melding} — de grenzen uit het KMZ zijn wel goed")
-              print(f"{zones} gebieden · {feats} features · {listed} referenties uit "
-                    f"{rows} directoryrijen · bron {meta.get('source_file')}")
+                      print(f"::warning::{melding} — the boundaries from the KMZ are fine, though")
 
           if fouten:
               for f in fouten:
-                  print(f"::error::uitvoercontrole: {f}")
+                  print(f"::error::output check: {f}")
               sys.exit(1)
           PY
 
-      - name: Is er iets veranderd?
+      - name: Did anything change?
         id: diff
         if: steps.kmz.outputs.found == '1'
         run: |
           if [ -z "$(git status --porcelain -- data report.md)" ]; then
             echo "changed=0" >> "$GITHUB_OUTPUT"
-            echo "Niets gewijzigd."
+            echo "Nothing changed."
           else
             echo "changed=1" >> "$GITHUB_OUTPUT"
             git status --short -- data report.md
           fi
 
-      # ------------------------------------------------- pull request: committen
-      - name: Resultaat op de pull-request-branch zetten
+      # ---------------------------------------------- pull request: committing
+      - name: Put the result on the pull request branch
         if: github.event_name == 'pull_request' && steps.diff.outputs.changed == '1'
         run: |
           git config user.name  "diana-bot"
           git config user.email "diana-bot@users.noreply.github.com"
           git add data report.md
-          git commit -q -m "data: omgezet uit $(basename "${{ steps.kmz.outputs.path }}")"
+          git commit -q -m "data: converted $DIANA_COUNTRIES"
           git push -q origin "HEAD:${{ github.event.pull_request.head.ref }}"
 
-      - name: Verschillenrapport onder de pull request zetten
+      - name: Post the diff report on the pull request
         if: github.event_name == 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -272,21 +335,22 @@ jobs:
                  --jq ".[] | select(.body | startswith(\"$MARKER\")) | .id" | head -n 1)
           if [ -n "$ID" ]; then
             gh api -X PATCH "repos/${{ github.repository }}/issues/comments/$ID" -f body="$BODY" >/dev/null
-            echo "Bestaand commentaar bijgewerkt."
+            echo "Existing comment updated."
           else
             gh api -X POST "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" -f body="$BODY" >/dev/null
-            echo "Commentaar geplaatst."
+            echo "Comment posted."
           fi
 
-      # ------------------------------------ wachtruimte: resultaat op een eigen branch
-      # Hier gaat niets naar main. Het beheerscherm maakt van deze branch een pull
-      # request, jij kijkt naar de preview, en pas jouw merge zet het live.
+      # ------------------------------ waiting room: result on a branch of its own
+      # Nothing goes to main here. The admin panel turns this branch into a pull
+      # request, you look at the preview, and only your merge takes it live.
       #
-      # --allow-empty is dragend: levert een nieuwe release exact dezelfde data op,
-      # dan is er niets te committen en zou er geen branch zijn om een pull request
-      # van te maken. Dan blijft de app hangen op "wachten op de omzetting" zonder
-      # dat er iets mis is. Een lege commit zegt eerlijk: gedraaid, niets gewijzigd.
-      - name: Resultaat op de gevraagde branch zetten
+      # --allow-empty is load-bearing: if a new release yields exactly the same
+      # data, then there is nothing to commit and there would be no branch to
+      # make a pull request from. The app would then hang on "waiting for the
+      # conversion" without anything actually being wrong. An empty commit says
+      # honestly: ran, nothing changed.
+      - name: Put the result on the requested branch
         if: github.event.inputs.branch != '' && steps.kmz.outputs.found == '1'
         env:
           DOEL: ${{ github.event.inputs.branch }}
@@ -295,61 +359,61 @@ jobs:
           git config user.email "diana-bot@users.noreply.github.com"
           git add data report.md
           if [ "${{ steps.diff.outputs.changed }}" = "1" ]; then
-            git commit -q -m "data: omgezet uit $(basename "${{ steps.kmz.outputs.path }}")"
+            git commit -q -m "data: converted $DIANA_COUNTRIES"
           else
-            git commit -q --allow-empty -m "data: $(basename "${{ steps.kmz.outputs.path }}") levert geen wijzigingen op"
+            git commit -q --allow-empty -m "data: $DIANA_COUNTRIES yields no changes"
           fi
           git push -q origin "HEAD:refs/heads/$DOEL"
-          echo "Branch $DOEL klaar."
+          echo "Branch $DOEL ready."
 
-      # ------------------------------------------- nachtelijk: rechtstreeks naar main
-      - name: Naar main committen
+      # ------------------------------------------------ nightly: straight to main
+      - name: Commit to main
         if: github.event_name != 'pull_request' && github.event.inputs.branch == '' && steps.diff.outputs.changed == '1'
         run: |
           git config user.name  "diana-bot"
           git config user.email "diana-bot@users.noreply.github.com"
           git add data report.md
-          git commit -q -m "data: nachtelijke verversing uit de WWFF-directory"
+          git commit -q -m "data: nightly refresh from the WWFF directory"
 
-          # main kan intussen bewogen zijn. Drie pogingen met een rebase ertussen;
-          # lukt het dan nog niet, dan is er iets anders aan de hand dan drukte.
+          # main may have moved in the meantime. Three attempts with a rebase in
+          # between; if it still does not work then something other than traffic
+          # is going on.
           DOEL="${{ github.ref_name }}"
           for poging in 1 2 3; do
             if git push -q origin "HEAD:$DOEL"; then
-              echo "Gepusht naar $DOEL (poging $poging)."
+              echo "Pushed to $DOEL (attempt $poging)."
               exit 0
             fi
-            echo "Push mislukt, $DOEL is bewogen — rebasen en opnieuw (poging $poging)."
+            echo "Push failed, $DOEL has moved — rebasing and trying again (attempt $poging)."
             git fetch -q origin "$DOEL"
             git rebase -q "origin/$DOEL" || {
-              echo "::error::rebase mislukt"; exit 1; }
+              echo "::error::rebase failed"; exit 1; }
           done
-          echo "::error::na drie pogingen nog altijd niet kunnen pushen"
+          echo "::error::still unable to push after three attempts"
           exit 1
 
-      - name: Samenvatting
+      - name: Summary
         if: always()
         run: |
           {
-            echo "### 🗺️ ONFF-data bouwen"
+            echo "### 🗺️ Build map data"
             echo ""
             if [ "${{ steps.kmz.outputs.found }}" != "1" ]; then
-              echo "Geen \`.kmz\` gevonden in \`${{ steps.bronmap.outputs.dir }}\` — niets omgezet."
+              echo "No \`.kmz\` found in \`${{ steps.bronmap.outputs.dir }}\` — nothing converted."
             elif [ "${{ steps.diff.outputs.changed }}" = "1" ]; then
-              echo "Bron: \`$(basename "${{ steps.kmz.outputs.path }}")\`"
-              echo ""
               cat report.md
             else
-              echo "Bron: \`$(basename "${{ steps.kmz.outputs.path }}")\` — niets gewijzigd."
+              echo "Countries: \`$DIANA_COUNTRIES\` — nothing changed."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
-  # Een mislukte nacht mag geen stilte zijn. Ook "er stond geen KMZ" telt als
-  # melding: dat ziet er anders eeuwig hetzelfde uit als "niets te verversen".
+  # A failed night must not be silence. "There was no KMZ" counts as a report
+  # too: otherwise that looks forever the same as "nothing to refresh".
   melden:
     needs: bouwen
-    # Niet bij een build uit de wachtruimte: daar zit een mens voor het scherm die
-    # de mislukking meteen ziet. Een issue openen zou alleen ruis zijn.
+    # Not for a build from the waiting room: there is a human in front of the
+    # screen there who sees the failure straight away. Opening an issue would
+    # only be noise.
     if: >-
       always() && github.event_name != 'pull_request' &&
       github.event.inputs.branch == '' &&
@@ -358,31 +422,31 @@ jobs:
     permissions:
       issues: write
     steps:
-      - name: Issue openen of aanvullen
+      - name: Open an issue or add to it
         env:
           GH_TOKEN: ${{ github.token }}
           LABEL: diana-nachtelijke-build
         run: |
           RUN="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          TITEL="Nachtelijke databuild mislukt"
+          TITEL="Nightly data build failed"
           REDEN="${{ needs.bouwen.result }}"
           if [ "${{ needs.bouwen.outputs.kmz_found }}" != "1" ]; then
-            REDEN="overgeslagen — er is geen .kmz gevonden (private bron-repo bereikbaar?)"
+            REDEN="skipped — no .kmz was found (is the private source repo reachable?)"
           fi
-          TEKST="De run van $(date -u '+%Y-%m-%d %H:%M UTC') eindigde met \`$REDEN\`.
+          TEKST="The run of $(date -u '+%Y-%m-%d %H:%M UTC') ended with \`$REDEN\`.
 
           $RUN
 
-          Zolang dit niet opgelost is, blijft de site op de laatst geslaagde dataset staan.
-          Een nieuwe grens verschijnt sowieso alleen via een KMZ-upload, dus dit raakt
-          enkel de verversing uit de WWFF-directory."
+          Until this is fixed, the site stays on the last dataset that built successfully.
+          A new boundary only ever appears through a KMZ upload anyway, so this affects
+          only the refresh from the WWFF directory."
 
-          gh label create "$LABEL" --color BFD4F2 --description "Meldingen van de nachtelijke databuild" 2>/dev/null || true
+          gh label create "$LABEL" --color BFD4F2 --description "Reports from the nightly data build" 2>/dev/null || true
 
           ID=$(gh issue list --label "$LABEL" --state open --limit 1 --json number --jq '.[0].number')
           if [ -n "$ID" ]; then
             gh issue comment "$ID" --body "$TEKST"
-            echo "Toegevoegd aan issue #$ID."
+            echo "Added to issue #$ID."
           else
             gh issue create --title "$TITEL" --label "$LABEL" --body "$TEKST"
           fi
