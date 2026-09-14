@@ -36,8 +36,8 @@ with sync_playwright() as p:
     print("\n[1] factory setting: the worldwide layer is on")
     default_on = pg.evaluate("() => showWorld")
     ok(default_on is True, f"showWorld default is true (got {default_on})")
-    default_filter = pg.evaluate("() => worldFilter")
-    ok(default_filter == "all", f"worldFilter default is 'all' (got '{default_filter}')")
+    default_filter = pg.evaluate("() => spotFilter")
+    ok(default_filter == "all", f"the worldwide/your-country choice starts at 'all' (got '{default_filter}')")
 
     print("\n[2] the worldwide points layer is loaded and drawn")
     pg.wait_for_function("() => worldLoaded === true", timeout=15000)
@@ -54,39 +54,48 @@ with sync_playwright() as p:
         "() => ['world-clusters','world-point'].every(l => !!map.getLayer(l))")
     ok(layers_exist, "the cluster and point layers exist")
 
-    print("\n[3] filtering to one country narrows the source")
-    pg.evaluate("""() => {
-        const sel = document.getElementById('setWorldCountry');
-        const opt = [...sel.options].find(o => o.textContent === 'Netherlands');
-        sel.value = opt.value; sel.dispatchEvent(new Event('change'));
-    }""")
-    pg.wait_for_timeout(300)
-    saved_filter = pg.evaluate("() => worldFilter")
-    ok(saved_filter == "PAFF", f"worldFilter is 'PAFF' after choosing a country (got '{saved_filter}')")
+    print("\n[3] these points follow the one country choice, not a second list")
+    # There used to be a separate dropdown here ("show only this country") that
+    # knew nothing of the country picked for the spots, so you could have two
+    # different countries set without noticing. The points answer to the same
+    # choice as everything else now: worldwide, or your own country.
+    ok(not pg.evaluate("() => !!document.getElementById('setWorldCountry')"),
+       "the second country dropdown is gone")
+    pg.evaluate("() => setHomeCountry('PAFF')")
+    pg.wait_for_timeout(900)
+    ok(pg.evaluate("() => localStorage.getItem('diana.homeprog')") == "PAFF",
+       "the Netherlands is your country now")
+    wide = pg.evaluate("() => worldFilteredData().features.length")
+    ok(wide > 60000, f"on worldwide you still see every other country ({wide})")
+
+    pg.evaluate("() => document.querySelector('#spotFilter [data-home]').click()")
+    pg.wait_for_timeout(600)
     filtered_n = pg.evaluate("() => worldFilteredData().features.length")
     all_paff = pg.evaluate(
         "() => worldFilteredData().features.every(f => f.properties.ref.toUpperCase().split('-')[0] === 'PAFF')")
-    ok(filtered_n > 0 and all_paff, f"only PAFF references in the filtered data ({filtered_n} of them)")
+    ok(filtered_n > 0 and all_paff, f"on your own country, only its points are left ({filtered_n})")
+    ok(filtered_n < wide, f"which is fewer than worldwide ({filtered_n} against {wide})")
 
     print("\n[4] the choice survives a reload")
-    stored = pg.evaluate("() => localStorage.getItem('diana.worldFilter')")
+    stored = pg.evaluate("() => localStorage.getItem('diana.spotFilter2')")
     ok(stored == "PAFF", f"'PAFF' saved in localStorage (got '{stored}')")
     pg.reload(wait_until="load")
     pg.wait_for_timeout(3000)
     pg.wait_for_function("() => worldLoaded === true", timeout=15000)
-    after_reload = pg.evaluate("() => worldFilter")
-    ok(after_reload == "PAFF", f"worldFilter still 'PAFF' after a reload (got '{after_reload}')")
-    sel_after = pg.evaluate("() => document.getElementById('setWorldCountry').value")
-    ok(sel_after == "PAFF", "the country dropdown shows the saved choice after a reload")
+    after_reload = pg.evaluate("() => spotFilter")
+    ok(after_reload == "PAFF", f"still on your own country after a reload (got '{after_reload}')")
+    sel_after = pg.evaluate("() => document.getElementById('setSpotCountry').value")
+    ok(sel_after == "PAFF", "and the picker in Settings says so")
 
     print("\n[5] back to worldwide")
-    pg.evaluate("""() => {
-        const sel = document.getElementById('setWorldCountry');
-        sel.value = ''; sel.dispatchEvent(new Event('change'));
-    }""")
-    pg.wait_for_timeout(300)
-    back_to_all = pg.evaluate("() => worldFilter")
-    ok(back_to_all == "all", f"worldFilter is 'all' again (got '{back_to_all}')")
+    pg.evaluate("() => document.querySelector('#spotFilter [data-filter=\"all\"]').click()")
+    pg.wait_for_timeout(400)
+    back_n = pg.evaluate("() => worldFilteredData().features.length")
+    ok(back_n > 60000, f"every country's points are back ({back_n})")
+    ok(pg.evaluate("() => document.getElementById('setSpotCountry').value") == "PAFF",
+       "and your country is still the Netherlands")
+    pg.evaluate("() => setHomeCountry('ONFF')")
+    pg.wait_for_timeout(1200)
 
     print("\n[6] the layer can be switched off and on from the layers panel")
     pg.evaluate("() => document.querySelector('.opt[data-layer=\"world\"]').click()")

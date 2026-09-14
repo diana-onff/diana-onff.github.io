@@ -112,13 +112,15 @@ your choice is remembered. **⤢ Zoom to all spots** re-frames the map to fit
 everything currently shown, including your own position.
 
 Also on by default: **other WWFF areas**, every active WWFF reference
-worldwide that isn't in Belgium (~64,600 of them), shown as blue clustered
+worldwide outside your own country (~64,600 of them), shown as blue clustered
 dots that split apart as you zoom in — tap a cluster to zoom into it, tap a
 single dot for its reference and name. The dots grow as you zoom in, and from
-zoom 11 each one is labelled with its reference. These are always shown as points,
-never as an outlined area — Diana only has real boundaries for ONFF. Switch
-the layer off from the layers button, or narrow it to one country from
-**Settings → Other WWFF areas** (see below).
+zoom 11 each one is labelled with its reference. These are always shown as
+points, never as an outlined area: real boundaries exist only for the countries
+that have published them, and Diana loads those for your own country (see
+**Your country** under Settings). Switch the layer off from the layers button.
+The dots follow the same Worldwide / your-country choice as the spots do, so on
+your own country the map shows your areas and nothing else.
 
 ### Spots (((·)))
 A list view of the same live spots and agenda, refreshed every 30 seconds.
@@ -223,14 +225,23 @@ Declining the location permission costs you nothing and produces no complaint:
 the map falls back to your locator, then your callsign's country, then all zones
 — never a blank world view.
 
+This is also where you set **your country**, and that one setting decides three
+things at once: which spots and agenda items you see, which country's
+boundaries Diana loads onto the map, and which other countries appear as points.
+Diana fills it in from your callsign until you pick one yourself. Under it,
+**Tonen / Show** is the same Worldwide-or-your-country choice as the control on
+the Spots screen, kept in sync with it.
+
+A line under the picker says what Diana has for the country you chose: how many
+areas came in with boundaries, or that there are none and you will see points
+only. Not every WWFF programme has published its boundaries — for those, the
+references are still all there as points, they simply have no outline to stand
+inside. Changing the country takes effect immediately; there is nothing to
+restart.
+
 This is also where you set your **language** (the seven below, or "follow the
-browser"), your **Spots filter** — worldwide by default, or narrowed to ONFF
-only or to one specific WWFF country, the same choice as the quick control on
-the Spots screen, kept in sync with it — your **Other WWFF areas** setting
-(worldwide by default, or narrowed to one country — a separate choice from
-the Spots filter, since one decides which map *points* you see and the other
-which live *spots* you see), and where you **install Diana as an app**.
-Everything here is local to this device; see §Limitations.
+browser"), and where you **install Diana as an app**. Everything here is local
+to this device; see §Limitations.
 
 ### Admin (⛭, hidden by default)
 For repository maintainers only — publishing new data and generating embed

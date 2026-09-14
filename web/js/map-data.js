@@ -113,20 +113,59 @@ async function loadCountries(){
   return [LEGACY_ONFF];
 }
 
-/* Which of them go into memory. An explicit choice wins; otherwise the country
-   that goes with your callsign, if we have it; otherwise the first on the list.
-   Never all of them: one country is megabytes, and there is no reason to carry
-   Sweden around while you are standing in Flanders. */
+/* ---------- your country, the one setting ----------
+ *
+ * Diana used to have three separate notions of "country" that knew nothing of
+ * one another: which one the spots filter offered, which one the worldwide
+ * points were narrowed to, and which one's boundaries were in memory. That
+ * last one was never asked — it went by your callsign and nothing else, so
+ * picking the Netherlands in Settings changed the spots and left the map
+ * Belgian.
+ *
+ * One value now, and everything reads it: the spots and agenda filter, the
+ * boundaries that get loaded, and the points of other countries on the map.
+ * Kept apart from "which filter is on" on purpose — see homeProgram() in
+ * spots.js: glancing at Worldwide does not mean you have stopped caring about
+ * the Netherlands. */
+function homeCountry(have){
+  const saved = recall('homeprog');
+  if(saved) return saved;
+  // cfg first: a callsign just typed in Settings has not necessarily been
+  // saved yet, and the country ought to follow along as you type.
+  const call = (typeof cfg !== 'undefined' && cfg ? (cfg.call || cfg.callp) : '')
+            || recall('call') || recall('callp');
+  const mine = programForCall(call);
+  if(mine) return mine;
+  const list = have || (countries || []).map(c => c.program);
+  // The map opens over Belgium and that is where this app was born, so it is
+  // the honest default for someone who has not said who they are yet —
+  // certainly more honest than whichever country happens to sort first.
+  return list.includes('ONFF') ? 'ONFF' : (list[0] || 'ONFF');
+}
+
+/* Which countries go into memory: yours, and only if we have boundaries for
+   it. Never all of them — one country is megabytes, and there is no reason to
+   carry Sweden around while you are standing in Flanders. A country we have no
+   boundaries for loads nothing at all, and then the worldwide points are the
+   only place its references exist; the map falls back to those by itself. */
 function wantedPrograms(list){
   const have = list.map(c => c.program);
+  // An explicit list wins, and nothing in the app writes it: this is how a
+  // preview build — or a test — puts more than one country on board at once.
   try{
     const saved = JSON.parse(recall('countries') || '[]');
     const keep = Array.isArray(saved) ? saved.filter(p => have.includes(p)) : [];
     if(keep.length) return keep;
   }catch{}
-  const mine = programForCall(recall('call') || recall('callp'));
-  if(mine && have.includes(mine)) return [mine];
-  return have.slice(0, 1);
+  const mine = homeCountry(have);
+  return have.includes(mine) ? [mine] : [];
+}
+
+/* Does your country have boundaries at all, or only points? The Settings
+   screen says so out loud, because "only dots on the map" is otherwise
+   indistinguishable from something being broken. */
+function countryEntry(prog){
+  return (countries || []).find(c => c.program === prog) || null;
 }
 
 async function loadCountry(c){
@@ -144,36 +183,42 @@ async function loadCountry(c){
   return out;
 }
 
-async function loadData(){
-  countries = await loadCountries();
-  loadedPrograms = [];
+/* Put exactly these countries in memory, replacing whatever was there. Split
+   off from loadData() because the country can now be changed while the app is
+   running, and the second copy of this loop is precisely how the two would
+   have drifted apart. */
+/* Bumped every time what is in memory changes. The map compares against it so
+   that an ordinary redraw costs nothing: handing a 3.8 MB source the same data
+   again puts MapLibre's style back into "busy" for a moment, and a redraw that
+   does that on every pass never lets it settle — which is how the points layer
+   ended up never being built at all. */
+let dataGen = 0;
 
-  if (window.DIANA_ZONES){            // baked into the standalone preview build
-    zones = window.DIANA_ZONES;
-    if (window.DIANA_POINTS) noPoly = window.DIANA_POINTS;
-  } else {
-    zones  = {type:'FeatureCollection', features: []};
-    noPoly = {type:'FeatureCollection', features: []};
-    activity = {};
-    for(const prog of wantedPrograms(countries)){
-      const c = countries.find(x => x.program === prog);
-      try{
-        const got = await loadCountry(c);
-        zones.features.push(...got.zones);
-        noPoly.features.push(...got.points);
-        Object.assign(activity, got.activity);
-        loadedPrograms.push(prog);
-      }catch(err){
-        // One country that will not load must not take the others down with it.
-        console.warn('country ' + prog + ' did not load:', err);
-      }
+async function loadPrograms(progs){
+  zones  = {type:'FeatureCollection', features: []};
+  noPoly = {type:'FeatureCollection', features: []};
+  activity = {};
+  loadedPrograms = [];
+  for(const prog of progs){
+    const c = countryEntry(prog);
+    if(!c) continue;
+    try{
+      const got = await loadCountry(c);
+      zones.features.push(...got.zones);
+      noPoly.features.push(...got.points);
+      Object.assign(activity, got.activity);
+      loadedPrograms.push(prog);
+    }catch(err){
+      // One country that will not load must not take the others down with it.
+      console.warn('country ' + prog + ' did not load:', err);
     }
   }
-  if(!loadedPrograms.length){
-    loadedPrograms = [...new Set((zones.features || [])
-      .map(f => refProgram(f.properties && f.properties.ref)).filter(Boolean))];
-  }
+  dataGen++;
+}
 
+/* Everything that is derived from what is in memory: the search index, the
+   points without a boundary, and the count under the map. */
+function buildIndex(){
   index = zones.features.map(f => {
     const b = bboxOf(f.geometry);
     return {...f.properties, bbox:b};
@@ -187,10 +232,62 @@ async function loadData(){
     index.push({...f.properties, lon:f.geometry.coordinates[0], lat:f.geometry.coordinates[1]});
   }
 
-  $('counts').innerHTML = `<b>${zones.features.length}</b> ${t('map.areas')}`
-    + (noPoly.features.length ? ` · ${noPoly.features.length} ${t('map.nopolycount')}` : '');
+  updateCounts();
   const optNp = $('optNopoly');
   if(optNp) optNp.hidden = noPoly.features.length === 0;
+}
+
+/* The line under the map: what you are actually looking at. For a country
+   without boundaries that is the worldwide points and nothing else — saying
+   "0 areas" there would read as a fault rather than as the truth. */
+function updateCounts(){
+  const el = $('counts');
+  if(!el) return;
+  if(zones.features.length || noPoly.features.length){
+    el.innerHTML = `<b>${zones.features.length}</b> ${t('map.areas')}`
+      + (noPoly.features.length ? ` · ${noPoly.features.length} ${t('map.nopolycount')}` : '');
+    return;
+  }
+  const wereld = (typeof worldFilteredData === 'function' && typeof worldLoaded !== 'undefined' && worldLoaded)
+    ? worldFilteredData().features.length : 0;
+  el.innerHTML = `<b>${wereld}</b> ${t('map.points')}`;
+}
+
+/* Your country changed in Settings. The boundaries of the old one go out of
+   memory and the new one's come in — while the app is running, because sending
+   someone off to restart for a setting they just changed is not an answer.
+   What is drawn follows: the areas, the labels, the points without a boundary,
+   and the worldwide dots (which leave out whatever country is on board). */
+async function switchCountry(prog){
+  await loadPrograms(prog ? [prog] : []);
+  buildIndex();
+  // A reference from the country that just left cannot stay selected.
+  if(typeof clearSelection === 'function') clearSelection();
+  if(typeof closeSheet === 'function') closeSheet();
+  if(typeof updateCountrySources === 'function') updateCountrySources();
+  // Nearby is a list of distances to what is in memory, so it is a different
+  // list now, from the first page.
+  if(typeof nearShown !== 'undefined') nearShown = NEAR_MAX_ROWS;
+  if(typeof renderNearby === 'function' && $('viewNearby').classList.contains('on')) renderNearby();
+  syncCountryUI();
+}
+
+async function loadData(){
+  countries = await loadCountries();
+  loadedPrograms = [];
+
+  if (window.DIANA_ZONES){            // baked into the standalone preview build
+    zones = window.DIANA_ZONES;
+    if (window.DIANA_POINTS) noPoly = window.DIANA_POINTS;
+  } else {
+    await loadPrograms(wantedPrograms(countries));
+  }
+  if(!loadedPrograms.length){
+    loadedPrograms = [...new Set((zones.features || [])
+      .map(f => refProgram(f.properties && f.properties.ref)).filter(Boolean))];
+  }
+
+  buildIndex();
 
   // Programme → country, worldwide — for the spots filter (Settings: ONFF only
   // / one country / everywhere). If the file is missing (older data), then
@@ -202,7 +299,34 @@ async function loadData(){
   // The QSO counts and last activations came in with each country above —
   // the detail panel and the Nearby screen both want them straight away.
   populateSpotCountries();
-  populateWorldCountries();
+  syncCountryUI();
+}
+
+/* What Settings says about your country: which one it is, and whether Diana
+   has boundaries for it or only points. That second line matters — a map with
+   nothing but dots on it is otherwise indistinguishable from a map that is
+   broken. */
+function syncCountryUI(){
+  const el = $('setCountryState');
+  if(!el) return;
+  const prog = homeCountry();
+  const c = countryEntry(prog);
+  if(!countries.length){
+    el.textContent = '';
+    return;
+  }
+  if(c && loadedPrograms.includes(prog)){
+    el.textContent = t('set.countryzones')
+      .split('{n}').join(zones.features.length)
+      .split('{prog}').join(prog);
+    el.className = 'hint good';
+  }else if(c){
+    el.textContent = t('set.countryloading').split('{prog}').join(prog);
+    el.className = 'hint';
+  }else{
+    el.textContent = t('set.countrypoints').split('{prog}').join(prog);
+    el.className = 'hint';
+  }
 }
 
 /* One label point per reference, on the largest sub-area — where you are most

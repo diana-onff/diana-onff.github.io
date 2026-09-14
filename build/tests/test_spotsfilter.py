@@ -70,12 +70,13 @@ with sync_playwright() as p:
     ok(vis_onff == ["ONFF-0001"], f"only ONFF-0001 (got {vis_onff})")
 
     print("\n[5] one specific country via Settings")
+    # The picker lists "Netherlands — PAFF" and is grouped by whether Diana has
+    # boundaries for a country, so it is looked up by value, not by its label.
     pg.evaluate("""() => {
         const sel = document.getElementById('setSpotCountry');
-        const opt = [...sel.options].find(o => o.textContent === 'Netherlands');
-        sel.value = opt.value; sel.dispatchEvent(new Event('change'));
+        sel.value = 'PAFF'; sel.dispatchEvent(new Event('change'));
     }""")
-    pg.wait_for_timeout(200)
+    pg.wait_for_timeout(900)
     vis_nl = pg.evaluate("() => visibleSpots().map(s=>s.reference)")
     ok(vis_nl == ["PAFF-0123"], f"only the Dutch spot (got {vis_nl})")
 
@@ -105,10 +106,15 @@ with sync_playwright() as p:
     ok(sel_after == "PAFF", "the country dropdown shows the saved choice after a reload")
 
     print("\n[8] back to worldwide via the quick filter")
+    # The picker used to blank out here, because it was the filter in dropdown
+    # form. It is your country now — the one setting behind the spots, the
+    # boundaries on the map and the foreign points — and looking at the world
+    # for a moment does not mean you have stopped living somewhere.
     pg.evaluate("() => document.querySelector('#spotFilter [data-filter=\"all\"]').click()")
     pg.wait_for_timeout(200)
-    country_reset = pg.evaluate("() => document.getElementById('setSpotCountry').value")
-    ok(country_reset == "", "the country dropdown is empty again after 'Worldwide'")
+    country_kept = pg.evaluate("() => document.getElementById('setSpotCountry').value")
+    ok(country_kept == "PAFF", f"the picker still names your country ({country_kept})")
+    ok(pg.evaluate("() => spotFilter") == "all", "while the filter itself is worldwide")
 
     print("\n[8b] without a choice, the country comes from your callsign")
     # "Without a choice" has to mean it: a country picked earlier is remembered

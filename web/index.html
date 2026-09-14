@@ -202,15 +202,17 @@
 
   <div class="card">
     <h4 style="margin:0 0 10px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
-        data-i18n="set.spotstitle">Spots-filter</h4>
-    <p class="hint" style="margin:0 0 10px" data-i18n="set.spotslead">Welke spots en agenda-items Diana toont, op de kaart en in de Spots-lijst. Wat je hier kiest is meteen ook de instelling voor de volgende keer.</p>
+        data-i18n="set.countrytitle">Jouw land</h4>
+    <p class="hint" style="margin:0 0 10px" data-i18n="set.countrylead">Eén keuze, voor alles: welke spots en agenda-items je ziet, van welk land Diana de grenzen inlaadt, en welke gebieden op de kaart komen. Van andere landen toont Diana altijd alleen de punten.</p>
+    <label class="fld"><span data-i18n="set.country">Land</span>
+      <select id="setSpotCountry"></select>
+    </label>
+    <p class="hint" id="setCountryState" style="margin:6px 2px 12px"></p>
+    <p class="hint" style="margin:0 0 6px" data-i18n="set.countryshow">Tonen</p>
     <div class="segs" id="setSpotFilter">
       <button class="seg" data-home data-filter="ONFF">ONFF</button>
       <button class="seg on" data-filter="all" data-i18n="spots.world">Wereldwijd</button>
     </div>
-    <label class="fld" style="margin-top:10px"><span data-i18n="set.spotscountry">Of één specifiek land</span>
-      <select id="setSpotCountry"><option value="" data-i18n="set.spotscountrynone">— geen —</option></select>
-    </label>
   </div>
 
   <div class="card">
@@ -256,15 +258,6 @@
       <button class="seg" data-bands="short" data-i18n="set.bandsshort">Alleen HF</button>
     </div>
     <p class="hint" style="margin:8px 0 0" data-i18n="set.bandsnote">Alle banden: 160m tot 23cm. Alleen HF: 80, 40, 30, 20, 15 en 10m.</p>
-  </div>
-
-  <div class="card">
-    <h4 style="margin:0 0 10px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
-        data-i18n="set.worldtitle">Andere WWFF-gebieden</h4>
-    <p class="hint" style="margin:0 0 10px" data-i18n="set.worldlead">Referentiepunten uit de wereldwijde WWFF-lijst, buiten België — altijd als punt, nooit als grens (die hebben we alleen voor ONFF). Standaard toont Diana ze allemaal; kies hieronder een land om te beperken.</p>
-    <label class="fld"><span data-i18n="set.worldcountry">Alleen dit land tonen</span>
-      <select id="setWorldCountry"><option value="" data-i18n="set.worldcountrynone">— alle landen —</option></select>
-    </label>
   </div>
 
   <div class="card">

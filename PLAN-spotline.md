@@ -1317,3 +1317,46 @@ gebieden. `test_adminupload.py` kreeg de controle vóór het versturen erbij (21
 checks). Volledige suite: 19 bestanden, 407 checks, allemaal tot "ALL OK"
 gedraaid; `test_directory.py` slaat zichzelf over zolang er geen lokale
 `wwff_directory.csv` is, zoals altijd.
+
+---
+
+**Uitgevoerd op 2026-09-14 — v1.13.0.** Eén landkeuze, in plaats van drie die
+niets van elkaar wisten.
+
+Bij het nakijken bleken er drie los van elkaar te bestaan: welk land de
+spotsfilter aanbood (`homeprog`), tot welk land de wereldpunten beperkt waren
+(`worldFilter`, met een eigen dropdown in Instellingen), en van welk land de
+grenzen in het geheugen zaten — dat laatste werd nooit gevraagd, dat ging puur
+op je roepteken. De sleutel `diana.countries` waar de kaart naar keek, werd
+door geen enkel scherm ooit geschreven. Nederland kiezen in Instellingen
+veranderde dus de spots en liet de kaart Belgisch.
+
+- **Eén waarde nu**, en alles leest hem: de spots- en agendafilter, welke
+  grenzen ingeladen worden, en welke punten van andere landen getekend worden.
+  De dropdown bij de wereldpunten is weg; die punten volgen dezelfde
+  wereldwijd/eigen-land-knop.
+- **Wisselen gebeurt terwijl de app draait.** Nieuw land ophalen, index
+  opnieuw opbouwen, selectie van het vertrokken land loslaten, en de kaartlagen
+  hun nieuwe data geven. Geen herstart.
+- **Geen grenzen? Dan zegt Instellingen dat**, met het aantal gebieden als ze
+  er wel zijn. De wereldpunten van dat land blijven dan staan — dat is immers
+  de enige plek waar die referenties bestaan — en de teller onder de kaart telt
+  die in plaats van "0 gebieden" te melden, wat als een storing leest.
+- Het Nederlandse `map.areas` zei nog "ONFF-gebieden". Met Denemarken en
+  Duitsland op komst is dat gewoon fout; nu "WWFF-gebieden".
+
+Twee dingen die de nieuwe test ving en ik anders had meegeleverd. De eerste:
+`paintZones()` stapte weg zodra de bron bestond — geschreven voor een kaart die
+zijn data één keer laadt — dus na het wisselen stonden de oude grenzen nog op
+het scherm terwijl elke variabele iets anders beweerde. De tweede is subtieler
+en was mijn eigen reparatie ervan: als je bij élke hertekening 3,8 MB opnieuw
+in die bron duwt, staat MapLibre's stijl permanent op "bezig", en de laag met
+punten zonder grens werd daardoor nooit meer aangemaakt. Vijf bestaande tests
+vielen erover. Nu wordt alleen geduwd wat echt veranderd is (`dataGen`).
+
+Nieuwe test `test_country.py` (31 checks) controleert wat de kaart wérkelijk
+vasthoudt, niet alleen wat de variabelen zeggen — precies waar die eerste fout
+zat. `test_worldpoints.py` en `test_spotsfilter.py` aangepast aan de
+samengevoegde keuze. Volledige suite: 20 bestanden, 443 checks, allemaal tot
+"ALL OK"; `test_directory.py` slaat zichzelf over zolang er geen lokale
+`wwff_directory.csv` is.

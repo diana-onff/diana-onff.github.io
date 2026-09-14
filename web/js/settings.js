@@ -67,7 +67,7 @@ function loadSettingsUI(){
   [...$('setBands').children].forEach(b => b.classList.toggle('on', b.dataset.bands === cfg.bands));
   [...$('setNearKm').children].forEach(b => b.classList.toggle('on', +b.dataset.km === cfg.nearkm));
   syncSpotFilterUI();
-  syncWorldFilterUI();
+  syncCountryUI();
   [...$('setLang').children].forEach(b => b.classList.toggle('on', b.dataset.lang === langPref));
   checkGrid();
 }

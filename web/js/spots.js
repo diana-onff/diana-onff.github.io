@@ -382,12 +382,42 @@ $('spotTab').addEventListener('click', e=>{
    ('all' | 'onff' | a programme code) — whatever you pick here is also the
    default for next time, and the other way round. */
 function setSpotFilter(value){
+  const was = homeCountry();
   spotFilter = value;
   remember('spotFilter2', spotFilter);
   // Worldwide is not a country, so it does not overwrite which country is yours.
   if(value !== 'all') remember('homeprog', value);
   syncSpotFilterUI();
   paintSpots(); renderSpots();
+  // The dots of other countries answer to this same choice now, instead of to
+  // a second country list in Settings that nobody could keep in step with it.
+  if(typeof worldLoaded !== 'undefined' && worldLoaded) paintWorld();
+  // And picking another country is picking another country, full stop: the
+  // boundaries follow. Otherwise the map would be showing one country while
+  // the list underneath it shows a different one.
+  if(value !== 'all' && value !== was && typeof switchCountry === 'function'){
+    return switchCountry(value);
+  }
+}
+
+/* Which country is yours. One value behind all of it: the spots and agenda
+   filter, the boundaries in memory, and which other countries' points are
+   drawn. Changing it loads that country's boundaries there and then — if we
+   have any. If we have none, nothing is loaded and its references stay what
+   they already were: points from the worldwide list. */
+function setHomeCountry(prog){
+  if(!prog) return;
+  // While you are looking at Worldwide, changing your country does not change
+  // what you are looking at — only which country you would go back to, and
+  // which boundaries are on the map underneath.
+  if(spotFilter !== 'all') return setSpotFilter(prog);
+  const was = homeCountry();
+  remember('homeprog', prog);
+  syncSpotFilterUI();
+  paintSpots(); renderSpots();
+  if(typeof worldLoaded !== 'undefined' && worldLoaded) paintWorld();
+  if(prog !== was && typeof switchCountry === 'function') return switchCountry(prog);
+  syncCountryUI();
 }
 /* Which country the first button in the filter stands for.
  *
@@ -400,10 +430,7 @@ function setSpotFilter(value){
  * remembered on its own, and only then does the callsign get a say. */
 function homeProgram(){
   if(spotFilter !== 'all') return spotFilter;
-  return recall('homeprog')                     // the last country you actually picked
-      || programForCall(cfg.call || cfg.callp)  // else the one your callsign suggests
-      || loadedPrograms[0]                      // else whatever boundaries are on board
-      || 'ONFF';
+  return homeCountry();   // the setting, with the callsign behind it
 }
 
 function syncSpotFilterUI(){
@@ -414,15 +441,23 @@ function syncSpotFilterUI(){
     if(home){ home.dataset.filter = prog; home.textContent = prog; }
     [...el.children].forEach(c=>c.classList.toggle('on', c.dataset.filter===spotFilter));
   }
+  // The picker holds your country, not the filter: on Worldwide it keeps
+  // showing which country you would go back to, because that is still true.
   const sel = $('setSpotCountry');
-  if(sel) sel.value = spotFilter !== 'all' ? spotFilter : '';
+  if(sel && sel.options.length) sel.value = homeCountry();
 }
 function populateSpotCountries(){
   const sel = $('setSpotCountry'); if(!sel) return;
-  const current = sel.value;
-  sel.innerHTML = `<option value="" data-i18n="set.spotscountrynone">${t('set.spotscountrynone')}</option>`
-    + wwffPrograms.map(p => `<option value="${p.program}">${p.country}</option>`).join('');
-  sel.value = current;
+  // Countries we have boundaries for first, under a heading of their own: for
+  // those this choice does more than filter a list, it puts a map on screen.
+  const have = new Set((countries || []).map(c => c.program));
+  const opt = p => `<option value="${p.program}">${p.country} — ${p.program}</option>`;
+  const mine = wwffPrograms.filter(p => have.has(p.program));
+  const rest = wwffPrograms.filter(p => !have.has(p.program));
+  sel.innerHTML =
+      (mine.length ? `<optgroup label="${t('set.countryhas')}">${mine.map(opt).join('')}</optgroup>` : '')
+    + (rest.length ? `<optgroup label="${t('set.countrypointsonly')}">${rest.map(opt).join('')}</optgroup>` : '');
+  sel.value = homeCountry();
   syncSpotFilterUI();
 }
 $('spotFilter').addEventListener('click', e=>{
@@ -434,13 +469,20 @@ $('setSpotFilter').addEventListener('click', e=>{
   setSpotFilter(b.dataset.filter);
 });
 $('setSpotCountry').addEventListener('change', e=>{
-  setSpotFilter(e.target.value || 'all');
+  setHomeCountry(e.target.value);
 });
-/* The callsign decides the first button, so changing it has to redraw one. */
-['setCall','setCallP'].forEach(id => $(id).addEventListener('input', () => syncSpotFilterUI()));
-$('setWorldCountry').addEventListener('change', e=>{
-  setWorldFilter(e.target.value || 'all');
-});
+/* The callsign decides the country until you pick one yourself, so changing it
+   has to redraw the button — and, if you have never picked one, actually move
+   the map to that country. */
+['setCall','setCallP'].forEach(id => $(id).addEventListener('input', () => {
+  syncSpotFilterUI();
+  if(!recall('homeprog')){
+    const mine = homeCountry();
+    const sel = $('setSpotCountry');
+    if(sel && sel.options.length) sel.value = mine;
+    if(!loadedPrograms.includes(mine) && countryEntry(mine)) switchCountry(mine);
+  }
+}));
 
 /* ---------- spot detail ---------- */
 function openSpot(id){

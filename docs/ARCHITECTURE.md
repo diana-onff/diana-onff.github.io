@@ -241,9 +241,39 @@ and once as a dot in the middle of it. The app checks this a second time at
 draw time, because a world file built before a country had boundaries would
 otherwise still list them.
 
-What the app does with all this: it reads the manifest, and loads the countries
-you asked for — your own by default, worked out from your callsign. Loading
-everything is not an option; one country is megabytes.
+What the app does with all this: it reads the manifest and loads **your
+country**, and only that one. Loading everything is not an option; one country
+is megabytes.
+
+Which country that is used to be three separate questions that did not know
+about each other — the one the spots filter offered (`diana.homeprog`), the one
+the worldwide points were narrowed to (`diana.worldFilter`, its own dropdown in
+Settings), and the one whose boundaries were in memory (never asked at all: it
+went by your callsign). Picking the Netherlands in Settings therefore changed
+the spots and left the map Belgian. There is one value now, `diana.homeprog`,
+and all three read it:
+
+- `wantedPrograms()` loads it, if the manifest has boundaries for it. If it does
+  not, nothing is loaded — and the worldwide points are then the only place
+  that country's references exist at all, which is exactly what stays on the
+  map. Settings says so in as many words, because a map showing nothing but
+  dots is otherwise indistinguishable from a map that is broken.
+- `homeProgram()` in spots.js offers it as the one country button next to
+  Worldwide. Tapping Worldwide does not change it — glancing at everything for
+  a moment is not the same as moving abroad.
+- `worldFilteredData()` in map.js draws every *other* country's points on
+  Worldwide, and none of them when you are looking at your own country.
+
+Changing it swaps the boundaries while the app is running: `switchCountry()`
+loads the new country, rebuilds the index, lets go of any selection from the
+country that just left, and hands the map's sources their new data. The sources
+are only ever handed data that has actually changed (`dataGen`) — pushing 3.8 MB
+into a source it already holds puts MapLibre's style back into "busy", and a
+redraw doing that on every pass never lets it settle.
+
+`diana.countries` (a JSON array) still overrides all of it, and nothing in the
+app writes it: that is how a preview build or a test puts more than one country
+on board at once.
 
 ### 2.1c Three shapes of KMZ, and refusing the fourth
 
