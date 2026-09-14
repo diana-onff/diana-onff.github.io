@@ -94,9 +94,8 @@ position often arrives within a second claiming twenty metres — that is how
 accurate the wifi database believes itself to be, not how accurate this
 particular answer is, and if the router is registered at an old address you get
 a confident position several streets away. Diana therefore answers on that fix
-straight away, but **keeps listening for the rest of the twelve seconds**: a
-later fix that is both sharper and further away than its own error margin
-replaces it, marker and verdict together. Outdoors you never notice, because
+straight away, but **keeps listening for the rest of the twelve seconds** and
+revises the answer as more readings arrive. Outdoors you never notice, because
 the first fix is already the real one. Indoors the answer corrects itself a few
 seconds in. Ordinary wobble of a few metres changes nothing — the marker does
 not dance.
@@ -108,6 +107,18 @@ covering the whole block means the answer came off a wifi network. This is the
 quickest way to tell the two apart, and it explains a marker that moves between
 refreshes: if the ring is eighty metres across, a position that shifts by eighty
 metres is not a fault, it is the phone being honest about what it knows.
+
+Some phones state an accuracy they cannot honour. One reported ±5 to ±11 m
+while five readings from the same spot, a few seconds apart, stood fifty metres
+apart — four of those ten pairs were mutually impossible by the phone's own
+numbers. No rule that reads the stated accuracy can catch that, because the
+stated accuracy is the thing that is wrong. So Diana keeps the readings of the
+last three-quarters of a minute, across taps of ◎, and judges them against each
+other. A single wild reading is outvoted by the others and no longer shown. If
+the readings as a group contradict each other, the margin becomes the spread
+you are actually seeing and the verdict says "metingen spreken elkaar tegen".
+Walking is not scatter: what you could have covered on foot between two readings
+is subtracted before anything is called a contradiction.
 
 If you want to see the figures behind it, **Settings → your station** shows
 what the last position actually was: the accuracy in metres, how long ago, and

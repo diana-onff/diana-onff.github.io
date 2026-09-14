@@ -34,6 +34,12 @@ def routes(ctx):
         status=200, content_type="application/json", body="[]"))
     ctx.route(re.compile(r"https://docs\.google\.com/.*"), lambda r: r.abort())
 
+# Diana now keeps the readings of the last 45 seconds ACROSS taps, because the
+# scatter that started all this showed up between presses of the locate button,
+# not within one press. Each scenario below is a fresh situation, so each one
+# clears that log — otherwise the previous scenario's readings would be weighed
+# in as evidence about this one.
+#
 # A stand-in for navigator.geolocation. Emits whatever window.__SEQ holds, on
 # the timings given there, and records what was asked of it. getCurrentPosition
 # throws on purpose: nothing in Diana may go back to asking once.
@@ -119,7 +125,7 @@ with sync_playwright() as p:
         {{t: 250,  lat: {coarse_lat}, lon: {coarse_lon}, acc: 380}},
         {{t: 1200, lat: {lat}, lon: {lon}, acc: 12}},
       ];
-      hideStatus(); locate();
+      hideStatus(); fixLog = []; locate();
     }}""")
     pg.wait_for_timeout(500)     # the two coarse fixes are in, the sharp one is not
     txt = pg.evaluate("() => document.getElementById('stT1').textContent + ' / ' + document.getElementById('stT2').textContent")
@@ -165,7 +171,7 @@ with sync_playwright() as p:
         {{t: 50,   lat: {coarse_lat}, lon: {coarse_lon}, acc: 20}},   // wifi, wrong, confident
         {{t: 1500, lat: {lat}, lon: {lon}, acc: 8}},                  // the satellites arrive
       ];
-      hideStatus(); if(fixRun && fixRun.run) fixRun.run.stop(); locate();
+      hideStatus(); fixLog = []; if(fixRun && fixRun.run) fixRun.run.stop(); locate();
     }}""")
     pg.wait_for_timeout(600)
     first = pg.evaluate("() => here")
@@ -188,7 +194,7 @@ with sync_playwright() as p:
         {{t: 50,  lat: {lat}, lon: {lon}, acc: 12}},
         {{t: 700, lat: {lat + 0.00003}, lon: {lon}, acc: 10}},   // ~3 m away, ±10 m
       ];
-      hideStatus(); if(fixRun && fixRun.run) fixRun.run.stop(); locate();
+      hideStatus(); fixLog = []; if(fixRun && fixRun.run) fixRun.run.stop(); locate();
     }}""")
     pg.wait_for_timeout(1100)
     held = pg.evaluate("() => lastFix")
@@ -204,7 +210,7 @@ with sync_playwright() as p:
     # answer of the lot.
     pg.evaluate(f"""() => {{
       window.__SEQ = [{{t: 50, lat: {lat}, lon: {lon}}}];   // no accuracy at all
-      hideStatus(); if(fixRun && fixRun.run) fixRun.run.stop(); locate();
+      hideStatus(); fixLog = []; if(fixRun && fixRun.run) fixRun.run.stop(); locate();
     }}""")
     pg.wait_for_timeout(600)
     cls = pg.evaluate("() => document.getElementById('status').className")
@@ -226,7 +232,7 @@ with sync_playwright() as p:
     # fault in the app rather than as what a phone manages indoors.
     pg.evaluate(f"""() => {{
       window.__SEQ = [{{t: 50, lat: {lat}, lon: {lon}, acc: 80}}];
-      hideStatus(); if(fixRun && fixRun.run) fixRun.run.stop(); locate();
+      hideStatus(); fixLog = []; if(fixRun && fixRun.run) fixRun.run.stop(); locate();
     }}""")
     pg.wait_for_timeout(12500)          # 80 m never answers early; the budget does it
     txt = pg.evaluate("() => document.getElementById('stT2').textContent")
@@ -243,7 +249,7 @@ with sync_playwright() as p:
 
     pg.evaluate(f"""() => {{
       window.__SEQ = [{{t: 50, lat: {lat}, lon: {lon}, acc: 6}}];
-      hideStatus(); if(fixRun && fixRun.run) fixRun.run.stop(); locate();
+      hideStatus(); fixLog = []; if(fixRun && fixRun.run) fixRun.run.stop(); locate();
     }}""")
     pg.wait_for_timeout(900)
     txt = pg.evaluate("() => document.getElementById('stT2').textContent")
@@ -261,7 +267,7 @@ with sync_playwright() as p:
         {{t: 50,  lat: {lat}, lon: {lon}, acc: 25}},
         {{t: 600, lat: {lat + 0.0006}, lon: {lon}, acc: 24}},   // 67 m away, 1 m better
       ];
-      hideStatus(); if(fixRun && fixRun.run) fixRun.run.stop(); locate();
+      hideStatus(); fixLog = []; if(fixRun && fixRun.run) fixRun.run.stop(); locate();
     }}""")
     pg.wait_for_timeout(1100)
     ok(abs(pg.evaluate("() => lastFix.lat") - lat) < 1e-6,
@@ -271,12 +277,60 @@ with sync_playwright() as p:
         {{t: 50,  lat: {lat}, lon: {lon}, acc: 25}},
         {{t: 600, lat: {lat + 0.0006}, lon: {lon}, acc: 8}},    // the satellites
       ];
-      hideStatus(); if(fixRun && fixRun.run) fixRun.run.stop(); locate();
+      hideStatus(); fixLog = []; if(fixRun && fixRun.run) fixRun.run.stop(); locate();
     }}""")
     pg.wait_for_timeout(1100)
     moved = pg.evaluate("() => lastFix")
     ok(abs(moved["lat"] - (lat + 0.0006)) < 1e-6 and moved["acc"] == 8,
        "a fix three times sharper does")
+
+    print("\n[3g] a phone that rates itself well while scattering is caught out")
+    # Hoboken, five presses of the locate button from one spot: 773 m ±6,
+    # 820 m ±11, 768 m ±10, 776 m ±8, 767 m ±5 to the same reference. Four of
+    # those ten pairs are mutually impossible. No rule that reads the stated
+    # accuracy can catch that, because the stated accuracy is what is wrong —
+    # so the readings are judged against each other instead.
+    scatter = pg.evaluate(f"""() => {{
+      fixLog = [];
+      const now = Date.now();
+      const m = 1/111320, e = 1/(111320*Math.cos({lat}*Math.PI/180));
+      // four readings all claiming ±5, thrown around over some sixty metres
+      const pts = [[0,0,9],[60,0,6],[30,40,3],[10,-20,0]];
+      for(const [dn,de,age] of pts)
+        fixRemember({lat} + dn*m, {lon} + de*e, 5, now - age*1000);
+      return fixVerdict(now);
+    }}""")
+    ok(scatter["scattered"] is True, "the scatter is recognised for what it is")
+    ok(scatter["acc"] > 40,
+       f"and the margin becomes the spread, not the phone's ±5 (got ±{scatter['acc']} m)")
+    ok(any(abs(scatter["lat"] - (lat + dn / 111320)) < 1e-6 for dn in (0, 60, 30, 10)),
+       "the position is one of the readings — the middle one, not an average of them")
+
+    # The same four readings, but one of them much sharper: then it is not
+    # scatter, it is one good fix among coarse ones, and the good one wins.
+    beter = pg.evaluate(f"""() => {{
+      fixLog = [];
+      const now = Date.now();
+      const m = 1/111320, e = 1/(111320*Math.cos({lat}*Math.PI/180));
+      fixRemember({lat} + 300*m, {lon}, 20, now - 3000);
+      fixRemember({lat}, {lon}, 8, now);
+      return fixVerdict(now);
+    }}""")
+    ok(beter["scattered"] is False and beter["acc"] == 8,
+       f"a coarse reading does not inflate the margin of a sharp one (±{beter['acc']} m)")
+    ok(abs(beter["lat"] - lat) < 1e-6, "and the sharp one is where you are put")
+
+    # Walking is not scatter: twenty metres in fifteen seconds is a person.
+    lopen = pg.evaluate(f"""() => {{
+      fixLog = [];
+      const now = Date.now();
+      const m = 1/111320;
+      fixRemember({lat}, {lon}, 6, now - 15000);
+      fixRemember({lat} + 20*m, {lon}, 6, now);
+      return fixVerdict(now);
+    }}""")
+    ok(lopen["scattered"] is False,
+       "and walking twenty metres in fifteen seconds raises no alarm")
 
     print("\n[4] a fix that never sharpens still gets an answer — an honest one")
     # Only coarse fixes, and the budget cut short so the test does not sit for
@@ -285,7 +339,7 @@ with sync_playwright() as p:
     was = pg.evaluate("() => window.__GEO.cleared.length")
     pg.evaluate(f"""() => {{
       window.__SEQ = [{{t: 50, lat: {coarse_lat}, lon: {coarse_lon}, acc: 800}}];
-      hideStatus(); if(fixRun && fixRun.run) fixRun.run.stop(); fixRun = null;
+      hideStatus(); fixLog = []; if(fixRun && fixRun.run) fixRun.run.stop(); fixRun = null;
       locate();
     }}""")
     pg.wait_for_timeout(400)

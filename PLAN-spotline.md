@@ -1451,3 +1451,47 @@ nooit verschenen, afhankelijk van timing. Die wacht nu en komt terug, zoals
 `test_gps_watch.py` van 30 naar 36 checks. Volledige suite: 20 bestanden, 462
 checks, allemaal tot "ALL OK"; `test_directory.py` slaat zichzelf over zolang
 er geen lokale `wwff_directory.csv` is.
+
+---
+
+**Uitgevoerd op 2026-09-14 — v1.15.0.** Vijf keer op ◎ drukken vanaf dezelfde
+plek in Hoboken, en vijf keer een ander antwoord.
+
+De metingen: 773 m ±6, 820 m ±11, 768 m ±10, 776 m ±8, 767 m ±5 — allemaal tot
+ONFF-0685. Vier van de tien paren zijn wiskundig onmogelijk. De ergste: 820 ±11
+tegenover 767 ±5 verschillen 53 m terwijl hun eigen marges samen 16 m
+toestaan, 3,3× te ver. Het toestel claimde gemiddeld ±8 terwijl het over
+vijftig meter strooide.
+
+Dat legde bloot dat mijn regel van vorige ronde naar het verkeerde keek. Die
+eiste "merkbaar scherper" (0,7×) voor een correctie — maar van ±6 naar ±5 is
+dat niet, en van ±6 naar ±11 al helemaal niet. Welke fix ook als eerste
+binnenkwam bleef dus staan, mét een zelfverzonnen ±5 eronder. Geen enkele
+regel die het opgegeven getal leest kan dit vangen, want dát getal is de fout.
+
+- **De metingen beoordelen elkaar nu.** Diana houdt de metingen van de laatste
+  45 seconden bij, over drukken op ◎ heen — want de spreiding zat tússen die
+  drukken, niet binnen één. De positie wordt de meest centrale meting van de
+  reeks (de medoïde, geen gemiddelde: middelen tussen twee clusters zet je in
+  de straat ertussen waar geen enkele meting je ooit plaatste). Eén wilde
+  uitschieter wordt daardoor weggestemd in plaats van getoond — precies jouw
+  820 m.
+- **De marge wordt de waargenomen spreiding** zodra die groter is dan wat de
+  metingen zelf toegeven, en de uitspraak zegt het: "metingen spreken elkaar
+  tegen".
+- **Twee dingen houden het in toom.** Een grove meting naast een veel scherpere
+  telt niet als onenigheid maar als achterhaald — anders zou de kerkhof-fix van
+  vorige ronde een marge van 300 m opleveren in plaats van 8. En wat je te voet
+  afgelegd kan hebben tussen twee metingen wordt eerst afgetrokken, zodat
+  wandelen geen vals alarm geeft.
+
+Met jouw eigen cijfers nagerekend in de browser: de ±11-uitschieter valt af,
+het antwoord landt op het scherpe cluster — de plek die je zelf "juiste
+locatie" noemde. Een toestel dat consequent ±5 claimt en zestig meter strooit
+krijgt ±56 m te zien, met de melding erbij.
+
+`test_gps_watch.py` van 36 naar 42 checks, met alle vier de gevallen: strooiing,
+uitschieter, grove-naast-scherpe, en wandelen. De testsecties wissen nu elk hun
+eigen meetgeschiedenis — die loopt in de app bewust over drukken heen, en liet
+scenario's anders in elkaar overlopen. Volledige suite: 20 bestanden, 468
+checks, allemaal tot "ALL OK".
