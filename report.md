@@ -1,7 +1,6 @@
-## Diana — new dataset from `ONFF 20260802.kmz`
+## Diana — first dataset from `ONFF 20260802.kmz`
 
-**946 areas** (was 946, 0) · **0 new** · **0 gone** · **0 boundary changed**
-
+**946 areas** read in. There is no previous version to compare against yet.
 
 ### Cross-check against the WWFF directory
 

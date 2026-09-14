@@ -1,0 +1,20 @@
+{
+  "generated": "2026-09-14T05:59:04Z",
+  "countries": [
+    {
+      "program": "ONFF",
+      "country": "Belgium",
+      "refs": 946,
+      "points": 2,
+      "release": "2026-08-02",
+      "source_file": "ONFF 20260802.kmz",
+      "generated": "2026-09-14T05:59:04Z",
+      "bytes": 3852361,
+      "files": {
+        "zones": "zones/onff.geojson",
+        "points": "zones/onff-points.geojson",
+        "activity": "zones/onff-activity.json"
+      }
+    }
+  ]
+}
