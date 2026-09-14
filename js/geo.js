@@ -76,11 +76,22 @@ function distanceToZone(lat,lon,f){
  */
 const FIX_GOOD_M  = 25;      // sharp enough to answer on
 const FIX_WAIT_MS = 12000;   // and never keep anyone waiting longer than this
+/* How much sharper a later fix has to be before it may overturn the answer.
+   A metre of improvement is not evidence of anything: indoors the accuracy
+   wanders by a few metres from wave to wave, and letting that move the marker
+   makes it dance across the street while the app looks broken. Three tenths
+   better is a real step — and the case this is all for, a wifi fix claiming
+   20 m replaced by a satellite fix of 8 m, clears it with room to spare. */
+const FIX_BETTER = 0.7;
 let fixRun = null;           // the locate() in progress, or null
 /* The last position we committed to, for the readout in Settings: there is no
    other way to tell a sharp fix from a coarse one after the fact, and "it put
    me in the wrong place" is not something you can debug from a screenshot. */
 let lastFix = null;
+/* Where the marker is standing at this moment, with the accuracy that came
+   with it. Drives the ring on the map; see fixApply() for why it is not the
+   same thing as lastFix. */
+let ringFix = null;
 
 /* How far apart two fixes are, in metres. */
 function fixApart(a, b){
@@ -94,10 +105,18 @@ function fixApply(pos, final){
   const {latitude:lat, longitude:lon} = pos.coords;
   const accuracy = fixAcc(pos);
   here = {lat, lon};
+  // Two different things, deliberately kept apart. lastFix is what Diana
+  // committed to and is what Settings reports; ringFix is simply where the
+  // marker is standing right now, final or not, because the ring has to follow
+  // the marker — a circle drawn around a position the marker has already left
+  // is worse than none at all. While it is still searching, that ring shrinking
+  // is also the clearest sign that anything is happening.
+  ringFix = {lat, lon, acc: accuracy};
   if(final){
     lastFix = {lat, lon, acc: accuracy, at: Date.now()};
     if(typeof syncFixUI === 'function') syncFixUI();
   }
+  if(typeof paintFixAcc === 'function') paintFixAcc();
   marker.setLngLat([lon,lat]).addTo(map);
   if(final) map.easeTo({center:[lon,lat], zoom:Math.max(map.getZoom(),12)});
   renderSpots();
@@ -172,13 +191,15 @@ function bestFix(onFinal, onProgress, onFail, onEnd){
       if(acc <= FIX_GOOD_M){ run.answered = pos; onFinal(pos); }
       return;
     }
-    // Answered already. Only a fix that is both sharper AND further away than
-    // its own error margin is grounds to change the answer: that combination
-    // means the two positions genuinely disagree and this one is the better
-    // evidence. Ordinary jitter of a few metres fails the second test, so the
-    // marker does not dance.
+    // Answered already. Being meaningfully sharper is the whole test, and it
+    // is enough on its own: a better fix is better evidence whether or not it
+    // moves you, and if it does not move you it still shrinks the circle drawn
+    // around you and can change a verdict that was hedged for lack of
+    // precision. What it is NOT allowed to be is a fix that is barely better —
+    // that is the wander, not the satellites, and following it is what makes
+    // the marker hop about indoors.
     const had = fixAcc(run.answered);
-    if((had == null || acc < had) && fixApart(run.answered, pos) > acc){
+    if(had == null || acc <= had * FIX_BETTER){
       run.answered = pos;
       onFinal(pos);
     }
@@ -250,6 +271,13 @@ function evaluate(lat,lon,accuracy){
   // now, and every comparison below has to deal with it.
   const acc = (typeof accuracy === 'number' && isFinite(accuracy) && accuracy >= 0)
     ? Math.round(accuracy) : null;
+  // How good the position was, said out loud, in every verdict — not only in
+  // the one case where it happens to be about to flip the answer. Without it a
+  // marker looks equally certain at ±6 m and at ±80 m, and a position that
+  // wanders eighty metres between refreshes reads as a fault in the app rather
+  // than as what the phone can manage indoors.
+  const note = acc == null ? ' · ' + t('gps.noacc')
+                           : ' · ' + t('gps.accis').replace('{a}', acc);
   if(inside.length){
     // Edge case: are you so close to the boundary that the GPS error could flip the answer?
     const edge = Math.min(...inside.map(f=>distanceToZone(lat,lon,f)));
@@ -258,14 +286,13 @@ function evaluate(lat,lon,accuracy){
       // No margin to reason with. Say where the position puts you and say, in
       // the same breath, that there is nothing behind it — inventing a radius
       // here would be making up the very number that is missing.
-      showStatus('near', t('gps.inone'),
-        `${names} — ${t('gps.noacc')}`);
+      showStatus('near', t('gps.inone'), `${names}${note}`);
     } else if(edge < acc){
       showStatus('near', t('gps.nearedge').replace('{ref}', inside[0].properties.ref),
         t('gps.nearedgesub').replace('{d}', Math.round(edge)).replace('{a}', acc));
     } else {
       showStatus('in', inside.length>1 ? t('gps.inmany').replace('{n}', inside.length) : t('gps.inone'),
-        `${names} — ${t('gps.toedge').replace('{d}', Math.round(edge))}`);
+        `${names} — ${t('gps.toedge').replace('{d}', Math.round(edge))}${note}`);
     }
     select(inside[0].properties.ref, inside.map(f=>f.properties.ref));
   } else {
@@ -295,7 +322,7 @@ function evaluate(lat,lon,accuracy){
       const d=haversine(lat,lon,zlat,zlon);
       if(d<bd){bd=d;best=z;}
     }
-    if(!best){ showStatus('out', t('gps.outside'), ''); return; }
+    if(!best){ showStatus('out', t('gps.outside'), note.replace(/^ · /, '')); return; }
     // For a reference without a boundary there is no boundary to measure a
     // distance to; then the distance to the point is the most honest answer we
     // have.
@@ -303,8 +330,7 @@ function evaluate(lat,lon,accuracy){
     const edge = f ? distanceToZone(lat,lon,f) : bd;
     const dist = edge>1500 ? (edge/1000).toFixed(1)+' km' : Math.round(edge)+' m';
     showStatus('out', t('gps.outside'),
-      `${t('gps.nearest')}: ${best.ref} ${best.name} — ${dist}${f?'':' ('+t('zone.nopoly')+')'}.`
-      + (acc == null ? ' ' + t('gps.noacc') : ''));
+      `${t('gps.nearest')}: ${best.ref} ${best.name} — ${dist}${f?'':' ('+t('zone.nopoly')+')'}${note}`);
   }
 }
 /* ---------- what the last position actually was ----------
