@@ -83,6 +83,9 @@
   .sw.on{background:var(--leaf)}
   .sw.on::after{transform:translateX(15px)}
   .hint{margin:8px 2px 0;font-size:12px;color:var(--ink-3)}
+  /* Used for "this country's boundaries are on board": the one hint that
+     reports something good rather than explaining something. */
+  .hint.good{color:var(--green-2)}
 
   /* ---------- search ---------- */
   .search{

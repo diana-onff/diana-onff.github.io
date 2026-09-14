@@ -7,10 +7,30 @@ const map = new maplibregl.Map({
 });
 map.addControl(new maplibregl.NavigationControl({showCompass:false}),'bottom-right');
 
+/* Which generation of the data each source is holding — see dataGen in
+   map-data.js. Only a genuine change is pushed: handing a source the same
+   3.8 MB again puts the style back into "busy", and a redraw doing that every
+   pass never lets it settle. That is exactly how the points layer came to be
+   never built at all. */
+let zonesDrawn = -1, npDrawn = -1;
+
 function paintZones(){
   if (!zones || !map.isStyleLoaded()) return;
-  if (map.getSource('onff')) return;
-  
+  // The country can change while the app is running. This used to walk away
+  // the moment the source existed — written for a map that loads its data once
+  // — so a switch left the previous country's boundaries on screen while every
+  // variable in the app said otherwise.
+  if (map.getSource('onff')){
+    if(zonesDrawn !== dataGen){
+      zonesDrawn = dataGen;
+      map.getSource('onff').setData(zones);
+      const labels = map.getSource('onff-pts');
+      if(labels) labels.setData(labelFeatures());
+    }
+    return;
+  }
+  zonesDrawn = dataGen;
+
   // generateId gives every feature an ascending id, in the same order as the array —
   // that is what feature-state (the selection highlight) needs.
   map.addSource('onff',{type:'geojson',data:zones,generateId:true});
@@ -89,8 +109,18 @@ function addNoPolyIcon(){
 
 function paintNoPoly(){
   if(!map.isStyleLoaded()) return;
+  // Same as in paintZones: an existing source gets the new country's points,
+  // and that has to happen even when there are none — otherwise the previous
+  // country's dots stay behind.
+  if(map.getSource('onff-np')){
+    if(npDrawn !== dataGen){
+      npDrawn = dataGen;
+      map.getSource('onff-np').setData(noPoly);
+    }
+    return;
+  }
   if(!noPoly || !noPoly.features.length) return;
-  if(map.getSource('onff-np')) return;
+  npDrawn = dataGen;
 
   addNoPolyIcon();
   map.addSource('onff-np',{type:'geojson',data:noPoly});
@@ -122,7 +152,6 @@ let npBound = false;
    polygon. With thousands of points they get clustered (MapLibre's built-in
    cluster option), otherwise the map is unreadable at a world-level zoom. */
 let showWorld = true;
-let worldFilter = recall('worldFilter') || 'all';
 let worldPoints = {type:'FeatureCollection', features:[]};
 let worldLoaded = false, worldLoading = null;
 let worldBound = false;
@@ -141,19 +170,31 @@ async function loadWorldPoints(){
   return worldLoading;
 }
 
-/* A reference we have a boundary for must not also appear as a bare point —
-   that is the same area drawn twice, and the point is the worse of the two.
-   The build already leaves out the countries it made boundaries for, but a
-   country can be loaded that an older world file still lists, so it is checked
-   here as well. */
+/* Which of the worldwide points are drawn. Two rules, and they used to be
+   three settings.
+ *
+ * A reference we have a boundary for must not also appear as a bare point —
+ * that is the same area drawn twice, and the point is the worse of the two.
+ * The build already leaves out the countries it made boundaries for, but a
+ * country can be loaded that an older world file still lists, so it is checked
+ * here as well.
+ *
+ * And the points follow the same worldwide/your-country choice as the spots,
+ * rather than a second country list of their own: on Worldwide you get every
+ * other country's dots around your own boundaries, and on your own country the
+ * map is about your country and the foreign dots stay off. If your country has
+ * no boundaries at all, those same worldwide points are the only place its
+ * references exist — so then they are exactly what is left, and the map is not
+ * empty. */
 function worldFilteredData(){
   const own = new Set(loadedPrograms);
   const keep = f => !own.has(refProgram(f.properties.ref));
-  if(worldFilter === 'all'){
+  if(typeof spotFilter === 'undefined' || spotFilter === 'all'){
     return own.size ? {type:'FeatureCollection', features: worldPoints.features.filter(keep)}
                     : worldPoints;
   }
-  const feats = worldPoints.features.filter(f => refProgram(f.properties.ref) === worldFilter && keep(f));
+  const mine = homeProgram();
+  const feats = worldPoints.features.filter(f => refProgram(f.properties.ref) === mine && keep(f));
   return {type:'FeatureCollection', features:feats};
 }
 
@@ -169,6 +210,9 @@ function paintWorld(tries){
     return;
   }
   const data = worldFilteredData();
+  // For a country without boundaries these points are all there is on the map,
+  // so the count under it has to come from here.
+  if(typeof updateCounts === 'function') updateCounts();
   const src = map.getSource('wwff-world');
   if(src){ src.setData(data); applyVisibility(); return; }
   if(!worldPoints.features.length) return;
@@ -225,25 +269,21 @@ function paintWorld(tries){
   applyVisibility();
 }
 
-function setWorldFilter(value){
-  worldFilter = value;
-  remember('worldFilter', worldFilter);
-  syncWorldFilterUI();
-  if(worldLoaded) paintWorld();
-}
-
-function syncWorldFilterUI(){
-  const sel = $('setWorldCountry');
-  if(sel) sel.value = (worldFilter!=='all') ? worldFilter : '';
-}
-
-function populateWorldCountries(){
-  const sel = $('setWorldCountry'); if(!sel) return;
-  const current = sel.value;
-  sel.innerHTML = `<option value="" data-i18n="set.worldcountrynone">${t('set.worldcountrynone')}</option>`
-    + wwffPrograms.map(p => `<option value="${p.program}">${p.country}</option>`).join('');
-  sel.value = current;
-  syncWorldFilterUI();
+/* Your country changed: draw the new one. The painters above each handle
+   "the source is already there" themselves, so this is the same call whether
+   the layers exist yet or not — and when the style is not ready,
+   redrawOverlays() waits and then does exactly this, from globals that already
+   hold the new country. */
+function updateCountrySources(){
+  if(styleSwitching || !map.isStyleLoaded()){
+    redrawOverlays();
+    return false;
+  }
+  paintZones();
+  paintNoPoly();
+  if(showWorld) paintWorld();
+  applyVisibility();
+  return true;
 }
 
 /* The data stands apart from the map. If the background map drops out — no
