@@ -400,22 +400,24 @@ function setSpotFilter(value){
   }
 }
 
-/* Which country is yours. One value behind all of it: the spots and agenda
-   filter, the boundaries in memory, and which other countries' points are
-   drawn. Changing it loads that country's boundaries there and then — if we
-   have any. If we have none, nothing is loaded and its references stay what
-   they already were: points from the worldwide list. */
+/* Which country is yours, for the boundaries and the worldwide dots. Picking
+   one here changes only that — which polygons are on the map, and which other
+   countries' points are drawn instead — and nothing about the spots filter.
+   The two used to move together: choosing a country in Settings also dragged
+   the spots filter along with it, unless it was already on Worldwide. That
+   read as a bug the moment there was a reason to load a country's boundaries
+   without also wanting your spots narrowed to it — picking Germany's
+   polygons to have a look should not silently hide every other country's
+   spots you were otherwise watching. So this is now the one and only thing
+   this does: load the boundaries, if we have any. If we have none, nothing is
+   loaded and its references stay what they already were: points from the
+   worldwide list. The spots filter is untouched either way — see
+   setSpotFilter() for that, which is its own, separate choice. */
 function setHomeCountry(prog){
   if(!prog) return;
-  // While you are looking at Worldwide, changing your country does not change
-  // what you are looking at — only which country you would go back to, and
-  // which boundaries are on the map underneath.
-  if(spotFilter !== 'all') return setSpotFilter(prog);
   const was = homeCountry();
   remember('homeprog', prog);
   syncSpotFilterUI();
-  paintSpots(); renderSpots();
-  if(typeof worldLoaded !== 'undefined' && worldLoaded) paintWorld();
   if(prog !== was && typeof switchCountry === 'function') return switchCountry(prog);
   syncCountryUI();
 }
