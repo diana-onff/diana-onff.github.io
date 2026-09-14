@@ -7,6 +7,12 @@ $('nav').addEventListener('click', e=>{
   [...$('nav').children].forEach(c=>c.classList.toggle('on',c===b));
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
   if(b.dataset.view!=='map'){ $(b.dataset.view).classList.add('on'); toggle(null); }
+  else {
+    // Home: no panel left open over the map, and nothing still outlined.
+    closeSheet();
+    $('closeSpot').onclick();
+    clearSelection();
+  }
   if(b.dataset.view==='viewSpots'){
     startSpots(); renderSpots(); redrawOverlays();
   }

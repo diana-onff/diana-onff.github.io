@@ -8,7 +8,7 @@ const $ = id => document.getElementById(id);
 
 /* Version of the app itself. Shown on the splash screen and in Settings, so that
    a report along the lines of "it's behaving oddly" can be tied to a version. */
-const APP_VERSION = '1.11.0';
+const APP_VERSION = '1.11.2';
 /* Filled in at publish time by build/site.sh: the short commit hash and the date
    of that build. If the placeholder is still there, you are running a copy that
    never went through the build step — locally, or straight out of the repo.
@@ -47,9 +47,6 @@ function splashDone(){
 }
 setTimeout(splashDone, 12000);
 
-/* Storage on this device. Sits up here at the top because the language choice,
-   the settings and the install screen all three need it — a const further down
-   the file is not reachable yet by the time that code runs. */
 /* Callsign prefix → WWFF programme. Diana uses this for one thing: which
    country the spots filter offers first, so a Dutch operator does not have to
    tap past Belgium every time. One tap changes it, so a guess that misses
@@ -118,6 +115,9 @@ function programForCall(call){
    because the data loader needs it before spots.js exists. */
 const refProgram = r => (typeof r === 'string' ? r.toUpperCase().split('-')[0] : '');
 
+/* Storage on this device. Sits up here at the top because the language choice,
+   the settings and the install screen all three need it — a const further down
+   the file is not reachable yet by the time that code runs. */
 const remember = (k,v) => { try{ localStorage.setItem('diana.'+k, v==null?'':String(v)); }catch{} };
 const recall   = k => { try{ return localStorage.getItem('diana.'+k) || ''; }catch{ return ''; } };
 

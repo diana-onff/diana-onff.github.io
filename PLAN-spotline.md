@@ -1218,3 +1218,31 @@ een echte repo. Volledige suite groen: 18 bestanden, 371 checks.
 Blijft over voor ronde 2: het inlaadscherm om landen te kiezen, de bewuste
 offline-keuze per land, en het tweede land zelf — dat wacht op een
 voorbeeldbestand.
+
+---
+
+**Uitgevoerd op 2026-09-14 — v1.11.2.** Twee meldingen uit het veld.
+
+- **"Nieuwe versie beschikbaar" bleef onzichtbaar** tot je terugging naar de
+  kaart. De meldingsbalk stond op z-index 6 en de volledige schermen op 8, dus
+  Instellingen lag er gewoon overheen — en je vraagt die controle nu net vanuit
+  Instellingen. Eerste poging: de balk naar 9. Dat brak het aankondigingsscherm,
+  want de bevestiging na het versturen dekte dan de knoppen eronder af; de
+  agenda-test liep vast op een knop die niet meer aanklikbaar was. Nu heeft
+  alleen een melding die over de app zélf gaat (nieuwe versie, up-to-date, of
+  de fout bij het controleren) een extra klasse die hem boven de schermen tilt.
+  De rest blijft eronder, waar hij hoort.
+- **Een gebied bleef oranje omlijnd** na "In de buurt" → gebied kiezen → Map.
+  Map is het beginscherm en daar hoort niets uitgelicht te staan. Bij het
+  repareren bleek er al een `clearSelection()` te bestaan die alleen de
+  omlijning wiste en níét de selectie — en die wordt aangeroepen door
+  `selectPoint()`, meteen nadat die een selectie heeft gezét. Mijn tweede
+  functie met dezelfde naam won stilzwijgend en deed het verkeerde. Nu twee
+  eerlijke namen: `clearOutline()` voor wat de oude deed, `clearSelection()`
+  voor beide, en de Map-knop sluit ook de open panelen.
+
+Mijn eigen testlus las ondertussen een afgebroken run als geslaagd: geen
+kruisjes betekent niet geslaagd. `test_agenda` zakte van 42 naar 26 controles
+en meldde toch OK — dat is hoe de regressie hierboven bijna meeging in de zip.
+De lus eist nu "ALL OK" in de uitvoer. 18 bestanden, 377 controles, allemaal
+echt tot het einde gedraaid.

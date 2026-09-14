@@ -340,6 +340,13 @@
     padding:12px 14px; display:none; gap:12px; align-items:center;
   }
   .status.show{display:flex}
+  /* Most messages belong to the map and stay under the full screens (z-index 8)
+     — a confirmation that covered the buttons of the form you just used would
+     be worse than no confirmation. The exception is a message about the app
+     itself: "a new version is ready" is asked for from Settings, and used to
+     appear behind that very screen, showing itself only once you wandered back
+     to the map. Those rise above everything. */
+  .status.top{z-index:9}
   .status .txt{flex:1;min-width:0}
   .status .stx{
     flex:0 0 auto; border:0; background:transparent; cursor:pointer;

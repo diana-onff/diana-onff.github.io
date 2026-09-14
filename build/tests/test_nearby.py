@@ -134,6 +134,45 @@ with sync_playwright() as p:
     ok(not pg.evaluate("() => document.getElementById('viewNearby').classList.contains('on')"),
        "and we are back on the map to see it")
 
+    print("\n[6b] and Map is the way home: nothing stays outlined")
+    # Reported from the field: pick a reference in Nearby, look at it on the
+    # map, tap Map — and the area stayed orange, as though you were still
+    # standing in it.
+    ok(pg.evaluate("() => selected") is not None, "something is selected to begin with")
+    pg.evaluate("() => document.querySelector('#nav button[data-view=\"map\"]').click()")
+    pg.wait_for_timeout(400)
+    ok(pg.evaluate("() => selected") is None, "the selection is let go")
+    ok(pg.evaluate("() => map._lastSel") is None, "and the outline on the map with it")
+    ok("open" not in pg.evaluate("() => document.getElementById('sheet').className"),
+       "the panel is closed too")
+
+    print("\n[6c] a message can be seen from whatever screen you are on")
+    # The update notice is asked for from Settings, and used to appear behind
+    # it: the full screens sat above the message bar. You only saw it after
+    # wandering back to the map.
+    pg.evaluate("() => document.querySelector('#nav button[data-view=\"viewSet\"]').click()")
+    pg.wait_for_timeout(300)
+    # Only a message about the app itself rises above a full screen; a
+    # confirmation belonging to the screen you are on must NOT, or it would
+    # cover the buttons you just used.
+    pg.evaluate("() => showStatus('in', 'Test message', 'from the settings screen', true)")
+    pg.wait_for_timeout(200)
+    top = pg.evaluate("""() => {
+        const b = document.getElementById('status').getBoundingClientRect();
+        const el = document.elementFromPoint(b.left + b.width/2, b.top + b.height/2);
+        return el ? el.closest('#status') !== null : false;
+    }""")
+    ok(top, "a message about the app is the thing you would touch, not the screen behind it")
+    pg.evaluate("() => { hideStatus(); showStatus('in', 'Ordinary', 'belongs to this screen'); }")
+    pg.wait_for_timeout(150)
+    covered = pg.evaluate("""() => {
+        const b = document.getElementById('status').getBoundingClientRect();
+        const el = document.elementFromPoint(b.left + b.width/2, b.top + b.height/2);
+        return el ? el.closest('#status') !== null : false;
+    }""")
+    ok(not covered, "an ordinary one stays under the screen, so it cannot cover its buttons")
+    pg.evaluate("() => hideStatus()")
+
     print("\n[7] nothing thrown along the way")
     ok(not errs, f"no page errors: {errs or 'ok'}")
 
