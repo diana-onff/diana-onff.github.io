@@ -263,6 +263,10 @@
   .fb{font-size:12.5px;margin:-4px 0 10px;min-height:16px;color:var(--ink-3)}
   .fb.bad{color:#b91c1c}
   .fb.good{color:var(--green-2)}
+  /* Something is off, but not so certainly that it should stop you — the file
+     check uses this for "I found nothing in here", which may equally be my
+     reading of the file that is at fault. */
+  .fb.warn{color:#b45309}
   .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
   .chip{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:6px 11px;
         font:inherit;font-size:12.5px;color:var(--ink-2);cursor:pointer}

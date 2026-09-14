@@ -80,7 +80,9 @@ knowing when reasoning about gaps in the data:
   like `opp_ha`, `inspireid`).
 - The **reference number is not a data field** — it lives in the name of the
   enclosing KML folder, as `ONFF-nnnn <name>`. Every tool in this pipeline
-  therefore keys on the folder-derived number, never on name text.
+  therefore keys on the folder-derived number, never on name text. Other
+  countries put it elsewhere in the tree; §2.1c covers how all of them are
+  read.
 - Coverage is uneven. Of 932 zones in the KMZ: 565 have a designation
   (`desig`), 515 an IUCN category, 445 a manager, 75 a registration number,
   81 a region code — and roughly half have **nothing beyond name and
@@ -242,6 +244,56 @@ otherwise still list them.
 What the app does with all this: it reads the manifest, and loads the countries
 you asked for — your own by default, worked out from your callsign. Loading
 everything is not an option; one country is megabytes.
+
+### 2.1c Three shapes of KMZ, and refusing the fourth
+
+There is no WWFF house style for these files. Each programme's coordinator
+draws the areas in Google Earth and exports whatever they have, so the layout
+differs per country while the KML stays perfectly valid. The first two files
+from abroad, both real releases, disagreed with Belgium and with each other:
+
+| | Root | Grouping | Where the number is | Areas |
+|---|---|---|---|---|
+| ONFF (Belgium) | `<Document>` | `<Folder>` per province | name of the area's `<Document>` | 946 |
+| DLFF (Germany) | `<Document>` | one `<Folder>` for the lot | name of the `<Placemark>` itself | 1325 |
+| OZFF (Denmark) | `<Folder>` | none at all | name of the area's `<Document>` | 325 |
+
+Diana read the first of those and took it for the law. Denmark's `<Folder>` at
+the root stopped the build on its first line; past that, the areas sit in no
+folder, so the loop that walked "the folders one level down" would have found
+none and written an empty country without complaining. Germany would have
+converted, and given all 1326 areas the province `DLFF-Gebiete`.
+
+So the reading is deliberately loose in two places, and nowhere else.
+`<Document>` or `<Folder>` are both accepted as the outermost container. Inside
+it, folders are the province level *when there is more than one of them* — a
+division into one is not a division, and writing `DLFF-Gebiete` into every
+German area as its province would read like information. Anything sitting
+outside those folders is taken as one unnamed group rather than skipped. The
+reference number is still found the same way everywhere: the nearest name going
+up from the placemark that matches `<PROGRAMME>-nnnn`, which covers all three
+columns above without knowing which one it is looking at.
+
+**What is not loose is whether the file is the country it was said to be.** A
+KMZ carries no country marker — the panel asks, and the person answering can be
+wrong. That used to end as a conversion that read nothing, wrote nothing and
+explained nothing. Now the file is read for what it actually holds, in two
+places:
+
+- **In the admin panel, before the upload.** The KMZ is a zip; the browser
+  unpacks its KML and reads along until the question is settled. This is the
+  only thing in Diana that can close the send button on you, and it does so in
+  exactly one case: references of *another* programme were found and none of
+  yours. Finding nothing, an unreadable zip, a browser without
+  `DecompressionStream` — each of those says so and lets you send anyway. A
+  check that cannot be trusted to be right must not be trusted to say no.
+- **In `kmz2geojson.py`, before anything is written.** The same question, asked
+  where it is authoritative, and answered with a sentence rather than a count:
+  which programme the areas really carry, how many areas there are, or an
+  example of the names in a file whose areas carry no number at all. Exit code
+  2, nothing written, the previous data untouched, and the reason in
+  `report.md` so it reaches the pull request and the panel rather than only the
+  job log.
 
 ### 2.2 The ONFF activation-history sheet, and why it is no longer used
 

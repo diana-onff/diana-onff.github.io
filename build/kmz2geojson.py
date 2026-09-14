@@ -180,6 +180,64 @@ def _ref_from_ancestors(placemark) -> tuple[str | None, str | None]:
     return None, None
 
 
+def _foreign_program(placemark) -> str | None:
+    """Which OTHER programme the names around this placemark point at.
+
+    Only asked when the reference for the programme being built was not found.
+    Getting a whole file back with nothing in it is nearly always one mistake —
+    the wrong country picked in the admin panel — and the file itself can say
+    so, which beats "0 areas" as an explanation.
+    """
+    node = placemark
+    while node is not None:
+        name = _name(node)
+        if name:
+            match = FF_RE.search(name.upper())
+            if match:
+                return match.group(0).split("-")[0]
+        node = node.getparent()
+    return None
+
+
+def _placemarks(container):
+    """Yield (placemark, province, layer) for everything in the file that counts.
+
+    Three shapes have turned up in real WWFF releases, and they do not agree
+    with each other:
+
+        ONFF   Document > Folder per province > Document per area > Placemark
+        DLFF   Document > one Folder holding everything > Placemark per area
+        OZFF   Folder   > Document per area > Placemark
+
+    Diana read the first one and nothing else: it looked for <Document> at the
+    root (Denmark has <Folder> there and the build stopped dead), and it looked
+    for the areas inside folders one level down (Denmark has none, so even past
+    that it would have written an empty country without complaining). Both are
+    handled here, in one place, so that the rest of the conversion never has to
+    know which shape it came from.
+    """
+    folders = [c for c in container
+               if c.tag == KML_NS + "Folder" and _name(c) not in SKIP_FOLDERS]
+    # A division into one is not a division. Germany ships the lot in a single
+    # folder called "DLFF-Gebiete"; writing that into all 1326 areas as their
+    # province would be worse than leaving the field empty, because it reads
+    # like information.
+    named = len(folders) > 1
+    for folder in folders:
+        name = _name(folder)
+        layer = name if name in NON_PROVINCE_FOLDERS else None
+        province = None if (layer or not named) else name
+        for placemark in folder.iter(KML_NS + "Placemark"):
+            yield placemark, province, layer
+    # Areas sitting straight under the root container, with no grouping folder
+    # around them at all — the Danish shape. There is no province to be had
+    # here, only areas.
+    for child in container:
+        if child.tag in (KML_NS + "Document", KML_NS + "Placemark"):
+            for placemark in child.iter(KML_NS + "Placemark"):
+                yield placemark, None, None
+
+
 def extract_kmz(kmz_path: Path, workdir: Path) -> Path:
     """Unpack doc.kml from the KMZ. Returns the path to the extracted KML."""
     workdir.mkdir(parents=True, exist_ok=True)
@@ -724,9 +782,17 @@ def point_refs(source: str | None, programs: list[str], have: set[str],
 
 def convert(kml_path: Path, tolerance: float, decimals: int, overrides: dict) -> tuple[dict, dict, dict]:
     tree = etree.parse(str(kml_path))
-    document = tree.getroot().find(KML_NS + "Document")
+    # Google Earth writes the outermost container as either a <Document> or a
+    # <Folder>, depending on how the person who made the file organised it, and
+    # both are valid KML. Belgium and Germany have a Document, Denmark has a
+    # Folder. Neither is a reason to refuse a file.
+    root = tree.getroot()
+    document = root.find(KML_NS + "Document")
     if document is None:
-        raise SystemExit("KML has no <Document> root")
+        document = root.find(KML_NS + "Folder")
+    if document is None:
+        raise SystemExit("KML has neither a <Document> nor a <Folder> at its root — "
+                         "this does not look like a Google Earth export")
 
     release = None
     desc = document.find(KML_NS + "description")
@@ -739,57 +805,70 @@ def convert(kml_path: Path, tolerance: float, decimals: int, overrides: dict) ->
     meta: dict[str, dict] = {}
     warnings: list[str] = []
     skipped_no_ref = 0
+    # What the file turned out to hold, whether or not any of it was usable.
+    # A conversion that produces nothing has to be able to say why, and "why"
+    # is nearly always one of: no areas in it, or areas belonging to another
+    # country. Both are visible from here and nowhere else.
+    seen_polygons = 0
+    foreign: Counter = Counter()
+    stray_names: list[str] = []
 
-    for folder in document.findall(KML_NS + "Folder"):
-        folder_name = _name(folder)
-        if folder_name in SKIP_FOLDERS:
+    for placemark, province, layer in _placemarks(document):
+        kml_polys = placemark.findall(".//" + KML_NS + "Polygon")
+        if not kml_polys:
             continue
-        province = None if folder_name in NON_PROVINCE_FOLDERS else folder_name
-        layer = folder_name if folder_name in NON_PROVINCE_FOLDERS else None
+        seen_polygons += 1
+        ref, raw_name = _ref_from_ancestors(placemark)
+        if not ref:
+            skipped_no_ref += 1
+            other = _foreign_program(placemark)
+            if other:
+                foreign[other] += 1
+            if len(stray_names) < 3:
+                name = _name(placemark)
+                if name:
+                    stray_names.append(name)
+            continue
 
-        for placemark in folder.iter(KML_NS + "Placemark"):
-            kml_polys = placemark.findall(".//" + KML_NS + "Polygon")
-            if not kml_polys:
+        for kml_poly in kml_polys:
+            outer = kml_poly.find(".//" + KML_NS + "outerBoundaryIs/" + KML_NS + "LinearRing")
+            if outer is None:
                 continue
-            ref, raw_name = _ref_from_ancestors(placemark)
-            if not ref:
-                skipped_no_ref += 1
+            shell = _ring(outer)
+            if len(shell) < 4:
                 continue
+            holes = []
+            for inner in kml_poly.findall(".//" + KML_NS + "innerBoundaryIs/" + KML_NS + "LinearRing"):
+                ring = _ring(inner)
+                if len(ring) >= 4:
+                    holes.append(ring)
+            try:
+                poly = Polygon(shell, holes)
+            except Exception:
+                warnings.append(f"{ref}: unreadable polygon skipped")
+                continue
+            if not poly.is_valid:
+                poly = poly.buffer(0)
+            if poly.is_empty:
+                continue
+            polygons[ref].append(poly)
 
-            for kml_poly in kml_polys:
-                outer = kml_poly.find(".//" + KML_NS + "outerBoundaryIs/" + KML_NS + "LinearRing")
-                if outer is None:
-                    continue
-                shell = _ring(outer)
-                if len(shell) < 4:
-                    continue
-                holes = []
-                for inner in kml_poly.findall(".//" + KML_NS + "innerBoundaryIs/" + KML_NS + "LinearRing"):
-                    ring = _ring(inner)
-                    if len(ring) >= 4:
-                        holes.append(ring)
-                try:
-                    poly = Polygon(shell, holes)
-                except Exception:
-                    warnings.append(f"{ref}: unreadable polygon skipped")
-                    continue
-                if not poly.is_valid:
-                    poly = poly.buffer(0)
-                if poly.is_empty:
-                    continue
-                polygons[ref].append(poly)
-
-            entry = meta.setdefault(ref, {"names": Counter(), "province": province, "layer": layer})
-            if raw_name:
-                entry["names"][raw_name] += 1
-            if entry["province"] is None and province:
-                entry["province"] = province
-            attrs = attributes_from(_extended_data(placemark))
-            for key, value in attrs.items():
-                entry.setdefault(key, value)
+        entry = meta.setdefault(ref, {"names": Counter(), "province": province, "layer": layer})
+        if raw_name:
+            entry["names"][raw_name] += 1
+        if entry["province"] is None and province:
+            entry["province"] = province
+        attrs = attributes_from(_extended_data(placemark))
+        for key, value in attrs.items():
+            entry.setdefault(key, value)
 
     if skipped_no_ref:
-        warnings.append(f"{skipped_no_ref} polygons with no recognisable ONFF number skipped")
+        note = f"{skipped_no_ref} polygons with no recognisable {PROGRAM} number skipped"
+        if foreign:
+            note += (" — they carry " +
+                     ", ".join(f"{p} ({n}×)" for p, n in foreign.most_common(3)) +
+                     " instead")
+        warnings.append(note)
 
     features = []
     index = []
@@ -845,8 +924,59 @@ def convert(kml_path: Path, tolerance: float, decimals: int, overrides: dict) ->
         "zones": len(index),
         "polygons": sum(len(v) for v in polygons.values()),
         "warnings": warnings,
+        # For the format check in main(): what was in the file, as opposed to
+        # what could be used from it.
+        "seen_polygons": seen_polygons,
+        "no_ref": skipped_no_ref,
+        "foreign": dict(foreign),
+        "stray_names": stray_names,
     }
     return geojson, index_doc, stats
+
+
+# --------------------------------------------------------------------------- #
+# Does this file hold what we were told it holds?
+#
+# A conversion that yields nothing used to be indistinguishable from a country
+# that happens to have no areas: the build wrote an empty file and the output
+# check further down the line said "0 zones" without ever saying why. The one
+# mistake that actually happens is picking the wrong country when uploading,
+# and that is exactly the case the file itself can explain — so it does, here,
+# before anything is written and before the WWFF directory is even fetched.
+# --------------------------------------------------------------------------- #
+
+def _an(code: str) -> str:
+    """"an ONFF number", "a DLFF number". Read aloud, a programme code starts
+    with the name of its first letter, not with the letter — so the article
+    follows the sound of that name. Small thing; it is a message people read."""
+    return "an" if code[:1].upper() in "AEFHILMNORSX" else "a"
+
+
+def format_complaint(stats: dict, program: str, source: str) -> str | None:
+    """The reason this file cannot be read as `program`, or None if it can."""
+    if stats["zones"]:
+        return None
+
+    seen = stats.get("seen_polygons") or 0
+    if not seen:
+        return (f"{source} holds no areas at all: not one placemark with a boundary in "
+                f"it. A WWFF release is a Google Earth export with the areas as "
+                f"polygons — a file of waypoints or an empty map will not do.")
+
+    foreign = stats.get("foreign") or {}
+    lead = (f"{source} holds {seen} areas, and not one of them carries "
+            f"{_an(program)} {program} number.")
+    if foreign:
+        top = sorted(foreign.items(), key=lambda kv: -kv[1])
+        named = ", ".join(f"{prog} ({n}×)" for prog, n in top[:3])
+        return (f"{lead} They carry {named}. This file is for another country than "
+                f"the one it was sent as — pick {top[0][0]} instead of {program}, or "
+                f"send the {program} release.")
+    examples = stats.get("stray_names") or []
+    shown = "; ".join(f'"{n}"' for n in examples[:3])
+    return (f"{lead} The number has to stand in the name of the area itself or of a "
+            f"folder around it, as \"{program}-0001 Name\"."
+            + (f" The names in this file look like: {shown}." if shown else ""))
 
 
 # --------------------------------------------------------------------------- #
@@ -1008,6 +1138,20 @@ def main() -> int:
 
     print("→ parsing and converting", file=sys.stderr)
     geojson, index_doc, stats = convert(kml_path, args.tolerance, args.decimals, overrides)
+
+    # Stop here if the file cannot be read as this country, before anything is
+    # written and before the directory is fetched. Writing an empty country
+    # would take the real one off the map; saying nothing would leave whoever
+    # sent the file guessing. So: nothing written, and a reason.
+    complaint = format_complaint(stats, PROGRAM, args.kmz.name)
+    if complaint:
+        args.report.write_text(
+            f"## Diana — `{args.kmz.name}` could not be read as {PROGRAM}\n\n"
+            f"{complaint}\n\n"
+            f"Nothing has been changed. The data that was already there is untouched.\n",
+            encoding="utf-8")
+        print(f"✗ {complaint}", file=sys.stderr)
+        return 2
 
     # The <description> in the KML is the official release date, but ONFF does
     # forget to update it now and then: the August 2026 release still carries

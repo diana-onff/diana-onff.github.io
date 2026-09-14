@@ -140,6 +140,23 @@ data — see
 (A file left over from before this existed, lying loose in `incoming/` or
 `source/`, is still read — as ONFF.)
 
+**The file is read before it is sent.** As soon as a file and a country are
+both chosen, the panel opens the KMZ on your own device and looks at what is
+in it. A line appears under the file:
+
+| | |
+|---|---|
+| `✓ OZFF — 20+ references found in this file.` | as expected; send it |
+| `The areas in this file are DLFF, not OZFF …` | the wrong country was picked. The send button stays shut: the file itself proves the answer, and sending it would put a German release in the Danish folder |
+| `No reference number was found anywhere …` | nothing recognisable in it. Sending is still allowed — this may equally be the check's fault, and the conversion will look again properly |
+| `Could not check the file here …` | an unreadable zip, or a browser that cannot unpack one. Sending is allowed; nothing has been proven either way |
+
+Only the second line stops you, because it is the only one that is certain.
+For a large file the check takes a moment — it is reading the whole thing —
+and the send button stays shut until it has finished. If the wrong country
+slips past all this anyway, the conversion on GitHub refuses the file with the
+same explanation, writes nothing, and leaves the previous data alone.
+
 **Why `incoming/` and not `source/` directly.** The nightly build always
 picks the newest KMZ in `source/`. If an uploaded file went straight there,
 then rejecting the change would achieve nothing — the next night's build

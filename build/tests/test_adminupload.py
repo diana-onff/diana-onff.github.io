@@ -10,11 +10,32 @@
 # that is what this file checks: which paths the panel builds. GitHub is
 # replaced by a recorder — nothing here talks to a network, and no token is
 # needed.
-import json, re, sys
+import json, pathlib, re, sys, tempfile, zipfile
 from playwright.sync_api import sync_playwright
 
 BASE = "http://localhost:8011/web/"
 fails = []
+
+
+def ring(lon, lat, d=0.01):
+    pts = [(lon, lat), (lon + d, lat), (lon + d, lat + d), (lon, lat + d), (lon, lat)]
+    return " ".join(f"{x},{y},0" for x, y in pts)
+
+
+def kmz(path, program, gebieden):
+    """A real KMZ — a zip with a KML in it — because the check in the panel
+    unpacks the file itself. A made-up four-byte file would only exercise the
+    "cannot read this" branch."""
+    pms = "".join(
+        f"<Placemark><name>{program}-{num} Gebied {num}</name><Polygon><outerBoundaryIs>"
+        f"<LinearRing><coordinates>{ring(lon, lat)}</coordinates></LinearRing>"
+        f"</outerBoundaryIs></Polygon></Placemark>" for num, lon, lat in gebieden)
+    kml = ('<?xml version="1.0" encoding="UTF-8"?>'
+           '<kml xmlns="http://www.opengis.net/kml/2.2"><Document>'
+           f'<name>{program}</name><Folder><name>{program}</name>{pms}</Folder>'
+           '</Document></kml>')
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("doc.kml", kml)
 
 def ok(c, m):
     print(("  ✓ " if c else "  ✗ ") + m)
@@ -90,9 +111,46 @@ with sync_playwright() as p:
     ok(pg.evaluate("() => document.getElementById('admSend').disabled"),
        "a file on its own is not enough")
     pg.select_option("#admProgram", "DLFF")
-    pg.wait_for_timeout(100)
+    pg.wait_for_timeout(600)
     ok(not pg.evaluate("() => document.getElementById('admSend').disabled"),
        "with a country chosen it opens")
+
+    print("\n[2b] the file is read before it is sent, and may say it is the wrong one")
+    # The mistake that actually happens: the right file, the wrong country in
+    # the list. The panel used to take that on trust and find out from a failed
+    # build twenty-five megabytes later.
+    tmp = pathlib.Path(tempfile.mkdtemp())
+    kmz(tmp / "DLFF 2026.kmz", "DLFF", [("0001", 13.2, 48.9), ("0002", 12.9, 47.5)])
+    kmz(tmp / "OZFF 2026.kmz", "OZFF", [("0001", 11.0, 57.2), ("0002", 10.5, 56.2)])
+    (tmp / "geenzip.kmz").write_bytes(b"this is not a zip at all")
+
+    def keur(bestand, program):
+        pg.set_input_files("#admFile", str(tmp / bestand))
+        pg.select_option("#admProgram", program)
+        pg.wait_for_function(
+            "() => { const e = document.getElementById('admCheck');"
+            "        return !e.hidden && !e.textContent.includes('…'); }", timeout=20000)
+        return (pg.evaluate("() => document.getElementById('admCheck').className"),
+                pg.evaluate("() => document.getElementById('admCheck').textContent"),
+                pg.evaluate("() => document.getElementById('admSend').disabled"))
+
+    cls, txt, dicht = keur("DLFF 2026.kmz", "OZFF")
+    ok("bad" in cls, f"a German file sent as Danish is flagged ({cls})")
+    ok("DLFF" in txt and "OZFF" in txt, f"naming both countries: {txt!r}")
+    ok(dicht, "and the send button stays shut — this one we are sure about")
+
+    cls, txt, dicht = keur("OZFF 2026.kmz", "OZFF")
+    ok("good" in cls, f"the matching file passes ({cls})")
+    ok(not dicht, "and can be sent")
+
+    cls, txt, dicht = keur("geenzip.kmz", "OZFF")
+    ok("bad" not in cls, f"a file the check cannot read is not called wrong ({cls})")
+    ok(not dicht, "and is not blocked either — a check that may be wrong may not say no")
+
+    # Back to a state the rest of the file expects.
+    pg.set_input_files("#admFile", str(tmp / "DLFF 2026.kmz"))
+    pg.select_option("#admProgram", "DLFF")
+    pg.wait_for_timeout(800)
 
     print("\n[3] the upload lands in that country's folder")
     pg.evaluate("() => { window.__calls = []; }")

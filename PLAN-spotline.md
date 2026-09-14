@@ -1246,3 +1246,74 @@ kruisjes betekent niet geslaagd. `test_agenda` zakte van 42 naar 26 controles
 en meldde toch OK — dat is hoe de regressie hierboven bijna meeging in de zip.
 De lus eist nu "ALL OK" in de uitvoer. 18 bestanden, 377 controles, allemaal
 echt tot het einde gedraaid.
+
+---
+
+**Uitgevoerd op 2026-09-14 — v1.12.0.** Twee echte
+voorbeeldbestanden binnen: een volledige OZFF-export (Denemarken, 331
+gebieden) en een DLFF-export (Duitsland, 1326 plaatsmerken). Onderzocht of
+`kmz2geojson.py` ze zonder wijziging zou verwerken — dat is niet zo, en het
+maakt meteen concreet waarom een controle bij het inlezen nodig is (zie
+hieronder).
+
+- **DLFF (Duitsland)**: zou wél doorlopen. Eén platte map "DLFF-Gebiete" met
+  alle 1326 plaatsmerken er rechtstreeks in, elk keurig "DLFF-nnnn Naam", vier
+  cijfers, één referentie met twee polygoondelen (DLFF-0915, hoort samengevoegd
+  te worden — dat doet de bestaande code al). Enige gemis: geen tussenliggende
+  mappen per Bundesland, dus elk gebied krijgt letterlijk "DLFF-Gebiete" als
+  provincie in plaats van de Duitse deelstaat. Geen blokkerend probleem, wel
+  een cosmetisch gat.
+- **OZFF (Denemarken)**: zou vastlopen. `kmz2geojson.py` verwacht dat de KML
+  begint met `<Document>` aan de wortel; dit bestand begint met `<Folder>`
+  ("OZFF") met daarin 331 losse `<Document>`-knopen, één per gebied, elk met
+  een propere "OZFF-nnnn Naam" (vier cijfers, allemaal kloppend). Zonder
+  aanpassing stopt het script meteen met "KML has no Document root" — en zelfs
+  als dat opgevangen wordt, zoekt de huidige lus alleen naar `<Folder>` als
+  provincieniveau, en OZFF heeft daar geen enkele onder zitten: nul gebieden
+  zouden weggeschreven worden, in plaats van een foutmelding.
+- Referentienummers zelf zijn in beide bestanden 100% schoon (vier cijfers,
+  overal), dus dat deel van de aanname klopt nog steeds wereldwijd.
+
+**Wat er daarna gebouwd is.**
+
+- **Drie vormen lezen in plaats van één.** De wortel mag nu `<Document>` óf
+  `<Folder>` zijn. Mappen één niveau lager zijn provincies *als er meer dan
+  één is* — een indeling in één is geen indeling, en `DLFF-Gebiete` in alle
+  1326 Duitse gebieden als provincie schrijven leest als informatie terwijl
+  het er geen is. Wat buiten die mappen hangt (de Deense vorm) wordt als één
+  naamloze groep meegenomen in plaats van stilzwijgend overgeslagen. Het
+  referentienummer wordt nog altijd op dezelfde manier gezocht, en dat dekt
+  alle drie de vormen zonder te weten welke het is.
+- **Een weigering met een reden.** Levert een omzetting nul gebieden op, dan
+  stopt het script vóór er iets geschreven wordt, met exitcode 2 en een zin:
+  welk programma de gebieden wél dragen ("dit is DLFF, je stuurde het als
+  OZFF"), of dat er geen enkel gebied in zit, of een voorbeeld van de namen
+  als de gebieden geen nummer dragen. Die zin gaat ook in `report.md`, zodat
+  hij in de pull request en in het adminscherm terechtkomt en niet alleen in
+  het logboek van de Action. De workflow verzamelt hem nu ook vóór hij de job
+  laat falen.
+- **Kristofs punt: controle bij het uploaden.** Het adminscherm pakt de KMZ
+  op je eigen toestel uit — een KMZ is een zip — en leest het KML door tot de
+  vraag beslist is. Eén geval sluit de verzendknop: er staan referenties van
+  een ánder programma in en geen enkele van het jouwe. Dat is het enige geval
+  waarin we het zeker weten. Niets gevonden, een onleesbare zip, een browser
+  zonder `DecompressionStream`: dat wordt gezegd en je mag alsnog versturen.
+  Een controle die niet te vertrouwen is om gelijk te hebben, mag niet
+  vertrouwd worden om nee te zeggen.
+
+Gemeten aan de echte bestanden: Denemarken 325 gebieden (1,35 MB), Duitsland
+1325 (13,05 MB — 3,75 MB over de lijn), België onveranderd 946 met exact
+dezelfde provincietelling als ervoor. De zes OZFF-gebieden die niet meekomen
+hebben werkelijk geen polygoon in het bestand; die worden punten zodra de
+WWFF-directory erbij komt.
+
+Wat er níét in zit: de Duitse deelstaat en de Deense regio als provincie. Die
+staan niet in de bestanden, dus daar is geen bron voor — beide landen krijgen
+een leeg provincieveld in plaats van een verzonnen waarde.
+
+Nieuwe test `test_kmlshapes.py` (23 checks, geen browser): alle drie de
+vormen, plus het verkeerde land, gebieden zonder nummer en een bestand zonder
+gebieden. `test_adminupload.py` kreeg de controle vóór het versturen erbij (21
+checks). Volledige suite: 19 bestanden, 407 checks, allemaal tot "ALL OK"
+gedraaid; `test_directory.py` slaat zichzelf over zolang er geen lokale
+`wwff_directory.csv` is, zoals altijd.
