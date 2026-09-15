@@ -1804,3 +1804,52 @@ tegenstelling tot de andere, bewust geen tegel-server, juist om echte
 stijlwissels te beproeven), reproduceerbaar met de wijzigingen van deze ronde
 volledig uitgeschakeld en verdwenen zodra de test wat meer tijd kreeg (4
 minuten in plaats van de gebruikelijke paar seconden, daarna "ALL OK").
+
+**Uitgevoerd op 2026-09-15 — v1.19.0.** Een veldrapport: op één telefoon, op
+één plek, hield een vergelijkbare wandel-app een stabiele 15 m nauwkeurigheid
+aan, terwijl Diana op diezelfde plek 98 m toonde, en op een aparte poging vier
+minuten later 136 m — nooit scherper, hoeveel keer ook op ◎ gedrukt. Onderzoek
+in `geo.js` sloot een rekenfout uit: `enableHighAccuracy` staat al aan, de
+twee metingen lagen te ver uiteen in tijd (4 minuten, ruim voorbij het
+venster van 45 s) om nog door elkaar beïnvloed te zijn, en de nauwkeurigheid
+werd bovendien slechter in plaats van beter — precies wat je verwacht als de
+browser zelf, bij elke afzonderlijke poging, een vervaagde positie aanlevert.
+Sinds een aantal jaren kunnen zowel een browser als een individuele website
+maar "geschatte locatie" krijgen toegewezen op het toestel — een bewuste
+privacygrens die vanuit de pagina niet te omzeilen is, met of zonder
+`enableHighAccuracy`. Er viel dus niets te repareren aan het gis-algoritme
+zelf; wat ontbrak was een aanwijzing waar te kijken.
+
+- **`web/js/geo.js`** — een nieuwe drempel `FIX_HINT_M = 75` (ruim boven
+  gewone buitenshuis-ruis, ruim onder wat FIX_GOOD_M als "scherp genoeg"
+  beschouwt). Zodra een definitieve positie daarboven zit: een balk boven de
+  menubalk (`syncAccHint()`), met de actuele ±afstand erin en een verwijzing
+  naar zowel de algemene locatie-instelling van de browser als die specifiek
+  voor deze site. Ze verdwijnt vanzelf zodra een latere positie weer scherp
+  genoeg is — geen wegklikken nodig — en wordt bij het wegklikken (`#accHintClose`)
+  voorgoed onthouden (`localStorage`, net als de "installeer deze app?"-balk),
+  op elk scherm behalve Instellingen: `syncFixUI()` toont daar altijd dezelfde
+  tip zodra de laatste positie boven de drempel zit, wegklikken of niet — een
+  interruptie uitzetten is iets anders dan niet meer willen weten.
+- **`web/index.html`** — het balkje zelf, rechtstreeks naar het bestaande
+  patroon van de installatiebalk gemodelleerd (zelfde plek, zelfde
+  "wegklikken is voorgoed"-contract).
+- **`web/css/app.css`** — amberkleurige styling (in plaats van het groen van
+  de installatiebalk — dit is een waarschuwing, geen aanbod), en een regel
+  die de balk hoger zet voor het zeldzame geval dat de installatiebalk
+  tegelijk zichtbaar is, zodat ze niet exact over elkaar heen vallen.
+- **`web/js/i18n-strings.js`** — twee nieuwe teksten (`gps.hintacc`,
+  `set.fixhint`) in alle acht ondersteunde talen.
+- **`build/tests/test_acc_hint.py`** (nieuw) — dat de balk verschijnt boven
+  75 m met de juiste ±waarde erin, dat ze precies op 75 m nog stil blijft
+  terwijl de oudere "te grof"-melding vanaf 25 m gewoon nog aanslaat, dat ze
+  vanzelf weer verdwijnt zodra een latere positie scherp is, dat wegklikken
+  het in `localStorage` wegschrijft en de balk voorgoed sluit — ook na een
+  herlaad van de pagina — en dat de tip in Instellingen daar los van blijft
+  staan. `build/tests/README.md` kreeg er een rij bij. `APP_VERSION` naar
+  1.19.0.
+
+Volledige suite: 24 bestanden, 557 checks, allemaal "ALL OK" — op
+`test_directory.py` na, ongemoeid gelaten zoals steeds (geen netwerktoegang
+hier naar de echte WWFF-directory). `test_swipe.py` liep deze keer in enkele
+seconden door, geen vals alarm ditmaal.

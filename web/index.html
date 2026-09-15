@@ -446,6 +446,18 @@
   <button class="no" id="instBarNo" data-i18n="inst.barno">Niet nu</button>
 </div>
 
+<!-- Only appears when the last fix stays worse than Diana can do anything
+     about from here — usually the browser, or this site specifically, only
+     sharing an approximate location (see FIX_HINT_M in geo.js). Dismiss it
+     and it stays gone on every screen; Settings keeps the same tip either
+     way, since that dismissal means "stop interrupting me", not "stop
+     telling me". Text is filled in by syncAccHint(), not data-i18n, because
+     it carries the live ±metres figure. -->
+<div class="acchint" id="accHint" hidden>
+  <span class="t" id="accHintTxt"></span>
+  <button class="ahx" id="accHintClose" aria-label="×">×</button>
+</div>
+
 <nav class="nav" id="nav">
   <button class="on" data-view="map"><span class="ic">◈</span><span data-i18n="nav.map">Kaart</span></button>
   <button data-view="viewSpots"><span class="ic">((·))</span><span data-i18n="nav.spots">Spots</span></button>
