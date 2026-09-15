@@ -1,8 +1,9 @@
 ### DLFF — `DLFF-Gebiete_jun26_2.kmz`
 
-## Diana — first dataset from `DLFF-Gebiete_jun26_2.kmz`
+## Diana — new dataset from `DLFF-Gebiete_jun26_2.kmz`
 
-**1325 areas** read in. There is no previous version to compare against yet.
+**1325 areas** (was 1325, 0) · **0 new** · **0 gone** · **0 boundary changed**
+
 
 ### Cross-check against the WWFF directory
 
