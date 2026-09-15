@@ -145,6 +145,12 @@ with tempfile.TemporaryDirectory() as tmp:
     wereld = json.loads(wf.read_text()) if wf.is_file() else {"features": []}
     progs = {f["properties"]["ref"].split("-")[0] for f in wereld["features"]}
     ok("VKFF" in progs, "and the worldwide points layer is published too")
+    # DLFF was built last, ONFF before it — both have boundaries, and both must
+    # still be in this shared file. Leaving out "whichever one was built most
+    # recently" is exactly the bug that made a country vanish for every viewer
+    # who did not happen to have that one loaded.
+    ok("DLFF" in progs, "the country just built is in it too, not only ONFF")
+    ok("ONFF" in progs, "and so is the one built before it")
 
     print("\n[6] source/ stays private")
     ok(not (site / "source").exists(), "no source/ folder in the published site")

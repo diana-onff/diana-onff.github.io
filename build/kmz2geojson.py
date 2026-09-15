@@ -26,13 +26,17 @@ Shared by every country, in data/:
     data/wwff-programs.json every WWFF programme in the directory mapped to its country
                             (worldwide) — lets the app's spots screen offer a "just this
                             country" filter without shipping a hand-kept list
-    data/wwff-world.geojson every active WWFF reference worldwide except this run's own
-                            programme, as bare Points — ref and name only, never a
-                            boundary; this is the "other WWFF areas" layer. Countries
-                            that have boundaries of their own stay in it deliberately:
-                            a viewer only ever has one country's boundaries loaded, and
-                            the app leaves that one out per viewer (worldFilteredData()
-                            in map.js). See the comment at the write itself.
+    data/wwff-world.geojson EVERY active WWFF reference worldwide, this run's own
+                            programme included, as bare Points — ref and name only,
+                            never a boundary; this is the "other WWFF areas" layer.
+                            Nothing is left out here on purpose: this file is shared
+                            by every viewer, and each one has only ONE country's
+                            boundaries loaded at a time — which one is a per-viewer
+                            choice the app already makes correctly, dynamically
+                            (worldFilteredData() in map.js). A build-time exclusion
+                            can only ever be right for whichever country a build
+                            happens to touch, not for whatever any given viewer
+                            actually has loaded. See the comment at the write itself.
 
 Nothing is written to data/<slug>.geojson at the top level any more. Files by
 those names may still be lying around from before the manifest; they are a
@@ -98,7 +102,7 @@ SKIP_FOLDERS = {"Maidenhead grid by OH2ECG"}
 # output for now; the MVP is ONFF only.
 NON_PROVINCE_FOLDERS = {"National parks", "Natura2000", "Ramsar", "Antartica"}
 
-SCRIPT_VERSION = "1.0.0"
+SCRIPT_VERSION = "1.1.0"
 
 
 # --------------------------------------------------------------------------- #
@@ -769,15 +773,35 @@ def point_refs(source: str | None, programs: list[str], have: set[str],
                     for prog, counter in programs_seen.items() if counter}
     stats["read_failed"] = read_failed
 
-    # Every active reference outside --program, as a bare point: no country name,
-    # no province, no IUCN — only what it takes to put a dot down, because this
-    # runs to tens of thousands of features soon enough. Never a boundary: we have
-    # none for any other country. A small share (~1%) has no position; those are
-    # skipped, never invented.
+    # Every active reference worldwide, as a bare point: no country name, no
+    # province, no IUCN — only what it takes to put a dot down, because this runs
+    # to tens of thousands of features soon enough. Never a boundary: this file
+    # carries no polygons for anyone. A small share (~1%) has no position; those
+    # are skipped, never invented.
+    #
+    # This USED to leave out --program — the country this very run is building —
+    # on the reasoning that it already has a boundary, so it should not also be a
+    # dot. That was true only because Diana used to have exactly one loadable
+    # country, which was therefore always both "what this run just built" and
+    # "what every viewer has loaded". Once a second country got boundaries the two
+    # came apart: this file is shared by every viewer, and each one loads only
+    # ONE country of their own choosing, not necessarily whichever one a build
+    # happened to touch most recently. Leaving out --program here meant that
+    # whichever country was rebuilt LAST simply vanished from this file for
+    # EVERYONE, including a viewer who had a completely different country loaded
+    # and needed exactly that one as a dot. It reappeared the moment some other
+    # country's build ran — a bug that moved around depending on build order, not
+    # a change in what anyone was looking at.
+    #
+    # So: everything goes in here now, this run's own programme included. Leaving
+    # the right one out is a per-viewer decision — only the browser knows which
+    # single country a given visitor actually has loaded — and the app already
+    # makes that decision correctly, dynamically, per viewer: see
+    # worldFilteredData() in map.js.
     world_features = []
     for row in rows:
         ref = (row.get("reference") or "").strip().upper()
-        if not ref or (wanted and ref.startswith(wanted)):
+        if not ref:
             continue
         # The same stray header line as above yields ref "REFERENCE" with an empty
         # status. Reading an empty status here as 'active' would put that line on

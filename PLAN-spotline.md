@@ -1596,3 +1596,46 @@ checks vallen dan om, met "data/countries.json is published" voorop.
 Volledige suite: 21 bestanden, 515 checks, allemaal tot "ALL OK" — op één test
 na (`test_directory.py`) die de echte WWFF-directory nodig heeft en hier geen
 netwerktoegang had; onveranderd door deze ronde en ongemoeid gelaten.
+
+**Uitgevoerd op 2026-09-15 — build-script v1.1.0 (geen app-versiewissel: enkel
+`kmz2geojson.py` en de tests eromheen).** Meteen nadat Duitsland zichtbaar werd,
+kwam de volgende: naar Duitsland schakelen liet Belgiës zones weg (terecht) maar
+toonde geen Belgische stippen in de plaats; terug naar België schakelen toonde
+wél Duitse stippen. Geen toeval, en geen UI — rechtstreeks in de live data
+nagekeken: `wwff-world.geojson` had op dat moment wel DLFF-punten (1327) maar
+géén ONFF-punten.
+
+`kmz2geojson.py` liet bij het wegschrijven van dat bestand nog altijd het
+programma weg waarvoor de build net liep (`--program`). Dat klopte zolang er
+maar één land ooit geladen kon worden: dan was "het land dat deze build net
+bouwde" altijd hetzelfde als "het land dat elke bezoeker toch al geladen had",
+en het wegschrappen ervan was dus onschadelijk. Zodra een tweede land grenzen
+kreeg, viel die gelijkstelling weg. Dit bestand is gedeeld door iedereen, en elke
+bezoeker heeft maar één land geladen — niet noodzakelijk het land dat toevallig
+het laatst herbouwd werd. Het laatst herbouwde land verdween dus uit dit bestand
+voor IEDEREEN, ook voor wie een heel ander land geladen had en dat land net als
+punt nodig had. De laatste build vannacht/vanmorgen was er een van ONFF, dus was
+België op dat moment de verdwenen partij — bij een volgende build van een ander
+land was het weer omgekeerd geweest. Een bug die van plaats wisselde met elke
+build, niet iets dat met "Duitsland" te maken had.
+
+- **De uitsluiting aan bouwzijde is helemaal weg.** `wwff-world.geojson` bevat
+  voortaan gewoon elke actieve WWFF-referentie wereldwijd, het net gebouwde land
+  inbegrepen. Welk land een kijker mag zien als grenzen versus als stip is een
+  keuze per bezoeker — enkel de browser weet welk EEN land die ene bezoeker
+  geladen heeft — en `worldFilteredData()` in map.js deed dat al correct en
+  dynamisch, per bezoeker. Een gedeeld bestand kan die keuze nooit voor iedereen
+  tegelijk goed maken; nu probeert het dat ook niet meer.
+
+`test_countries.py` stappen [4] en [5b] draaiden om: "het net gebouwde land
+staat er ook in" in plaats van "het net gebouwde land staat er niet in".
+`test_worldpoints.py`'s aantekening bij de vaste testdata aangepast (die dateert
+van vóór een tweede land bestond en blijft toevallig zonder ONFF, maar bewijst
+niets meer over het ontwerp — dat doet `worldFilteredData()` verderop in
+diezelfde test). `test_site.py` kreeg er twee checks bij die specifiek nagaan
+dat zowel het laatst gebouwde land als het land ervoor allebei in het
+gepubliceerde wereldbestand staan.
+
+Volledige suite: 21 bestanden, 517 checks, allemaal "ALL OK" — op
+`test_directory.py` na, ongemoeid gelaten zoals steeds (geen netwerktoegang
+hier naar de echte WWFF-directory).

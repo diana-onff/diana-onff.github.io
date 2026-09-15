@@ -8,8 +8,10 @@
 # for one country must be unable to touch another country's data. That last
 # rule is what this file is really about. It builds two miniature countries and
 # checks that each one keeps its own files, that the manifest grows instead of
-# being overwritten, and that a reference with a boundary stops appearing as a
-# bare point in the worldwide layer.
+# being overwritten, and that the worldwide points layer keeps every country in
+# it — the one just built included — because that file is shared by every
+# viewer and only the app itself, per viewer, knows which single country to
+# leave off (see worldFilteredData() in map.js).
 #
 # Everything here is made up on the spot: a KMZ is a zip with a KML in it, and
 # the WWFF directory is a CSV. No network, no real data.
@@ -110,19 +112,20 @@ with tempfile.TemporaryDirectory() as tmp:
     ok([c["program"] for c in man["countries"]] == ["ONFF", "PAFF"],
        "the manifest gained a country instead of being replaced")
 
-    print("\n[4] a reference with a boundary is not also a bare point — but only its own")
-    # This run built PAFF, so PAFF's own references are left out of the file it
-    # just wrote — the same reference must not be both a polygon and a dot. ONFF
-    # is a different matter: it has boundaries too, but they were not built just
-    # now, and a Dutch viewer (home country PAFF) has never loaded them — so
-    # without a dot here, Belgium would not exist anywhere on their map at all.
-    # That was the actual bug: a build used to strip every boundaried country,
-    # not just its own, which was invisible with one country and broke the
-    # moment a second one existed.
+    print("\n[4] the worldwide layer leaves nothing out — not even what was just built")
+    # This file is shared by every viewer, and each one loads only one country of
+    # their own. Leaving out the programme this run happens to build would leave
+    # out whichever country was rebuilt last — for EVERY viewer, including one
+    # whose own country is something else entirely and needed exactly this one as
+    # a dot. That was the actual bug: PAFF used to vanish from here the moment its
+    # own build ran, which broke the very first viewer who had, say, ONFF loaded
+    # and switched away from it. The build cannot know what any viewer has
+    # loaded — only the app can, per viewer, dynamically (worldFilteredData() in
+    # map.js) — so the build leaves that choice alone and writes everyone.
     world = json.loads((out / "wwff-world.geojson").read_text())
     progs = {f["properties"]["ref"].split("-")[0] for f in world["features"]}
-    ok("PAFF" not in progs, f"the country just built is not in the worldwide points layer ({sorted(progs)})")
-    ok("ONFF" in progs, "but another country that already has boundaries still is")
+    ok("PAFF" in progs, f"the country just built is there too ({sorted(progs)})")
+    ok("ONFF" in progs, "so is another country that already has boundaries")
     ok("DLFF" in progs, "and so does a country without boundaries at all")
 
     print("\n[5] a rebuild of the first country does not drop the second")
@@ -138,11 +141,11 @@ with tempfile.TemporaryDirectory() as tmp:
     onff = next(c for c in man["countries"] if c["program"] == "ONFF")
     ok(onff["source_file"] == "ONFF 20260301.kmz", "with Belgium's entry pointing at the new release")
 
-    print("\n[5b] the rebuild's own world file leaves the other country's points alone")
+    print("\n[5b] the rebuild's own world file still leaves nothing out")
     world = json.loads((out / "wwff-world.geojson").read_text())
     progs = {f["properties"]["ref"].split("-")[0] for f in world["features"]}
-    ok("ONFF" not in progs, "the country just rebuilt is not in the worldwide points layer")
-    ok("PAFF" in progs, "while the other one, built earlier and untouched just now, still is")
+    ok("ONFF" in progs, "the country just rebuilt is there too")
+    ok("PAFF" in progs, "and so is the other one, built earlier and untouched just now")
 
     print("\n[6] a programme code that is not one is refused")
     r = build(work, out, "ONFF 20260301.kmz", "Belgium")
