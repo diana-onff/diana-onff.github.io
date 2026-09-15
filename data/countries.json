@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-15T08:07:47Z",
+  "generated": "2026-09-15T08:37:50Z",
   "countries": [
     {
       "program": "DLFF",
@@ -29,6 +29,21 @@
         "zones": "zones/onff.geojson",
         "points": "zones/onff-points.geojson",
         "activity": "zones/onff-activity.json"
+      }
+    },
+    {
+      "program": "OZFF",
+      "country": "Denmark",
+      "refs": 325,
+      "points": 6,
+      "release": null,
+      "source_file": "All OZFF.kmz",
+      "generated": "2026-09-15T08:37:50Z",
+      "bytes": 1348069,
+      "files": {
+        "zones": "zones/ozff.geojson",
+        "points": "zones/ozff-points.geojson",
+        "activity": "zones/ozff-activity.json"
       }
     }
   ]
