@@ -22,11 +22,17 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
   # Load-bearing, not decorative: a push made with the default GITHUB_TOKEN does
-  # not start new workflows. Without this trigger the commit from "Build ONFF data"
+  # not start new workflows. Without this trigger the commit from "Build map data"
   # does land on main but is never published, and the preview of a pull request
   # shows the dataset from before the conversion.
+  #
+  # The name below must match the `name:` at the top of build-data.yml exactly —
+  # GitHub matches on that string and says nothing at all when it does not fit.
+  # It read "Build ONFF data" long after that workflow had been renamed for more
+  # than one country, so this trigger had quietly not fired since: every nightly
+  # refresh landed on main and stayed unpublished.
   workflow_run:
-    workflows: ["Build ONFF data"]
+    workflows: ["Build map data"]
     types: [completed]
   workflow_dispatch:
 
