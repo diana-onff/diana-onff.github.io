@@ -63,6 +63,19 @@ async function fetchSpots(){
   paintSpots(); renderSpots();
 }
 
+/* Coming back to the app deserves its own refresh, not a wait for whichever
+   moment the 30 s timer above happens to land on next. That timer already
+   skips a tick while the tab is hidden — sensible, no point spending battery
+   and data on a screen nobody is looking at — but that leaves the spots list,
+   and the arc lines drawn from your position, up to nearly 30 s stale the
+   moment you look again. And on a phone specifically this is also the moment
+   GPS itself gets going again: watchPosition, like every other timer, is
+   suspended while a tab is backgrounded, so `here` may be exactly as old as
+   the spots are. One refresh, on the way back in, catches both. */
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && showSpots) fetchSpots();
+});
+
 function spotVisible(ref){
   if(spotFilter === 'all') return true;
   return refProgram(ref) === spotFilter;         // one specific country
@@ -151,7 +164,13 @@ function addSpotIcon(){
 let pulsePhase = 0, pulseTimer = null;
 
 function paintSpots(){
-  if(!map.isStyleLoaded() || !zones){ redrawOverlays(); return; }
+  // zones is the one thing here that genuinely has nothing to fall back to —
+  // an agenda item's position comes from it, and there is no data to draw
+  // without it either way. The style being "done loading" is a different
+  // question entirely, and used to be asked here too; see the comment above
+  // spotSources() for why that cost every position update that landed during
+  // a busy style, which on a phone is most of them.
+  if(!zones){ redrawOverlays(); return; }
   addSpotIcon();
 
   const mine = myPos();
@@ -198,9 +217,65 @@ function paintSpots(){
     'spot-arcs':  arcs('spot', live),
     'agenda-arcs':arcs('agenda', agendaPlaced),
   };
+
+  // Every source that already exists gets today's data right now, whatever the
+  // style is busy doing. This used to wait behind the same "is the style done
+  // loading" check that guards creating a brand new source below — reasonable
+  // for a source you are about to add for the first time, wrong for one that
+  // is already sitting there. fixApply() calls map.easeTo() to the new
+  // position and THEN calls paintSpots(), on every single GPS tick — so the
+  // style was, more often than not, still busy loading the screenful of tiles
+  // that pan had just asked for. A setData() on a source that is already part
+  // of the style needs none of that: it was already proven safe against a
+  // style that reports itself not-loaded. Bailing out here anyway is exactly
+  // how the arc lines came to be drawn from wherever you stood a fix or two
+  // ago — the marker moved on with the very next easeTo, the lines waited for
+  // a style that was already busy with something else, and by the time it
+  // freed up, nothing asked again until the next spots refresh or a reload.
+  let missing = false;
   for(const [id, data] of Object.entries(sources)){
-    if(map.getSource(id)) map.getSource(id).setData(data);
-    else map.addSource(id, {type:'geojson', data});
+    const src = map.getSource(id);
+    if(src) src.setData(data);
+    else missing = true;
+  }
+
+  // Everything is already on the map: the near-instant path every tick takes
+  // once the first paintSpots() (or the one after a style switch) has run.
+  if(!missing && map.getLayer('spot-arcs-line')){
+    startPulse();
+    applyVisibility();
+    return;
+  }
+
+  // Something still needs to be created — the very first time, or again after
+  // a style switch wiped every custom source and layer out from under us.
+  // Adding a source or a layer is the one part of this that genuinely does
+  // need the style to be done loading (see paintNoPoly/paintFixAcc for the
+  // same wait, on the same grounds). pendingSpotSources always holds the
+  // freshest data: if another position or spots update lands while this is
+  // still waiting, it overwrites the snapshot in flight rather than starting
+  // a second, parallel wait alongside this one.
+  pendingSpotSources = sources;
+  if(!spotsCreatePending) createSpotLayers();
+}
+
+let spotsCreatePending = false, pendingSpotSources = null;
+
+function createSpotLayers(tries){
+  if(styleSwitching || !map.isStyleLoaded()){
+    spotsCreatePending = true;
+    tries = tries || 0;
+    if(tries > 100){ spotsCreatePending = false; return; }   // ~8 s, then we give up
+    setTimeout(() => createSpotLayers(tries + 1), 80);
+    return;
+  }
+  spotsCreatePending = false;
+  const sources = pendingSpotSources;
+  pendingSpotSources = null;
+  if(!sources) return;   // nothing waiting after all — paintSpots() already caught up
+
+  for(const [id, data] of Object.entries(sources)){
+    if(!map.getSource(id)) map.addSource(id, {type:'geojson', data});
   }
 
   if(!map.getLayer('spot-arcs-line')){

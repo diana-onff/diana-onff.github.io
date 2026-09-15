@@ -1693,3 +1693,63 @@ enkele ogenblikken na een echte upload zou ontstaan — geen wijziging aan
 Volledige suite: 22 bestanden, 527 checks, allemaal "ALL OK" — op
 `test_directory.py` na, ongemoeid gelaten zoals steeds (geen netwerktoegang
 hier naar de echte WWFF-directory).
+
+**Uitgevoerd op 2026-09-15 — v1.18.1.** Twee schermafbeeldingen uit het veld:
+op de eerste stond de marker correct middenin een bos, met alle lijnen naar de
+spots en naar een aankondiging netjes samenkomend op die marker. Op de tweede
+kwamen diezelfde lijnen allemaal samen op één punt, honderden meters van waar
+de marker met zijn onzekerheidscirkel stond — en een herlaad loste het op.
+"Gisteren had ik dat zelf ook, en refresh hielp toen ook" bevestigde dat het
+niet om beschadigde data ging: iets in het geheugen van een lopende sessie
+liep fout, iets dat een verse pagina altijd weer goed opbouwt.
+
+Teruggevonden in `paintSpots()` (spots.js), de functie die de groene
+stippellijnen naar live spots en de oranje streeplijn naar een aankondiging
+tekent. Ze weigerde tot nu toe om ook maar iets aan te raken — bestaande
+bronnen inbegrepen — zolang `map.isStyleLoaded()` niet `true` zei. Maar
+`fixApply()` (geo.js) roept bij elke GPS-melding eerst `map.easeTo()` aan naar
+de nieuwe positie, en *pas daarna* `paintSpots()` — en een `easeTo` naar een
+nieuwe plek is precies het soort ding dat een stijl weer "bezig" maakt met een
+schermvol nieuwe tegels. Op een telefoon met mobiele data is dat geen
+uitzondering, dat is de normale gang van zaken bij zowat elke positie-update.
+Rechtstreeks nagemeten met een testharnas dat de GPS en Spotline nabootst: een
+fix die binnenkomt terwijl de stijl zich "bezig" meldt, wordt gewoon
+weggegooid — de marker springt door naar de nieuwe plek, de lijnen blijven op
+de oude staan, en zodra de herprobeerpoging na zo'n acht seconden opgeeft,
+vraagt niets erom opnieuw tot de volgende spots-ververing (30 s) of een
+herlaad. Twee buurfuncties in `map.js` — `paintNoPoly` en `paintFixAcc`, de
+nauwkeurigheidscirkel — hadden deze les al geleerd, met een letterlijke
+aantekening dat opgeven vroeger "permanent" was. `paintSpots()` was degene die
+op het oude patroon bleef staan, en zij wordt op elke GPS-melding aangeroepen,
+niet enkel bij een landwissel — vandaar dat dit zoveel vaker toesloeg.
+
+- **Bestaande bronnen krijgen hun nieuwe gegevens meteen, ongeacht wat de
+  stijl aan het doen is.** Dat bleek hoe dan ook al veilig: rechtstreeks
+  getest dat `setData()` op een bron die al bestaat, gewoon lukt terwijl
+  `isStyleLoaded()` `false` meldt. Enkel het *aanmaken* van een nieuwe bron of
+  laag — de allereerste keer, of opnieuw na een stijlwissel die alles
+  wegveegt — wacht nog, in een eigen herprobeerlus zoals bij `paintNoPoly` en
+  `paintFixAcc`. Landt er tijdens dat wachten een nieuwere positie, dan wint
+  die — niet de oudste die toevallig het eerst aan de beurt kwam.
+- **Terugkeren naar de app telt nu ook hier als ververs.** De spots-timer van
+  30 s slaat sowieso al een beurt over zolang het tabblad verborgen is —
+  terecht — maar dat betekent dat de lijst, en de lijnen die ervan afhangen,
+  tot bijna 30 s oud kunnen zijn op het moment dat je weer kijkt. Op een
+  telefoon is dat ook precies het moment waarop GPS zelf weer op gang komt:
+  `watchPosition` wordt net als elke andere timer stilgelegd zolang een
+  tabblad naar de achtergrond gaat. Eén `visibilitychange`-luisteraar, zoals
+  gisteren bij het adminpaneel, vangt beide tegelijk op.
+
+`build/tests/test_spot_arcs.py` (nieuw) — meet met een echte (nagebootste)
+GPS-positie en Spotline-data: dat de lijnen de marker volgen wanneer een
+positie binnenkomt terwijl de stijl zich bezig meldt, dat dit ook standhoudt
+ruim voorbij het oude herprobeerbudget van acht seconden, dat een echte
+stijlwissel — die de bronnen wél wegveegt — terecht wacht en zich herstelt
+zodra de stijl weer klaar is, dat een nieuwere positie een oudere wint terwijl
+dat wachten nog loopt, en dat terugkeren naar de app de spots ververst zonder
+op de timer te wachten. `build/tests/README.md` kreeg er een rij bij.
+`APP_VERSION` naar 1.18.1.
+
+Volledige suite: 23 bestanden, 537 checks, allemaal "ALL OK" — op
+`test_directory.py` na, ongemoeid gelaten zoals steeds (geen netwerktoegang
+hier naar de echte WWFF-directory).
