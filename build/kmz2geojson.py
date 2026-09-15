@@ -1,22 +1,43 @@
 #!/usr/bin/env python3
 """
-Diana — ONFF KMZ to GeoJSON pipeline.
+Diana — WWFF KMZ to GeoJSON pipeline.
 
-Reads an official ONFF Google Earth release (ONFF_YYYYMMDD.kmz) and produces the
-static data files the Diana PWA loads:
+Reads an official Google Earth release for one WWFF programme (ONFF, DLFF, …)
+and produces the static data files the Diana PWA loads. One country per run, so
+that a bad file for one of them cannot touch another one's data — hence the
+per-country folder. <slug> below is the programme in lower case: onff, dlff.
 
-    data/onff.geojson       zone geometry, one MultiPolygon feature per ONFF reference
-    data/onff-index.json    lightweight index (no geometry) for search, lists and
+Per country, in data/zones/:
+
+    zones/<slug>.geojson    zone geometry, one MultiPolygon feature per reference
+    zones/<slug>-index.json lightweight index (no geometry) for search, lists and
                             "nearest zones" without loading the full geometry file
-    data/onff-points.geojson references that exist on the ONFF list but have no
-                            polygon in the KMZ, as single Point features
+    zones/<slug>-points.geojson  references that exist on the programme's list but
+                            have no polygon in the KMZ, as single Point features
+    zones/<slug>-activity.json   QSO count and last activation per reference
+
+Shared by every country, in data/:
+
+    data/countries.json     the manifest: which countries have boundaries, and which
+                            files each one is made of. MERGED per run, never rewritten.
+                            This is the only way the app learns a country exists —
+                            and the only way build/site.sh knows what to publish
     data/meta.json          provenance: which source file, which release, what settings
     data/wwff-programs.json every WWFF programme in the directory mapped to its country
-                            (worldwide, not just ONFF) — lets the app's spots screen offer
-                            a "just this country" filter without shipping a hand-kept list
-    data/wwff-world.geojson every OTHER active WWFF reference worldwide (not ONFF), as bare
-                            Points — ref and name only, never a boundary; this is the "other
-                            WWFF areas" layer, off-ONFF-map but still Diana's own data
+                            (worldwide) — lets the app's spots screen offer a "just this
+                            country" filter without shipping a hand-kept list
+    data/wwff-world.geojson every active WWFF reference worldwide except this run's own
+                            programme, as bare Points — ref and name only, never a
+                            boundary; this is the "other WWFF areas" layer. Countries
+                            that have boundaries of their own stay in it deliberately:
+                            a viewer only ever has one country's boundaries loaded, and
+                            the app leaves that one out per viewer (worldFilteredData()
+                            in map.js). See the comment at the write itself.
+
+Nothing is written to data/<slug>.geojson at the top level any more. Files by
+those names may still be lying around from before the manifest; they are a
+fallback for an old service worker, they are not kept up to date, and
+build/site.sh publishes them only if they happen to exist.
 
 It also writes a human-readable diff report against the previous index, which the
 GitHub Action posts under the pull request and the /admin page renders in plain

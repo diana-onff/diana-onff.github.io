@@ -1537,3 +1537,62 @@ overleven een herlaad onafhankelijk van elkaar. Volledige suite: 20
 bestanden, 481 checks, allemaal tot "ALL OK" — op één test na
 (`test_directory.py`) die de echte WWFF-directory nodig heeft en hier geen
 netwerktoegang had; onveranderd door deze ronde en ongemoeid gelaten.
+
+**Uitgevoerd op 2026-09-15 — v1.17.0.** Duitsland stond na de vorige ronde
+nog steeds nergens: niet bij de landen met grenzen in Instellingen, geen
+polygonen, en terug op België ook geen Duitse punten. Alles wees naar de data,
+en de data klopte — dat was precies wat het zo lang verborgen hield.
+
+De data op `main` was namelijk al twee dagen in orde: `countries.json` met DLFF
+erin (1325 zones), `zones/dlff.geojson` volledig, `wwff-world.geojson` met 1327
+Duitse punten. Wat niet klopte, zat één stap verder: `build/site.sh`, het script
+dat bepaalt wat er ooit gepubliceerd wordt, kopieerde nog altijd het rijtje
+bestandsnamen van vóór Diana een manifest had — `data/onff.geojson`,
+`data/onff-index.json` en wat losse extra's. `data/countries.json` stond er niet
+bij en `data/zones/` evenmin. Ze werden dus correct gebouwd, correct gemerged,
+belandden correct op `main`, en gingen vervolgens nooit online.
+
+Voor de app zag dat er zo uit: `countries.json` gaf een 404, `loadCountries()`
+viel terug op zijn noodgreep uit de begintijd ("ga uit van België, onder de oude
+namen"), en dus bestond er buiten België geen enkel land — hoe vaak je het ook
+opnieuw bouwde of publiceerde. België bleef werken en verborg daarmee het gat.
+Dat de wereldwijde stippen wél klopten was geen toeval: `wwff-world.geojson`
+stond toevallig nog in dat oude rijtje.
+
+- **`site.sh` publiceert voortaan wat de bouwstap echt schrijft:**
+  `data/countries.json` en heel `data/zones/`. En het controleert zichzelf
+  achteraf tegen het manifest — elk bestand dat `countries.json` noemt moet in
+  de uitvoer staan, anders stopt de publicatie met de naam van het ontbrekende
+  bestand erbij. Tegen het manifest, niet tegen een lijstje in het script: dat
+  lijstje is nu net wat verouderd is.
+- **De oude Belgische bestandsnamen zijn niet langer verplicht.** Ze worden nog
+  meegenomen als ze bestaan (voor wie nog een oude service worker heeft), maar
+  ze worden niet meer door de bouwstap geschreven en lopen dus achter — hun
+  `onff-activity.json` dateerde van 13 september, die in `zones/` van vandaag.
+  Zodra niemand nog op die oude schil zit, mogen ze uit de repo; de publicatie
+  breekt daar niet meer op.
+- **De `workflow_run`-trigger in `pages.yml` verwees nog naar "Build ONFF
+  data".** Die workflow heet al een tijd `Build map data`. GitHub matcht op die
+  naam als letterlijke tekst en zegt niets wanneer hij niet past, dus die
+  trigger vuurde in stilte al een hele tijd niet meer af — waardoor elke
+  nachtelijke ververing wel op `main` landde maar nooit gepubliceerd werd.
+- **De docstring bovenaan `kmz2geojson.py`** beschreef nog steeds de oude platte
+  bestandsnamen als "de uitvoer". Vermoedelijk de bron van de hele vergissing:
+  wie `site.sh` nakeek, las daar dat het klopte. Nu beschrijft hij de echte
+  uitvoer, inclusief de rol van het manifest.
+
+Nieuw: `test_site.py`, de eerste test die kijkt naar wat er werkelijk
+gepubliceerd wordt. Alle andere tests lezen `data/` rechtstreeks of serveren de
+repo zelf — `build/site.sh` werd door geen enkele test ooit uitgevoerd, en
+daarom stonden vorige ronde alle 481 checks op groen terwijl dit al live stuk
+was. De test bouwt twee landen echt, draait het echte script, en eist elk
+bestand dat het manifest noemt; verder dat `source/` en elke KMZ buiten blijven,
+dat de versiestempel en de cachenaam van de service worker ingevuld raken, dat
+een manifest met een ontbrekend bestand de publicatie tegenhoudt, en dat zowel
+een dataset van vóór het manifest als een dataset die de oude namen al kwijt is
+allebei gewoon publiceren. Tegengecheckt tegen het oude `site.sh`: negen van die
+checks vallen dan om, met "data/countries.json is published" voorop.
+
+Volledige suite: 21 bestanden, 515 checks, allemaal tot "ALL OK" — op één test
+na (`test_directory.py`) die de echte WWFF-directory nodig heeft en hier geen
+netwerktoegang had; onveranderd door deze ronde en ongemoeid gelaten.

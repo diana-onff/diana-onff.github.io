@@ -16,14 +16,81 @@ rm -rf "$OUT"
 mkdir -p "$OUT/data"
 
 cp -r web/. "$OUT/"
-cp data/onff.geojson data/onff-index.json data/meta.json "$OUT/data/"
-# From the WWFF directory, so only present after a build that could fetch it.
-# (As an 'if', not as '[ … ] && cp' — with set -e the script would stop there otherwise.)
-for extra in data/onff-points.geojson data/onff-activity.json data/wwff-programs.json data/wwff-world.geojson; do
-  if [ -f "$extra" ]; then
-    cp "$extra" "$OUT/data/"
+
+# ------------------------------------------------------------------- the data
+#
+# What the app really loads. This list used to be written out by hand, in the
+# Belgium-only filenames from before Diana had a manifest — and it stayed that
+# way when the build moved to one folder per country. The result was invisible
+# for Belgium and total for everyone else: data/countries.json and data/zones/
+# were built correctly, merged, and sitting on main, and still never reached the
+# published site. The app then found no manifest at all, fell back to "assume
+# Belgium, under the old names", and a second country could not exist no matter
+# how often it was rebuilt. Germany was live for a day before anyone could say
+# why it was not.
+#
+# Hence: copy what the build writes, and check it against the manifest rather
+# than against a list in this script. A list in this script is the thing that
+# went wrong.
+#
+# (Every copy is an 'if' rather than '[ … ] && cp' — with set -e the script
+# would stop at a false test otherwise.)
+
+# The manifest, and the per-country files it points at. Together these are what
+# makes more than one country possible; without them the app has nothing to go on.
+if [ -f data/countries.json ]; then
+  cp data/countries.json "$OUT/data/"
+fi
+if [ -d data/zones ]; then
+  cp -r data/zones "$OUT/data/"
+fi
+
+# Shared by every country: provenance, the worldwide programme list, and the
+# worldwide points layer. The last two only exist after a build that could
+# actually reach the WWFF directory.
+for gedeeld in data/meta.json data/wwff-programs.json data/wwff-world.geojson; do
+  if [ -f "$gedeeld" ]; then
+    cp "$gedeeld" "$OUT/data/"
   fi
 done
+
+# Belgium under the names it had before the manifest existed. The build no longer
+# writes these — they are a safety net for a visitor whose installed service
+# worker still asks for them, and for a data set older than the manifest. They
+# drift further out of date with every build that does not touch them, so they
+# may be deleted from the repository once nobody is on that old shell any more;
+# nothing here breaks when they go, which is exactly why this is an 'if' now and
+# not the unconditional cp it used to be.
+for oud in data/onff.geojson data/onff-index.json data/onff-points.geojson data/onff-activity.json; do
+  if [ -f "$oud" ]; then
+    cp "$oud" "$OUT/data/"
+  fi
+done
+
+# Nothing may be promised that is not published. A zones/<country>.geojson that
+# the manifest names but that is not in the output is a 404 at exactly the
+# moment someone in the field switches to that country — and it is silent until
+# then, which is how this went unnoticed for a day. Checked against the manifest
+# itself, so a future change to the build's layout is followed automatically.
+if [ -f "$OUT/data/countries.json" ]; then
+  python3 - "$OUT" <<'PY'
+import json, pathlib, sys
+
+data = pathlib.Path(sys.argv[1]) / "data"
+manifest = json.loads((data / "countries.json").read_text(encoding="utf-8"))
+landen = manifest.get("countries") or []
+ontbreekt = [f"{c.get('program', '?')}: {pad}"
+             for c in landen
+             for pad in (c.get("files") or {}).values()
+             if not (data / pad).is_file()]
+if ontbreekt:
+    sys.exit("site.sh: the manifest names files that are not being published:\n  "
+             + "\n  ".join(ontbreekt))
+print("countries published: " + (", ".join(c.get("program", "?") for c in landen) or "none"))
+PY
+else
+  echo "site.sh: no data/countries.json — publishing the pre-manifest layout only" >&2
+fi
 
 # --------------------------------------------------------------- version stamp
 # Inside an Action the hash is in GITHUB_SHA; locally we ask git itself. If

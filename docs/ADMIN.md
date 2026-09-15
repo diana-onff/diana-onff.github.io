@@ -324,6 +324,29 @@ above), so Settings → Pages was left on "Deploy from a branch: main /
 add the workflow file properly (via "Create new file", not drag-and-drop),
 let it run once, then repoint Settings → Pages to the `gh-pages` branch.
 
+### A new country is published, but the app only offers Belgium
+
+The conversion and the publication are two separate things, and this is the
+gap between them. Check in this order:
+
+1. **Is the country in the data?** Open `data/countries.json` on `main`. If
+   your country is not in there, the conversion never landed — look at the
+   pull request, not at the site.
+2. **Did it reach the site?** Open `https://<your-site>/data/countries.json`
+   in a browser. A 404, or a file without your country in it, means the
+   publication is behind: Actions → *Publish to GitHub Pages* → **Run
+   workflow**. `build/site.sh` decides what gets published, and it refuses to
+   publish at all if the manifest names a file it cannot find — so a green run
+   here means the country really is online.
+3. **Is your phone still on the old version?** Close the app fully and reopen
+   it. Everything under `data/` is fetched network-first, so one reopen with a
+   signal is enough.
+
+Up to v1.17.0 step 2 was permanently broken: `site.sh` still published the
+Belgium-only filenames from before Diana had a manifest, so `countries.json`
+and `data/zones/` never went online and no second country could be selected,
+no matter how often it was rebuilt.
+
 ### A pull request doesn't get a diff report or preview link
 
 Check that the PR actually touches `source/**.kmz`, `overrides.json`, or

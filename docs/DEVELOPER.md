@@ -19,13 +19,22 @@ diana/
 │  ├─ requirements.txt
 │  └─ site.sh         assembles the publishable folder (excludes source/)
 ├─ data/              the output — what the app actually loads
-│  ├─ onff.geojson
-│  ├─ onff-points.geojson   references with no boundary, as Points
-│  ├─ onff-activity.json    QSO count + last activation per reference
+│  ├─ countries.json       the manifest: which countries have boundaries, and which files
+│  │                       each is made of. Merged per build, never rewritten. Without it
+│  │                       the app knows of no country but Belgium
+│  ├─ zones/               one set per country, named after the programme in lower case
+│  │  ├─ onff.geojson         the boundaries
+│  │  ├─ onff-points.geojson  references with no boundary, as Points
+│  │  ├─ onff-activity.json   QSO count + last activation per reference
+│  │  ├─ onff-index.json      lightweight index, no geometry
+│  │  └─ dlff.geojson … the same again for every other country
 │  ├─ wwff-programs.json    every WWFF programme worldwide → its country (for the spots filter)
-│  ├─ wwff-world.geojson    every active non-ONFF WWFF reference worldwide, as bare points
-│  ├─ onff-index.json
-│  └─ meta.json
+│  ├─ wwff-world.geojson    every active WWFF reference worldwide except the one just built,
+│  │                        as bare points
+│  ├─ meta.json
+│  └─ onff*.json/geojson    the same Belgian files under their pre-manifest names, at the top
+│                           level. No longer written by the build; a fallback for an old
+│                           service worker, and safe to delete once nobody is on one
 ├─ overrides.json     manual name corrections, keyed by reference number
 ├─ web/               the web application itself                  ← runtime
 │  ├─ index.html      the markup, and the <script> tags in the order they must run
@@ -173,7 +182,7 @@ merging a new KMZ is a leap of faith.
 | push to `main`/`master` | `build/site.sh` output replaces the live site at the repo root of the `gh-pages` branch |
 | pull request opened/updated | published to `.../preview/pr-<number>/`, with the link posted as a PR comment |
 | pull request closed | that preview folder is deleted |
-| `workflow_run` after `build-data.yml` succeeds | publishes whatever that run committed. **This trigger is load-bearing:** a push made with the default `GITHUB_TOKEN` does not start new workflows, so without it the nightly data commit would land on `main` and never be published, and a PR preview would show the dataset from *before* the build |
+| `workflow_run` after `build-data.yml` succeeds | publishes whatever that run committed. **This trigger is load-bearing:** a push made with the default `GITHUB_TOKEN` does not start new workflows, so without it the nightly data commit would land on `main` and never be published, and a PR preview would show the dataset from *before* the build. It matches on the workflow's `name:` as a literal string, and GitHub says nothing when it does not match — it read `"Build ONFF data"` for a while after that workflow had been renamed `Build map data`, and silently never fired. Rename one, change the other |
 | `workflow_dispatch` | same as a push — mainly useful to bootstrap `gh-pages` the very first time, before it exists |
 
 Requires **Settings → Actions → General → Workflow permissions → "Read and
@@ -182,10 +191,21 @@ write permissions"**, set *before* the first run — otherwise the push to
 missing `gh-pages` branch, a `.github/` folder silently dropped by a
 drag-and-drop upload, etc.) is in [DEPLOY.md](../DEPLOY.md).
 
-`build/site.sh` assembles `_site/` from `web/` plus the three `data/*.json`
-files, and **excludes `source/`** — the KMZ never becomes part of the
+`build/site.sh` assembles `_site/` from `web/` plus the data the app loads —
+`data/countries.json`, the whole of `data/zones/`, and the files shared by every
+country — and **excludes `source/`** — the KMZ never becomes part of the
 published site, even though it lives in the repository's git history so the
 Action can read it.
+
+This script is a place to be careful. It once listed the Belgium-only filenames
+from before the manifest existed, and kept listing them after the build had
+moved to `data/zones/`. Nothing failed: Belgium went on working through the
+app's own pre-manifest fallback, while every other country was built, merged and
+live on `main` and still did not exist as far as the published site was
+concerned. Before publishing, the script now checks the output against
+`data/countries.json` itself and stops if a file the manifest names is not
+there. `build/tests/test_site.py` runs the whole thing end to end — it is the
+only test that looks at what is actually published rather than at `data/`.
 
 ```
 pull request (new KMZ)
