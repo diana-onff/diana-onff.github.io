@@ -1753,3 +1753,54 @@ op de timer te wachten. `build/tests/README.md` kreeg er een rij bij.
 Volledige suite: 23 bestanden, 537 checks, allemaal "ALL OK" — op
 `test_directory.py` na, ongemoeid gelaten zoals steeds (geen netwerktoegang
 hier naar de echte WWFF-directory).
+
+**Uitgevoerd op 2026-09-15 — v1.18.2.** Los van de spotlijnen: een
+schermafbeelding toonde het kleine versienummer-label onderaan links half
+achter de menubalk verdwijnen — "Onderaan verdie kader valt net achter
+menubalk". Dat label zweeft op een vaste afstand van de onderkant van het
+scherm (`bottom:70px`), in de veronderstelling dat de menubalk altijd exact
+even hoog is. Dat is ze niet: haar echte hoogte hangt af van het toestel — een
+telefoon met gebarennavigatie voegt daar zelf nog ruimte aan toe via
+`env(safe-area-inset-bottom)`, en een grotere systeemtekstgrootte maakt de
+knoppen zelf ook hoger. Gemeten in een testbrowser: bij de gewone instelling
+zit er 7,5 px lucht tussen het label en de balk; met een realistische
+combinatie van iets grotere tekst en een gebarenbalk-marge verdwijnt die
+lucht en zakt het label 20+ pixels onder de balk — precies het gemelde
+gedrag.
+
+Drie andere plekken maakten dezelfde vaste aanname (de statusmelding
+onderaan, het omhoogschuivende paneel, de kaartknoppen rechtsonder), en een
+vierde — de "installeer deze app"-balk — had de kiem van de juiste oplossing
+al liggen: een `--nav-h`-CSS-variabele, bedoeld om de echte balkhoogte op te
+vangen, maar nooit ergens in JavaScript ook echt ingesteld. Ze viel dus altijd
+stil terug op diezelfde vaste 62px.
+
+- **`web/js/nav.js`** — een `syncNavHeight()` die de werkelijke hoogte van de
+  menubalk (`#nav`) meet en in `--nav-h` zet: één keer bij het laden, opnieuw
+  bij een `resize` (schermdraai), en via een `ResizeObserver` voor elke
+  andere reden dat de balk zelf van hoogte verandert zonder dat er een
+  resize-event bij hoort — zoals een systeemlettergrootte die pas na de
+  eerste weergave wordt toegepast.
+- **`web/css/app.css`** — het versie-label, de statusmelding, het
+  omhoogschuivende paneel en de kaartknoppen lezen nu `var(--nav-h, 62px)`
+  in plaats van een geraden getal. De installatiebalk kreeg haar
+  `--nav-h`-variabele voor het eerst echt aangesloten; de losstaande
+  `env(safe-area-inset-bottom)` die er tot nu toe naast stond — nodig zolang
+  de variabele toch nooit iets deed — kon eraf: de echte balkhoogte bevat die
+  marge al, via de eigen onderste padding van de balk.
+
+Gecontroleerd met een testbrowser over een reeks breedtes, lettergroottes en
+gesimuleerde gebarenbalk-marges: de afstand tussen het label en de balk blijft
+nu overal gelijk (~8 px), ook in het geval dat voorheen 20+ pixels overlap
+gaf. Ook bevestigd dat de `ResizeObserver` een hoogteverandering ná het laden
+oppikt zonder dat er een `resize`-event nodig is.
+
+Volledige suite opnieuw gedraaid: 23 bestanden, 537 checks, allemaal "ALL OK"
+— op `test_directory.py` na, ongemoeid gelaten zoals steeds. Eén vals alarm
+onderweg: `test_swipe.py` liep de eerste keer non-stop tegen een timeout aan
+bij stap [6] (de stijlwissel-test) — bleek bij nader onderzoek zuiver
+netwerktraagheid naar de echte kaartstijlen te zijn (die test mockt, in
+tegenstelling tot de andere, bewust geen tegel-server, juist om echte
+stijlwissels te beproeven), reproduceerbaar met de wijzigingen van deze ronde
+volledig uitgeschakeld en verdwenen zodra de test wat meer tijd kreeg (4
+minuten in plaats van de gebruikelijke paar seconden, daarna "ALL OK").
