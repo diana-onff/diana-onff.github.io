@@ -1,0 +1,19 @@
+{
+  "source_file": "DLFF-Gebiete_jun26_2.kmz",
+  "release": null,
+  "generated": "2026-09-15T05:00:25Z",
+  "zones": 1325,
+  "directory_failed": null,
+  "directory_listed": 1332,
+  "directory_deleted": 36,
+  "directory_rows": 68738,
+  "directory_nonwwff": 0,
+  "points_no_polygon": 2,
+  "points_unplaced": 5,
+  "activity_refs": 1298,
+  "world_points": 64320,
+  "source_polygons": 2664,
+  "tolerance_deg": 5e-05,
+  "decimals": 5,
+  "script_version": "1.0.0"
+}
