@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-14T20:32:36Z",
+  "generated": "2026-09-15T05:00:25Z",
   "countries": [
     {
       "program": "DLFF",
@@ -8,7 +8,7 @@
       "points": 2,
       "release": null,
       "source_file": "DLFF-Gebiete_jun26_2.kmz",
-      "generated": "2026-09-14T20:32:36Z",
+      "generated": "2026-09-15T05:00:25Z",
       "bytes": 13053066,
       "files": {
         "zones": "zones/dlff.geojson",
