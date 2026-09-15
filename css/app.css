@@ -473,6 +473,28 @@
   /* One thing at a time along the bottom: an open sheet takes precedence. */
   body.sheet-open .instbar{display:none}
 
+  /* ---------- accuracy-permission hint ----------
+     Same shape and spot as the install bar above, deliberately: it is the
+     established "dismiss it and it's gone for good" bottom banner in this
+     app, and a second, differently-built one would just be a second thing to
+     get right. Amber rather than green — this one is a heads-up, not an
+     offer. */
+  .acchint{
+    position:absolute; left:10px; right:10px; z-index:7;
+    bottom:calc(var(--nav-h, 62px) + 10px);
+    display:flex; align-items:center; gap:8px;
+    background:var(--amber-soft); color:var(--ink); border:1px solid var(--amber);
+    border-radius:var(--radius); padding:10px 12px; box-shadow:var(--shadow); font-size:13.5px;
+  }
+  .acchint .t{flex:1;line-height:1.35}
+  .acchint .ahx{border:0;border-radius:9px;background:transparent;color:var(--ink-2);
+    font:inherit;font-weight:700;cursor:pointer;padding:8px 10px}
+  body.embed .acchint{display:none}
+  body.sheet-open .acchint{display:none}
+  /* The rare moment both bottom banners have something to say: stack instead
+     of the second one sitting exactly on top of the first. */
+  #instBar:not([hidden]) ~ #accHint{bottom:calc(var(--nav-h, 62px) + 66px)}
+
   body.embed .nav, body.embed .brand, body.embed .counts{display:none}
   body.embed .topbar{padding-top:8px}
   @media (max-width:520px){

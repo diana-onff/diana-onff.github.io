@@ -81,6 +81,17 @@ function distanceToZone(lat,lon,f){
  */
 const FIX_GOOD_M  = 25;      // sharp enough to answer on
 const FIX_WAIT_MS = 12000;   // and never keep anyone waiting longer than this
+/* Past this, a poor fix stops reading as ordinary outdoor GPS noise and
+   starts reading as a permission problem: a browser can be told to share
+   only an "approximate" location — for itself, or for one site specifically
+   — deliberately fuzzed into an area the size of a small town. No amount of
+   waiting or pressing ◎ fixes that; only the browser's own location setting
+   does. A field report showed exactly this: a comparison app on the same
+   phone, at the same spot, held a steady 15 m while Diana sat at 98 and then
+   136 m on two separate tries. See accHint below and set.fixhint.
+   Deliberately well above FIX_GOOD_M: ordinary outdoor scatter or a slow
+   satellite lock can land in between and is not what this is warning about. */
+const FIX_HINT_M = 75;
 let fixRun = null;           // the locate() in progress, or null
 /* The last position we committed to, for the readout in Settings: there is no
    other way to tell a sharp fix from a coarse one after the fact, and "it put
@@ -212,6 +223,7 @@ function fixApply(pos, final){
   if(final){
     lastFix = {lat, lon, acc: accuracy, at: Date.now()};
     if(typeof syncFixUI === 'function') syncFixUI();
+    if(typeof syncAccHint === 'function') syncAccHint();
   }
   if(typeof paintFixAcc === 'function') paintFixAcc();
   marker.setLngLat([lon,lat]).addTo(map);
@@ -468,7 +480,11 @@ function syncFixUI(){
         ? t('set.fixnoacc')
         : t('set.fixacc').replace('{a}', Math.round(lastFix.acc)))
       .replace('{when}', when)
-      + ((lastFix.acc == null || lastFix.acc > FIX_GOOD_M) ? ' ' + t('set.fixcoarse') : '');
+      + ((lastFix.acc == null || lastFix.acc > FIX_GOOD_M) ? ' ' + t('set.fixcoarse') : '')
+      // The one line in Settings that never goes away, whatever happened to the
+      // banner on the other screens — dismissing that banner only says "stop
+      // interrupting me elsewhere", not "stop telling me this at all".
+      + (lastFix.acc != null && lastFix.acc > FIX_HINT_M ? ' ' + t('set.fixhint') : '');
     el.className = 'hint' + ((lastFix.acc != null && lastFix.acc <= FIX_GOOD_M) ? ' good' : ' warn');
     return;
   }
@@ -491,6 +507,25 @@ function showStatus(kind,t1,t2,top){
 /* Every message has to be dismissable — it sits over the map. */
 function hideStatus(){ $('status').className='status'; }
 $('stClose').onclick = hideStatus;
+
+/* ---------- "check your location permission" banner ----------
+ * Same contract as the install bar just above it in index.html: it appears
+ * on its own, and dismissing it makes it gone for good, everywhere except
+ * Settings — which keeps saying the same thing (see set.fixhint above)
+ * because turning off an interruption is not the same as no longer wanting
+ * to know. Recomputed on every final fix, so it also disappears by itself,
+ * without anyone dismissing anything, the moment the position genuinely
+ * sharpens up again.
+ */
+function accHintOff(){ return recall('acc.hintoff') === '1'; }
+function syncAccHint(){
+  const el = $('accHint');
+  if(!el) return;
+  const show = !accHintOff() && lastFix && lastFix.acc != null && lastFix.acc > FIX_HINT_M;
+  el.hidden = !show;
+  if(show) $('accHintTxt').textContent = t('gps.hintacc').replace('{a}', Math.round(lastFix.acc));
+}
+$('accHintClose').onclick = () => { remember('acc.hintoff', '1'); $('accHint').hidden = true; };
 const marker = new maplibregl.Marker({color:'#1b4332'});
 
 /* our own locate button, down at the bottom with the zoom buttons */
