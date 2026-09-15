@@ -518,6 +518,25 @@ function huidigePr(){
 }
 function stopPrPoll(){ if(prPoll){ clearInterval(prPoll); prPoll = null; } }
 
+/* Coming back to the app is a refresh in itself.
+ *
+ * A phone does not sit and wait: you switch to GitHub, or WhatsApp, or the
+ * screen just locks, and the browser suspends its own timers the moment the
+ * tab goes into the background — the 15 s poll above included. Nothing in the
+ * page can keep a timer running while it is not the one on screen; the only
+ * moment that is guaranteed to run again is the tap that brings it back. So
+ * that tap is treated as a refresh: this fires whenever the page becomes
+ * visible again and re-runs toonPr(), which also renders the waiting-room
+ * cleanup list underneath it (its very first line) — the one place that had
+ * no polling of its own at all and so went stale for exactly as long as you
+ * were looking elsewhere. Harmless when the admin screen was never opened:
+ * toonPr() itself does nothing without a repo and a token. */
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && document.body.classList.contains('admin')){
+    toonPr().catch(()=>{});
+  }
+});
+
 function previewUrl(nummer){
   // pages.yml always publishes previews on this same pattern. Mind the
   // exception: a repo named exactly <owner>.github.io sits at the root of the
@@ -647,8 +666,15 @@ async function toonPr(){
   // is still running is exactly the mistake the preview exists to prevent.
   $('admPrMerge').disabled = !klaar;
 
+  // Poll while there is still something to wait for — not only while a run is
+  // actually `bezig`. Right after a push there is a real gap, seconds to
+  // sometimes closer to a minute, before GitHub's Actions API lists a run for
+  // it at all: `lijst` is empty then, `bezig` is `false` (nothing to be busy
+  // WITH), and this used to just sit there showing "in afwachting" forever —
+  // "verversen" was the only way out. `!klaar && !mislukt` also covers that gap;
+  // once a run finally appears the ordinary `bezig` case takes over as before.
   stopPrPoll();
-  if(bezig) prPoll = setInterval(() => { toonPr().catch(()=>{}); }, 15000);
+  if(!klaar && !mislukt) prPoll = setInterval(() => { toonPr().catch(()=>{}); }, 15000);
 }
 
 $('admPrRefresh').onclick = () => toonPr().catch(err => showStatus('out', err.message, ''));

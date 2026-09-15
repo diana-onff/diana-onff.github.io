@@ -1639,3 +1639,57 @@ gepubliceerde wereldbestand staan.
 Volledige suite: 21 bestanden, 517 checks, allemaal "ALL OK" — op
 `test_directory.py` na, ongemoeid gelaten zoals steeds (geen netwerktoegang
 hier naar de echte WWFF-directory).
+
+**Uitgevoerd op 2026-09-15 — v1.18.0.** Denemarken bleek na de vorige fix ook
+in orde, maar met een bijkomende vaststelling: telkens manueel op "verversen"
+drukken vóór het publiceren, en nadien nog eens bij het opruimen van de
+wachtruimte. Twee afzonderlijke oorzaken in `toonPr()` (admin.js), allebei
+onschuldig op een bureau-scherm en allebei hinderlijk op een telefoon.
+
+Eerst een gat vlak na een push: GitHub's Actions-API vermeldt een run pas na
+enkele seconden tot bijna een minuut. Zolang die lijst leeg is, was `bezig`
+`false` — er was tenslotte niets om druk mee bezig te zijn — en de eigen timer
+werd dan nooit opgestart (`if(bezig) prPoll = setInterval(...)`). Het scherm
+bleef dus op "in afwachting" staan tot iemand zelf ververste, terwijl er in
+werkelijkheid nog altijd iets te verwachten viel. De voorwaarde is verbreed
+naar `!klaar && !mislukt`: zolang er niets afgerond of mislukt is, blijft er
+gepolld, gat inbegrepen; zodra een run verschijnt neemt de gewone `bezig`-check
+het gewoon over.
+
+Tweede, en dat lost geen enkele timer-instelling op: een browser zet eigen
+timers stil zodra het tabblad naar de achtergrond gaat — naar GitHub
+overschakelen, naar WhatsApp, of gewoon het scherm op slot. Precies dat maakt
+van "terugkeren naar de app" zelf de betrouwbaarste ververs-gelegenheid die er
+is. Een `visibilitychange`-listener roept nu `toonPr()` opnieuw op zodra het
+tabblad weer zichtbaar wordt (enkel als het adminscherm open staat). `toonPr()`
+begint sowieso met `renderCleanup()` — dezelfde tik ververst dus ook de
+wachtruimtelijst, het enige stuk van het scherm dat tot nu toe helemaal geen
+eigen polling had.
+
+- **`web/js/admin.js`** — pollvoorwaarde verbreed (`!bezig` → `!klaar &&
+  !mislukt`) en een `visibilitychange`-listener toegevoegd die bij het
+  zichtbaar worden van het scherm `toonPr()` (en daarmee `renderCleanup()`)
+  herhaalt.
+- **`build/tests/test_admin_poll.py`** (nieuw) — GitHub vervangen door een
+  stand-in zoals in `test_adminupload.py`: dat een push zonder run al meteen
+  blijft pollen, dat een echte run de gewone pollcyclus overneemt en die stopt
+  bij een afgeronde run, dat terugkeren naar het tabblad zelf als ververs geldt,
+  en dat diezelfde terugkeer ook de opruimlijst meeneemt.
+
+Tijdens het schrijven van die test bleek de PR-vaste-waarde in `localStorage`
+niet te overleven: `unlockAdmin()` roept bij het laden zelf al eenmaal
+`toonPr()` aan, vóór de test haar eigen GitHub-vervanger kan inpluggen — die
+allereerste, echte aanroep naar `api.github.com` faalt in de testomgeving
+(geen netwerk, geen geldig token) en `toonPr()` leest dat terecht als "deze PR
+bestaat niet meer", en wist het record alweer. Verholpen door de PR-waarde pas
+te zetten nadat de stand-in klaarstaat, precies zoals een echte PR ook pas
+enkele ogenblikken na een echte upload zou ontstaan — geen wijziging aan
+`admin.js` nodig, enkel aan hoe de test zichzelf opzet.
+
+`APP_VERSION` naar 1.18.0 — dit raakt `web/js/`, in tegenstelling tot de vorige
+(build-script-only) ronde. `build/tests/README.md` kreeg er een rij bij voor
+`test_admin_poll.py`.
+
+Volledige suite: 22 bestanden, 527 checks, allemaal "ALL OK" — op
+`test_directory.py` na, ongemoeid gelaten zoals steeds (geen netwerktoegang
+hier naar de echte WWFF-directory).
