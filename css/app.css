@@ -199,9 +199,12 @@
   }
   .nav button[data-view="viewSpots"] .ic{font-size:12px;font-weight:700}
   .nav button.on{color:var(--green);font-weight:650}
-  body.has-nav .sheet{bottom:62px}
-  body.has-nav .status{bottom:78px}
-  body.has-nav .maplibregl-ctrl-bottom-right{margin-bottom:66px}
+  /* Same fixed-guess problem as .ver above, same fix: track the bar's real
+     height through --nav-h instead of the number that happened to be true on
+     whichever phone these were last measured on. */
+  body.has-nav .sheet{bottom:var(--nav-h, 62px)}
+  body.has-nav .status{bottom:calc(var(--nav-h, 62px) + 16px)}
+  body.has-nav .maplibregl-ctrl-bottom-right{margin-bottom:calc(var(--nav-h, 62px) + 4px)}
 
   .view{
     position:absolute;z-index:8;inset:0 0 62px;background:var(--paper);
@@ -329,9 +332,14 @@
 
   /* The little version badge, bottom left. Small enough to forget, big enough to
      read out over the phone when something goes wrong. The map controls and the
-     attribution sit bottom right, so: left. */
+     attribution sit bottom right, so: left.
+     Sits just above the bottom bar via --nav-h (see nav.js) rather than a fixed
+     guess at the bar's height — a guess that used to land the badge half UNDER
+     the bar the moment a phone's own gesture-navigation inset, or a larger
+     system text size, made the real bar taller than assumed. */
   .ver{
-    position:absolute; z-index:6; left:10px; bottom:70px;
+    position:absolute; z-index:6; left:10px;
+    bottom:calc(var(--nav-h, 62px) + 8px);
     font:11px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
     color:var(--ink-3); background:rgba(255,255,255,.72);
     border-radius:7px; padding:4px 7px; cursor:pointer;
@@ -445,7 +453,14 @@
   /* ---------- install bar ---------- */
   .instbar{
     position:absolute; left:10px; right:10px; z-index:7;
-    bottom:calc(var(--nav-h, 62px) + 10px + env(safe-area-inset-bottom));
+    /* --nav-h is now actually kept in sync (nav.js) — it was referenced here
+       before that was true, always falling back to the bare "62px" below, so
+       the explicit + env(safe-area-inset-bottom) term used to be doing the
+       one job that mattered: covering a gesture-navigation inset the fallback
+       knew nothing about. The bar's real height already includes that inset
+       (it is part of its own bottom padding), so adding it again here now
+       would double it. */
+    bottom:calc(var(--nav-h, 62px) + 10px);
     display:flex; align-items:center; gap:8px;
     background:var(--green); color:#fff; border-radius:var(--radius);
     padding:10px 12px; box-shadow:var(--shadow); font-size:13.5px;
