@@ -26,6 +26,42 @@ const BAND_LIST_FULL  = ['160m','80m','60m','40m','30m','20m','17m','15m',
                          '12m','10m','6m','4m','2m','70cm','23cm'];
 const BAND_LIST_SHORT = ['80m','40m','30m','20m','15m','10m'];
 
+/* Same reasoning as the band list above, just confirmed later: an activation
+ * covers an afternoon and is regularly worked in more than one mode, and
+ * Spotline's own live agenda feed shows entries like "SSB, CW" and
+ * "SSB, CW, FT8" — comma-space, same as bands. Every value here has to be one
+ * the Worker's checkModes() accepts (worker/src/index.js MODES); "Other" is
+ * deliberately left out because it was never in that set either — a mode the
+ * Worker would 400 on is worse than none, and anything unusual belongs in the
+ * remark instead. */
+const MODE_LIST = ['SSB','CW','FT8','FT4','RTTY','PSK','JS8','DATA','FM','AM'];
+let agModeSel = [];
+
+function fillModeOptions(){
+  const box = $('agModes'); if(!box) return;
+  box.innerHTML = MODE_LIST.map(m =>
+    `<button type="button" class="chip${agModeSel.includes(m) ? ' on' : ''}" data-mode="${m}">${m}</button>`
+  ).join('');
+}
+
+/* In list order, so "CW" tapped before "SSB" still reads "SSB, CW" — matching
+ * how Spotline's own feed writes it and how agBandValue() already behaves. */
+function agModeValue(){
+  return agModeSel.slice()
+    .sort((a,b) => MODE_LIST.indexOf(a) - MODE_LIST.indexOf(b))
+    .join(', ');
+}
+
+$('agModes').addEventListener('click', e => {
+  const b = e.target.closest('.chip[data-mode]'); if(!b) return;
+  const mode = b.dataset.mode;
+  if(agModeSel.includes(mode)) agModeSel = agModeSel.filter(x => x !== mode);
+  else agModeSel.push(mode);
+  b.classList.toggle('on', agModeSel.includes(mode));
+  vergeetControleAg();
+  validateAgenda();
+});
+
 /* An announcement covers an afternoon, not a single frequency, so it takes as
  * many bands as you like — unlike a spot, which is one signal on one band at
  * one moment. Spotline's own agenda feed shows this is how the field is used
@@ -137,7 +173,7 @@ function agendaVelden(){
     pin:            $('agPin').value.trim(),
   };
   const band = agBandValue(); if(band) uit.band = band;
-  const mode = $('agMode').value;        if(mode) uit.mode = mode;
+  const mode = agModeValue(); if(mode) uit.mode = mode;
   const rem  = $('agRemarks').value.trim(); if(rem) uit.remarks = rem;
   return uit;
 }
@@ -241,7 +277,8 @@ $('agSend').onclick = async () => {
       showStatus('in', t('ag.ok'), `${v.activator_call} · ${v.reference}`);
       $('agReference').value = ''; $('agStart').value = ''; $('agEnd').value = '';
       agBandSel = []; fillBandOptions();
-      $('agMode').value = ''; $('agRemarks').value = ''; $('agPin').value = '';
+      agModeSel = []; fillModeOptions();
+      $('agRemarks').value = ''; $('agPin').value = '';
       $('agCount').textContent = '0/100';
       $('fbAgReference').textContent = ''; $('fbAgReference').className = 'fb';
     } else {
@@ -265,7 +302,7 @@ $('agSend').onclick = async () => {
     validateAgenda();
   });
 });
-['agStart','agEnd','agMode','agPin'].forEach(id => $(id).addEventListener('input', () => {
+['agStart','agEnd','agPin'].forEach(id => $(id).addEventListener('input', () => {
   vergeetControleAg();
   validateAgenda();
 }));
@@ -289,6 +326,7 @@ function gaNaarView(id, extra){
 
 function agendaOpen(){
   fillBandOptions();
+  fillModeOptions();
   const ref = selected;
   const z = ref && zones && zones.features.find(f => f.properties.ref === ref);
   if(z){ $('agReference').value = z.properties.ref; checkAgReference(); }
@@ -302,6 +340,7 @@ function agendaOpen(){
 /* Filled once at start-up as well, so the field is never an empty dropdown for
    anything that reaches it before the screen has been opened by hand. */
 fillBandOptions();
+fillModeOptions();
 
 $('agNewOpen').onclick = () => { agOrigin = 'viewSpots'; gaNaarView('viewAgendaNew', agendaOpen); };
 $('agFromSelf').onclick = () => { agOrigin = 'viewSelf'; gaNaarView('viewAgendaNew', agendaOpen); };
