@@ -1,210 +1,46 @@
-# Diana
+# Browser tests
 
-Map app for the Belgian ONFF nature reserves (Belgian Flora & Fauna, part of WWFF)
-with live WWFF spots. A PWA on an open-source base map, which works offline and can
-be embedded in a website.
-
-Code: MIT. Data: not free — see [LICENSE](LICENSE).
-
-This is the **public** repository: the app, the data, the workflows, and the
-Worker's code. The ONFF source KMZ lives in a separate, **private**
-repository (`diana-source`) — see [source/README.md](source/README.md) and
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for why. Putting all of this
-online from scratch is covered in [docs/INSTALL.md](docs/INSTALL.md); the
-short orientation on what runs where is in [DEPLOY.md](DEPLOY.md).
-
-## Documentation
-
-Detailed documentation per audience is in [`docs/`](docs/):
-
-| Document | Who for | Contents |
-|---|---|---|
-| [docs/INSTALL.md](docs/INSTALL.md) | whoever sets Diana up somewhere new | building the whole thing from zero — organisation, repositories, permissions, the Worker — with a checkpoint after every step |
-| [docs/DEVELOPER.md](docs/DEVELOPER.md) | developers | cloning the repo, the two GitHub Actions workflows, generating `data/*.json` — automatically and by hand |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | developers/administrators | where every data source comes from, which APIs are involved, which folders the app reads |
-| [docs/ADMIN.md](docs/ADMIN.md) | administrators | publishing a new ONFF release, using the admin screen in the app, troubleshooting |
-| [docs/MAINTENANCE.md](docs/MAINTENANCE.md) | whoever keeps Diana running | every credential in the project — where it lives, what breaks if it expires, how to replace it, and how to add a new administrator |
-| [docs/SPOTLINE.md](docs/SPOTLINE.md) | developers/administrators | the Cloudflare Worker that proxies WWFF's Spotline API, and why it has to exist |
-| [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | users | platforms, installing as an app, every screen explained, embedding, and the **limitations** (everything local, no synchronisation between devices) |
-
-This `README.md` and `DEPLOY.md` remain the shortest route for anyone already
-familiar with the repo; the `docs/` folder is the full explanation for each of
-the audiences above.
-
----
-
-## What is in this repo
-
-```
-source/           empty by default — the real KMZ lives in the private
-                  diana-source repo; see source/README.md
-build/            the conversion from KMZ to the data files the app loads       ← build time
-data/             the result — this is what the app fetches
-overrides.json    manual corrections that survive every new release
-web/              the web application itself                                    ← runtime
-worker/           the Cloudflare Worker that proxies WWFF Spotline — see docs/SPOTLINE.md
-docs/             the full documentation set — see the table above
-_site/            what gets published (made by build/site.sh, not in git)
-.github/          the two Actions that build the data and publish the site
-```
-
-Two halves that do not get mixed up: `build/` runs on a GitHub runner and never
-reaches a user; `web/` is what people open.
-
-## Running the app
-
-A static server is enough — the app has no backend.
+Playwright tests that run the app in a real (headless) browser, with every
+external host intercepted — so no network is needed for them.
 
 ```bash
-python3 -m http.server 8000        # from the repo root, not from web/
-# open http://localhost:8000/web/
+pip install playwright --break-system-packages
+python3 -m http.server 8011          # from the repo root
+python3 build/tests/test_new.py      # etc.
 ```
 
-Starting from inside `web/` does not work: the app fetches `../data/countries.json`,
-and that falls outside the server root.
-
-The bottom bar covers Map, Spots, self-spotting, announcing an activation,
-an activation Session, Nearby, the band-plan Rules, and
-Settings — every screen explained in full in
-[docs/USER_GUIDE.md §3](docs/USER_GUIDE.md#3-the-screens). Seven languages
-(English, Dutch, French, German, Danish, Italian, Spanish, Portuguese), and a service
-worker that keeps everything available offline.
-
-Self-spotting and announcing an activation both go through a small
-Cloudflare Worker that holds WWFF's API key server-side — the app itself has
-no server, so that key can't live in it. A plain form-post fallback exists
-for when the Worker is unreachable. See
-[docs/SPOTLINE.md](docs/SPOTLINE.md) for the whole story, including why
-that's necessary at all.
-
-Reference numbers are on by default. They come from a separate point source with one
-point per reference: put them on the polygon layer and MapLibre draws a label per
-polygon part — and ONFF-0329 consists of 67 separate parcels.
-
-**URL parameters** (also for the embed on the blogspot):
-
-| Parameter | What |
+| File | What it guards |
 |---|---|
-| `?lang=nl\|fr\|en\|de\|da\|it\|es\|pt` | force the language; by default it follows the browser only if you explicitly choose "Follow the browser" in Settings — otherwise it's English |
-| `?ref=ONFF-0104` | zoom straight in on one area |
-| `?prov=limburg` | zoom in on a province |
-| `?spots=1` | switch the live-spots map layer on right away |
-| `?world=1` | switch the "other WWFF areas worldwide" map layer on right away |
-| `?embed=1` | hide the app chrome for an iframe |
-| `?admin=1` | show the admin screen (also: tap the logo five times) |
+| `test_new.py` | points without a boundary: loading, drawing, panel, search, layer button, and that the GPS test skips them |
+| `test_more.py` | language choice (English by default, "follow the browser", staying saved) and the install flow per platform |
+| `test_swipe.py` | swiping down to close panels, and whether all our own layers survive six style switches |
+| `test_final.py` | that the install bar gives way to an open panel |
+| `test_splash.py` | splash screen, version number, the 16 dots, and whether the bottom bar is aligned |
+| `test_nearby.py` | the Nearby screen: what it does without a position, distances from a locator and from a GPS fix, the three orderings, tapping through to the map — and above all that its QSO counts are the WWFF directory's real ones, with nothing asked of Google Sheets |
+| `test_worldpoints.py` | worldwide WWFF areas: on by default, clustering, that the points follow the one country setting rather than a second dropdown of their own, layer off/on, and that an embed leaves it off unless `?world=1` |
+| `test_country.py` | the one country setting: that your callsign decides it until you pick one, that changing it swaps the boundaries while the app is running (checked against what MapLibre is really holding, not only the globals), that the count under the map and Settings follow, that a selection from the country that just left is let go, that a country without boundaries says so and keeps its points, and that choosing a country no longer drags the spots filter along with it |
+| `test_spotsalways.py` | that the map opens unasked where you are standing, that spots cannot be switched off, and that only the lines leading to them are toggleable (and stay saved) |
+| `test_adminupload.py` | where the admin panel writes in the source repo: that a country must be chosen before anything can be sent, that the upload lands in that country's folder, that publishing moves it to `source/<country>/`, and that a file from before the folders existed still moves correctly. Also the check before the upload: a file belonging to another country closes the send button, a matching one opens it, and a file that cannot be read blocks nothing. GitHub is replaced by a recorder, so no token and no network |
+| `test_kmlshapes.py` | the three layouts real WWFF releases come in (no browser): a folder per province (Belgium), one folder for everything (Germany), and a `<Folder>` at the root with no grouping at all (Denmark) — and that a file for the wrong country, a file whose areas carry no number, and a file with no areas are each refused with a reason instead of writing an empty country |
+| `test_countries.py` | the per-country build (no browser): that a country lands in its own files, that the manifest is merged rather than rewritten, that building one country leaves another's files untouched byte for byte, that the country just built stops appearing as a bare point, and that a country built earlier still does appear as one — so a second boundaried country never goes invisible to everyone else |
+| `test_site.py` | what actually gets published (no browser): builds two countries for real, runs `build/site.sh` over them, and demands that everything `data/countries.json` names is in the output — checked against the manifest, not against a list of filenames. Also that `source/` and every KMZ stay out, that the version stamp and the service worker's cache name are filled in, that a manifest promising a file that is not there stops the publication, and that both a data set older than the manifest and one that has dropped the old filenames entirely still publish. This is the test that was missing: every other file here reads `data/` directly, so nobody ever looked at what `site.sh` produced |
+| `test_multicountry.py` | the app with more than one country on board: loading from the manifest, pooling two countries' boundaries, an invented second country standing in for the ones that have no data yet, the fallback to the old Belgian filenames when there is no manifest, and one country failing to load without taking the other down |
+| `test_directory.py` | the build step itself (no browser): impossible coordinates, leaks between the layers, and whether `--strict` really overwrites nothing when the directory is unreachable or truncated |
+| `test_spotsfilter.py` | spots filter: worldwide by default, ONFF-only, that the quick filter and Settings stay in sync and survive a reload, and that Settings' country picker only ever changes the boundaries — never the spots filter, which is its own choice with its own storage key |
+| `test_spot.py` | reporting a spot yourself: reference checking, check-then-send, and every answer the Worker can give (201, 400, 409, 429, 503, unreachable) |
+| `test_agenda.py` | announcing an activation: the date rules, local time going out as UTC, the PIN kept on the device, all three ways into the screen, and that both band and mode are multiple choice — several of each travel as one comma-separated field, in a fixed order, and the mode row only ever offers what the Worker's own `checkModes()` accepts |
+| `test_visual.py` | that the screens actually look right, by taking and inspecting screenshots |
+| `test_split.py` | that `web/js/*.js` stays loadable: every file has a `<script>` tag, every file is in `SHELL_FILES`, nothing throws at load, and the files can still see each other's declarations |
+| `test_gps_watch.py` | how a position is obtained: that a coarse first fix does not get to answer, that the sharp one does, that the watch stays open after answering and a sharper fix which disagrees overturns the verdict (the indoor-wifi case), that ordinary jitter does not, that an accuracy the browser will not state is never read as perfect, that every verdict states the accuracy and draws a ring at that radius, that the readings are judged against each other rather than on the accuracy each claims for itself (a phone scattering sixty metres while reporting ±5 m is caught, a single wild reading is outvoted, a coarse reading does not inflate a sharp one's margin, and walking is not mistaken for scatter), that a cached fix is refused (`maximumAge: 0`), and that nothing falls back to asking once with `getCurrentPosition` |
+| `test_gps_accuracy.py` | "am I inside this zone?" treats the GPS's reported accuracy the same way on both sides of a boundary — just outside by less than the accuracy is "too close to call", exactly like just inside already was |
+| `test_admin_poll.py` | the admin panel's pull-request card keeps checking on its own: that a push with no Actions run listed yet is not mistaken for "nothing to wait for" (the gap right after a push), that the ordinary poll still takes over once a run appears and stops once one is done, and that coming back to the app after being away — the tab was backgrounded, its timers suspended — is itself treated as a refresh, for the pull request and for the waiting-room cleanup list underneath it |
+| `test_spot_arcs.py` | the arc lines to the spots and to announced activations keep pointing at where you actually are: that a position update landing while the map style reports itself busy — the ordinary case, since `fixApply()` calls `map.easeTo()` right before asking for a redraw — still moves the lines with the marker instead of leaving them behind, that this holds even past the old ~8 s retry budget, that a genuine style switch (which really does wipe every source) still waits correctly and catches up the moment the style is ready, that a newer position wins over an older one still waiting to be drawn, and that coming back to the app refreshes the spots instead of waiting for the 30 s timer |
+| `test_acc_hint.py` | the "check your location permission" banner: that it appears once a fix stays worse than 75 m and carries the live figure, that it disappears on its own the moment a later fix is sharp again — no dismiss required — right at the 75 m threshold it stays quiet while the older "too coarse" note still fires above 25 m, that dismissing it writes the choice to storage and hides it for good, including across a reload, while the same tip in Settings keeps showing regardless of that dismissal |
 
-```html
-<iframe src="https://diana-onff.github.io/?embed=1&prov=antwerpen&lang=en&spots=1"
-        width="100%" height="600" style="border:0" loading="lazy"></iframe>
-```
+The style-switch test in `test_swipe.py` is the most important one: that is where
+the bug lived that made all our own layers disappear one by one after
+`map.setStyle()`.
 
-Full parameter reference and a live example:
-[docs/USER_GUIDE.md §5](docs/USER_GUIDE.md#5-embedding-diana-on-another-page).
-
-**One external, third-party source**: live spots and the agenda come from
-`spots.wwff.co`, as a plain cross-origin read — confirmed working, no proxy
-needed for reading, and with a visible message rather than a silent gap if it
-is unreachable. Everything else Diana shows ships with the release, including
-the QSO counts and last-activation dates behind the Nearby screen.
-*Writing* (self-spotting, announcing) is the part that needs the Worker
-above, because that's the part that needs the API key. Full detail in
-[docs/ARCHITECTURE.md §2](docs/ARCHITECTURE.md#2-where-the-apps-own-data-comes-from).
-
----
-
-## Publishing a new ONFF release
-
-Two equivalent ways to do this — a plain upload on github.com, or Diana's own
-in-app Admin panel — both ending at the same pull request, with a diff report
-and a preview link to look at before you merge. Merging **is** publishing;
-closing (or reverting an already-merged one) discards it. An area that has
-disappeared from a release is not an error but real information — ONFF does
-retire references — which is why it's always shown in the report, never
-applied silently.
-
-The full walkthrough, including the Admin panel's step-by-step upload flow,
-is [docs/ADMIN.md §1](docs/ADMIN.md#1-publishing-a-new-onff-release).
-
----
-
-## Correcting names
-
-The area names in the KMZ contain typos and inconsistent spellings. The script picks
-the best variant automatically, but not always the right one. Correct those in
-`overrides.json`:
-
-```json
-"ONFF-0599": {
-  "name": "Carrière de l'Alouette",
-  "_why": "KMZ schrijft \"Carriere de 'Alouttel\" — twee typfouten"
-}
-```
-
-The key is always the **number**, never the name. Add a `_why`, so that three years
-from now it is still clear why that correction is there. A pull request on this file
-makes the Action run again.
-
----
-
-## Running it locally
-
-```bash
-pip install -r build/requirements.txt
-python build/kmz2geojson.py --kmz "source/ONFF 20260101.kmz"
-```
-
-Takes about half a minute. Options:
-
-| Option | Default | What for |
-|---|---|---|
-| `--tolerance` | `0.00005` | simplification in degrees; 0.00005 ≈ 5 m |
-| `--decimals` | `5` | rounding of the coordinates; 5 ≈ 1 m |
-| `--out` | `data` | output folder |
-| `--overrides` | `overrides.json` | corrections file |
-| `--report` | `report.md` | where the diff report goes |
-
----
-
-## The data files
-
-| File | Size | What |
-|---|---|---|
-| `data/countries.json` | small | which countries Diana has boundaries for, and which files belong to each. This is what the app reads first; everything below follows from it |
-| `data/zones/onff.geojson` | 3.7 MB (1.0 MB gzipped) | one MultiPolygon per reference, with name, province, area and whatever attributes are known. One such file per country |
-| `data/zones/onff-points.geojson` | small | references that *are* in the WWFF directory but have no boundary in the KMZ, as a point. The app shows them as a dotted ring and deliberately does not run an "am I inside" test on them |
-| `data/zones/onff-activity.json` | 39 kB | per reference the number of QSOs and the date of the last activation, from the WWFF directory. This is what the Nearby screen and the zone panel show |
-| `data/zones/onff-index.json` | 210 kB | the same list without geometry, plus the points. It is *not* loaded by the app — that builds its own index from the two geojson files. Meant for reports and tooling alongside |
-| `data/meta.json` | small | provenance: which source file, which release, which settings, and how many references without a boundary have been placed |
-
-That the whole of Belgium fits in one megabyte is the reason Diana needs no tile
-server and can work entirely offline.
-
-### What not to expect in the data
-
-Attribute coverage in the KMZ is uneven. Of the 932 areas:
-
-- **565** have a designation (`desig`), **515** an IUCN category, **445** a manager
-- **75** a registration number, **81** a region code
-- and roughly half have **nothing** beyond a name and a number
-
-Every field is therefore optional. The app has to leave empty fields out, not show
-them as a dash. What is always computed and always present: area, centre point,
-bounding box and province.
-
-### Known quirks of the source
-
-- The reference number is **not in a field** but in the name of the parent folder, as
-  `ONFF-nnnn <name>`. That is why everything works off the number.
-- The KMZ contains a Maidenhead grid layer of some 32,700 placemarks. That gets thrown
-  away — a grid is cheaper to compute than to ship.
-- Underneath it is a WDPA export with the ONFF layer on top; hence the fields in
-  capitals (`MANG_AUTH`, `GIS_AREA`, `IUCN_CAT`) alongside the Flemish ones in
-  lowercase (`opp_ha`, `inspireid`).
-- **Which references exist comes from the WWFF directory**
-  (`https://wwff.co/wwff-data/wwff_directory.csv`, refreshed daily, 68,000 references
-  worldwide of which 964 are ONFF). The KMZ only says which ones have a *boundary*.
-  Of the 948 active ONFF references, 932 have a polygon; the remaining 16 go on the
-  map as a **point**, with the coordinate from the directory or from
-  `overrides.json` (`"point": [lon, lat]`). Deleted references are not shown. Every
-  reference appears exactly once: a polygon always beats a point. See
-  [docs/ADMIN.md](docs/ADMIN.md#31-a-reference-with-no-boundary).
+`test_split.py` is the one to run after touching anything under `web/js/`. Those
+files are plain scripts sharing one global scope, in a fixed order — nothing in
+the language enforces that, so this test does. See `docs/DEVELOPER.md`.
