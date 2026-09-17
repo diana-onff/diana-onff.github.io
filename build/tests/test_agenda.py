@@ -253,7 +253,47 @@ with sync_playwright() as p:
     ok(sorted(on) == ["2m","40m"], f"2m stays on screen and selected ({on})")
     pg.evaluate("() => { agBandSel = []; cfg.bands='full'; saveSettings(); fillBandOptions(); }")
 
-    print("\n[18] no JS errors along the way")
+    print("\n[19] modes are a multiple choice too, in the same shape Spotline's own feed uses")
+    # Mirrors [15]-[17] above for band: the old <select id="agMode"> is gone,
+    # replaced with chips built from MODE_LIST — every value the Worker's
+    # checkModes() actually accepts, with "Other" dropped because it never
+    # was accepted (see worker/src/index.js MODES).
+    pg.evaluate("() => document.querySelector('#nav button[data-view=\"viewAgendaNew\"]').click()")
+    pg.wait_for_timeout(300)
+    ok(pg.evaluate("() => !document.getElementById('agMode')"), "the old single dropdown for mode is gone")
+    modes = pg.evaluate("() => [...document.querySelectorAll('#agModes .chip')].map(c=>c.dataset.mode)")
+    ok(modes == ["SSB","CW","FT8","FT4","RTTY","PSK","JS8","DATA","FM","AM"],
+       f"the mode row matches what the Worker accepts ({modes})")
+
+    print("\n[20] several modes travel as one comma-separated field, in list order")
+    pg.evaluate("() => { agModeSel = []; fillModeOptions(); }")
+    for m in ["CW", "SSB"]:                  # deliberately not in list order
+        pg.click(f"#agModes .chip[data-mode='{m}']")
+    ok(pg.evaluate("() => agModeValue()") == "SSB, CW",
+       f"tapped CW then SSB, sent as '{pg.evaluate('() => agModeValue()')}'")
+    ok(pg.evaluate("() => document.querySelector('#agModes .chip[data-mode=\"CW\"]').classList.contains('on')"),
+       "and the chips show what is picked")
+    pg.click("#agModes .chip[data-mode='CW']")
+    ok(pg.evaluate("() => agModeValue()") == "SSB", "tapping again takes one off")
+
+    print("\n[21] a check round-trips several modes to the (stubbed) Worker")
+    fill(pg, ref="ONFF-0007")
+    pg.evaluate("() => { agModeSel = ['SSB','CW']; fillModeOptions(); }")
+    reply = {"status": 200, "body": {"dryrun": True}}
+    seen.clear()
+    pg.click("#agCheck")
+    pg.wait_for_timeout(400)
+    ok(len(seen) == 1 and seen[0].get("mode") == "SSB, CW",
+       f"mode travels as 'SSB, CW' ({seen[0].get('mode')})")
+
+    print("\n[22] sending clears the mode chips too, same as band")
+    reply = {"status": 201, "body": {"agenda_id": 778}}
+    pg.click("#agSend")
+    pg.wait_for_timeout(400)
+    on_after = pg.evaluate("() => document.querySelectorAll('#agModes .chip.on').length")
+    ok(on_after == 0, "no mode stays selected after a successful send")
+
+    print("\n[23] no JS errors along the way")
     ok(not errs, f"no page errors: {errs[:2] if errs else 'ok'}")
 
     br.close()

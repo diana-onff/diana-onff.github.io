@@ -1853,3 +1853,58 @@ Volledige suite: 24 bestanden, 557 checks, allemaal "ALL OK" — op
 `test_directory.py` na, ongemoeid gelaten zoals steeds (geen netwerktoegang
 hier naar de echte WWFF-directory). `test_swipe.py` liep deze keer in enkele
 seconden door, geen vals alarm ditmaal.
+
+**Uitgevoerd op 2026-09-17 — v1.20.0.** Mode bij een aankondiging wordt een
+multiselect, net als band dat al was. De redenering stond al letterlijk in
+de code bij `agBandSel` ("an announcement covers an afternoon, not a single
+frequency") en geldt woord voor woord ook voor mode; bevestigd met de echte
+`agendas.json`-feed van Spotline, waarin entries als `"mode": "SSB, CW"` en
+`"SSB, CW, FT8"` gewoon voorkomen — exact het komma-spatie-formaat dat band
+al gebruikte.
+
+- **`web/js/agenda.js`** — `MODE_LIST` (SSB, CW, FT8, FT4, RTTY, PSK, JS8,
+  DATA, FM, AM — elk een waarde die de Worker ook echt aanvaardt; "Other"
+  bewust weggelaten, want dat gaf vandaag al een 400 terug), `agModeSel`,
+  `fillModeOptions()` en `agModeValue()`, één-op-één gespiegeld van de
+  bestaande bandchips. `agendaVelden()` gebruikt nu `agModeValue()` in
+  plaats van `$('agMode').value`; reset en initialisatie volgen hetzelfde
+  patroon als bij band.
+- **`web/index.html`** — `<select id="agMode">` vervangen door
+  `<div class="chips" id="agModes">`, met een nieuwe label-sleutel `ag.mode`.
+- **`web/js/i18n-strings.js`** — `ag.mode` toegevoegd in alle acht talen,
+  naast de bestaande `ag.band`-sleutel.
+- **`worker/src/index.js`** (v1.1.0) — `checkModes()` naast het bestaande
+  `checkMode()`: splitst op komma, toetst elk deel afzonderlijk tegen
+  dezelfde `MODES`-set, laat dubbels stilzwijgend samenvallen, en behoudt de
+  volgorde die binnenkwam (deze Worker herschrijft geldige invoer niet, hij
+  weigert enkel onzin — zelfde terughoudendheid als bij band, dat als vrije
+  tekst doorgaat). `buildAgenda()` roept nu `checkModes()` i.p.v.
+  `checkMode()` voor het `mode`-veld van een aankondiging; `checkMode()`
+  zelf blijft ongewijzigd voor spots, want daar is één signaal op één
+  moment nog steeds één mode.
+- **`worker/test/validation.mjs`** — nieuwe sectie [9]: een enkele mode,
+  meerdere met en zonder spatie na de komma, dubbels die samenvallen, dat de
+  gegeven volgorde bewaard blijft, dat één foute mode tussen goede de hele
+  aankondiging weigert mét naam van het foute woord, en dat mode optioneel
+  blijft.
+- **`build/tests/test_agenda.py`** — secties [19]–[22]: dat de oude
+  dropdown weg is, dat de chiprij exact overeenkomt met wat de Worker
+  aanvaardt, dat getikte modes in lijstvolgorde vertrekken, dat een
+  check-ronde "SSB, CW" ongewijzigd naar de (gestubde) Worker stuurt, en dat
+  verzenden ook de modechips leegt. `build/tests/README.md` bijgewerkt.
+  `APP_VERSION` naar 1.20.0.
+
+Volledige suite opnieuw gedraaid: 24 bestanden, 564 checks, allemaal
+"ALL OK" — op `test_directory.py` na (bekend, omgevingsgebonden). Eén vals
+alarm onderweg, zoals de vorige keer: `test_swipe.py` liep de eerste keer
+tegen de timeout aan bij stap [6] (stijlwissel), en haalde bij een geïsoleerde
+herhaling met wat meer tijd probleemloos "ALL OK" — netwerktraagheid, niets
+met deze wijzigingen te maken (dat bestand raakt `agenda.js`, `index.html`,
+`i18n-strings.js` of de Worker nergens aan).
+
+**Belangrijk voor deze levering: de Worker moet opnieuw gedeployed worden.**
+Anders dan bij v1.19.0 zit er deze keer ook een wijziging in
+`worker/src/index.js` — zonder herdeploy blijft de live Worker de oude
+`checkMode()` gebruiken en krijgt elke aankondiging met meer dan één mode
+gewoon een 400 terug, ook al stuurt de bijgewerkte app hem netjes op. Zie de
+stap-voor-stap instructie in het begeleidende bericht.

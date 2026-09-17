@@ -23,7 +23,7 @@
  * remarks. See log() at the bottom.
  * ==================================================================== */
 
-const VERSION = '1.0.0';
+const VERSION = '1.1.0';
 
 /* ---------------------------------------------------------------- limits */
 
@@ -143,6 +143,31 @@ function checkMode(raw) {
   return { ok: true, value: v };
 }
 
+/* Mirrors checkMode above, but for the agenda's mode field, which — unlike a
+ * spot's, one signal at one moment — can legitimately be several: Spotline's
+ * own live agenda feed shows real entries like "SSB, CW" and "SSB, CW, FT8",
+ * comma-space, the same shape band already travels in. Each part is checked
+ * exactly like a lone mode would be; one bad part fails the whole field, so
+ * the error still names exactly which word was wrong. Duplicates collapse
+ * silently — "SSB, SSB" is a double-tap, not something worth an error for —
+ * and the accepted order is whatever order they arrived in, never reordered
+ * here, the same restraint band gets: this Worker rejects nonsense, it does
+ * not rewrite good input to look a certain way. */
+function checkModes(raw) {
+  const v = String(raw || '').trim();
+  if (!v) return { ok: false, error: 'mode is missing' };
+  const parts = v.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+  if (!parts.length) return { ok: false, error: 'mode is missing' };
+  const out = [];
+  for (const p of parts) {
+    if (!MODES.has(p)) {
+      return { ok: false, error: `mode ${p} is not one of ${[...MODES].join(', ')}` };
+    }
+    if (!out.includes(p)) out.push(p);
+  }
+  return { ok: true, value: out.join(', ') };
+}
+
 function checkRemarks(raw) {
   if (raw === undefined || raw === null || raw === '') return { ok: true, value: undefined };
   const v = String(raw).trim();
@@ -243,7 +268,7 @@ function buildAgenda(body) {
 
   if (body.band !== undefined && body.band !== '') out.band = String(body.band).trim();
   if (body.mode !== undefined && body.mode !== '') {
-    take(checkMode(body.mode), 'mode');
+    take(checkModes(body.mode), 'mode');
   }
   if (body.dryrun === true) out.dryrun = true;
 

@@ -98,6 +98,26 @@ console.log('\n[7] agenda');
   ok(buildAgenda({ ...good, utc_start: 'tomorrow-ish' }).errors.length >= 1, 'unparseable time refused');
 }
 
+console.log('\n[9] agenda modes — several at once, comma-space, same shape Spotline\'s own feed uses');
+{
+  const good = {
+    activator_call: 'ON3VZ/P', reference: 'ONFF-0104',
+    utc_start: inOneHour, utc_end: inTwoHours, pin: '1234', poster: 'ON3VZ',
+  };
+  ok(buildAgenda({ ...good, mode: 'ssb' }).out.mode === 'SSB', 'a single mode still works, uppercased');
+  ok(buildAgenda({ ...good, mode: 'ssb, cw' }).out.mode === 'SSB, CW', 'two modes pass and are uppercased');
+  ok(buildAgenda({ ...good, mode: 'SSB,CW,FT8' }).out.mode === 'SSB, CW, FT8',
+     'no space after the comma is still accepted, and comes back with one');
+  ok(buildAgenda({ ...good, mode: 'SSB, SSB, CW' }).out.mode === 'SSB, CW', 'a repeated mode collapses once');
+  ok(buildAgenda({ ...good, mode: 'CW, SSB' }).out.mode === 'CW, SSB',
+     'the order given is kept — this Worker refuses nonsense, it does not rewrite good input');
+  const bad = buildAgenda({ ...good, mode: 'SSB, TELEPATHY' });
+  ok(bad.errors.length === 1, 'one bad mode among good ones fails the whole field');
+  ok(/TELEPATHY/.test(bad.errors[0]), 'and names exactly which word was wrong');
+  ok(buildAgenda({ ...good, mode: '' }).errors.length === 0, 'mode stays optional for an agenda entry');
+  ok(buildAgenda({ ...good, mode: ', ,' }).errors.length === 1, 'only commas and blanks is still "missing", not silently empty');
+}
+
 console.log('\n[8] dryrun is passed through when explicitly true');
 {
   ok(buildSpot({ ...goodSpot, dryrun: true }).out.dryrun === true, 'dryrun: true survives');
