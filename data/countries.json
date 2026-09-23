@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-23T05:45:29Z",
+  "generated": "2026-09-23T13:51:52Z",
   "countries": [
     {
       "program": "DLFF",
@@ -38,7 +38,7 @@
       "points": 6,
       "release": null,
       "source_file": "All OZFF.kmz",
-      "generated": "2026-09-23T05:45:15Z",
+      "generated": "2026-09-23T13:51:52Z",
       "bytes": 1348069,
       "files": {
         "zones": "zones/ozff.geojson",
