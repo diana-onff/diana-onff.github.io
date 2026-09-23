@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-22T05:59:10Z",
+  "generated": "2026-09-23T05:45:29Z",
   "countries": [
     {
       "program": "DLFF",
@@ -8,7 +8,7 @@
       "points": 2,
       "release": null,
       "source_file": "DLFF-Gebiete_jun26_2.kmz",
-      "generated": "2026-09-22T05:58:47Z",
+      "generated": "2026-09-23T05:45:09Z",
       "bytes": 13053066,
       "files": {
         "zones": "zones/dlff.geojson",
@@ -23,7 +23,7 @@
       "points": 2,
       "release": "2026-08-02",
       "source_file": "ONFF 20260802.kmz",
-      "generated": "2026-09-22T05:59:10Z",
+      "generated": "2026-09-23T05:45:29Z",
       "bytes": 3852361,
       "files": {
         "zones": "zones/onff.geojson",
@@ -38,7 +38,7 @@
       "points": 6,
       "release": null,
       "source_file": "All OZFF.kmz",
-      "generated": "2026-09-22T05:58:55Z",
+      "generated": "2026-09-23T05:45:15Z",
       "bytes": 1348069,
       "files": {
         "zones": "zones/ozff.geojson",
