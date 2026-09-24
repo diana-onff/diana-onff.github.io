@@ -127,15 +127,27 @@ function greatCircle(from, to, steps){
   return parts.filter(pp => pp.length > 1);
 }
 
-/* An agenda item has no coordinates in the Spotline file. For ONFF references
-   we know the centre point from our own data; for the rest we don't, and those
-   we leave off the map rather than making them up. */
+/* An agenda item has no coordinates in the Spotline file. For the country
+   whose boundaries are loaded we know the centre of the actual reference
+   polygon; for everywhere else we fall back to the same worldwide point file
+   the map's own dots use for other countries (data/wwff-world.geojson,
+   loaded as worldPoints in map.js). Only when a reference is in neither do we
+   leave it off the map rather than making a position up. */
 function refPosition(ref){
-  if(!ref || !zones) return null;
-  const f = zones.features.find(x => x.properties.ref === String(ref).toUpperCase());
-  if(!f) return null;
-  const b = bboxOf(f.geometry);
-  return [(b[0]+b[2])/2, (b[1]+b[3])/2];
+  if(!ref) return null;
+  const key = String(ref).toUpperCase();
+  if(zones){
+    const f = zones.features.find(x => x.properties.ref === key);
+    if(f){
+      const b = bboxOf(f.geometry);
+      return [(b[0]+b[2])/2, (b[1]+b[3])/2];
+    }
+  }
+  if(typeof worldPoints !== 'undefined' && worldPoints){
+    const wf = worldPoints.features.find(x => (x.properties.ref||'').toUpperCase() === key);
+    if(wf && wf.geometry && wf.geometry.type === 'Point') return wf.geometry.coordinates;
+  }
+  return null;
 }
 
 /* The little icon: a green disc with an antenna on it, as a map image. After a
