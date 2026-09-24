@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-24T06:00:13Z",
+  "generated": "2026-09-24T11:49:23Z",
   "countries": [
     {
       "program": "DLFF",
@@ -44,6 +44,21 @@
         "zones": "zones/ozff.geojson",
         "points": "zones/ozff-points.geojson",
         "activity": "zones/ozff-activity.json"
+      }
+    },
+    {
+      "program": "PAFF",
+      "country": "Netherlands",
+      "refs": 277,
+      "points": 11,
+      "release": "2026-09-24",
+      "source_file": "PAFF 20260924.kmz",
+      "generated": "2026-09-24T11:49:23Z",
+      "bytes": 2097637,
+      "files": {
+        "zones": "zones/paff.geojson",
+        "points": "zones/paff-points.geojson",
+        "activity": "zones/paff-activity.json"
       }
     }
   ]
