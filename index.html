@@ -477,6 +477,14 @@
 
   <div class="card">
     <h4 style="margin:0 0 8px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
+        data-i18n="privacy.loch">Location on this device</h4>
+    <p data-i18n="privacy.locbody">Diana always asks your browser for the most precise position it can give. Whether that is your exact position or a deliberately blurred approximate one is decided by you, in your browser or phone settings. No website can overrule that choice.</p>
+    <div class="locstate" id="privLocState" aria-live="polite"></div>
+    <button class="btn ghost" id="privLocBtn" style="font-size:13.5px;padding:10px" data-i18n="loc.check">Check my location now</button>
+  </div>
+
+  <div class="card">
+    <h4 style="margin:0 0 8px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
         data-i18n="privacy.deviceh">What stays on this device</h4>
     <p data-i18n="privacy.devicebody">Your callsign, portable callsign, locator, and settings such as bands, the "nearby" distance, quick-reply chips and language all live in this browser's local storage, together with your statistics choice and whether you have seen the welcome screen. If you use the Beheer/Admin screen with your own GitHub access token, that token is stored the same way, on this device only. Diana also keeps an offline copy of the map tiles and of the app itself, so it keeps working without a connection; that is ordinary browser cache, not personal data.</p>
     <button class="btn danger" id="privClearBtn2" style="font-size:13.5px;padding:10px" data-i18n="privacy.clearbtn">Clear everything on this device</button>
@@ -606,6 +614,8 @@
     <div class="cbrand"><img class="mark" src="logo.png" alt="" width="34" height="23"> Diana</div>
     <h4 class="ch" data-i18n="consent.loch">Your location</h4>
     <p data-i18n="consent.locbody">Diana uses your device's GPS to show which nature area you are in and to find WWFF references nearby. Your position is used only on the screen in front of you; it is never sent to a server.</p>
+    <button class="btn" id="consentLoc" data-i18n="loc.btn">Allow precise location</button>
+    <div class="locstate" id="consentLocState" aria-live="polite"></div>
     <h4 class="ch" style="margin-top:16px" data-i18n="consent.statsh">Anonymous statistics</h4>
     <p data-i18n="consent.statsbody">With your permission, Diana can count visits with a privacy-friendly tool, so we know the app is actually being used. No account, no profile, no tracking across other websites, and nothing at all unless you choose yes.</p>
     <button class="btn ghost" id="consentYes" data-i18n="consent.yes">Yes, I'll help</button>

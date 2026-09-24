@@ -48,6 +48,7 @@ function rerender(){
     renderSession();
     selfPrefill();
     if($('viewNearby').classList.contains('on')) renderNearby();
+    if(typeof syncLocState === 'function') syncLocState();
     if($('status').classList.contains('show')) $('status').classList.remove('show');
   }catch(err){ console.warn('hertekenen:', err); }
 }

@@ -475,6 +475,15 @@
   .consent .cbrand .mark{width:34px;height:auto}
   .consent p{margin:6px 0 12px}
 
+  /* Location state line: welcome screen and privacy page (privacy.js). */
+  .locstate{margin:8px 0 10px;font-size:13px}
+  .locstate:empty{display:none}
+  .locstate .locmsg{color:var(--ink-2)}
+  .locstate .locmsg.good{color:var(--green-2)}
+  .locstate .locmsg.warn{color:#b45309}
+  .locstate .locmsg.bad{color:#b91c1c}
+  .locstate .locstep{margin-top:6px;font-size:12.5px;color:var(--ink-3);line-height:1.45}
+
   /* ---------- install bar ---------- */
   .instbar{
     position:absolute; left:10px; right:10px; z-index:7;
