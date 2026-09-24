@@ -13,7 +13,7 @@
  * Map tiles get a cache of their own with a rough LRU limit, so a downloaded area
  * stays put but storage does not grow without bound.
  */
-const VERSION   = 'diana-8a02215';
+const VERSION   = 'diana-5214971';
 const SHELL     = `${VERSION}-shell`;
 const TILES     = `${VERSION}-tiles`;
 const TILE_MAX  = 3000;               // roughly 60 MB of vector tiles
@@ -26,13 +26,17 @@ const SHELL_FILES = [
   // The app itself, split per screen. Every one of these must be here: leave one
   // out and the app works online and is broken offline — which you find out in
   // the woods, with no signal. Keep in step with the <script> tags in index.html.
-  './js/core.js', './js/i18n-strings.js', './js/i18n.js', './js/map-data.js',
+  './js/core.js', './js/radiogeo.js', './js/i18n-strings.js', './js/i18n.js', './js/map-data.js',
   './js/map.js', './js/spots.js', './js/install.js', './js/gestures.js',
   './js/nav.js', './js/settings.js', './js/privacy.js', './js/admin.js', './js/self-spot.js',
-  './js/agenda.js', './js/session.js', './js/rules.js', './js/nearby.js',
+  './js/agenda.js', './js/session.js', './js/rules.js', './js/nearby.js', './js/nearinfo.js',
   './js/offline.js', './js/geo.js',
   './icon-192.png', './icon-512.png', './apple-touch-icon.png', './start.jpg', './logo.png',
   './vendor/maplibre-gl.js', './vendor/maplibre-gl.css',
+  // CQ/ITU zones and ITU regions for Nearby > Info. Precached rather than
+  // fetched on first use: the tab is meant for the field, where there may be
+  // no signal the first time anyone opens it.
+  './geo/radio-zones.json',
   // The files that are the same whatever country you carry. The per-country
   // files are NOT listed here on purpose: which countries you have is a choice,
   // and a shell that precached every one of them would drag Sweden down the

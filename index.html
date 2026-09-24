@@ -428,16 +428,27 @@
 
 <section class="view" id="viewNearby">
   <h1 data-i18n="near.title">In de buurt</h1>
-  <p class="sub" data-i18n="near.sub">De dichtstbijzijnde referenties vanaf waar je staat</p>
-  <div class="segs" id="nearMetric">
-    <button class="seg on" data-metric="dist" data-i18n="near.bydist">Afstand</button>
-    <button class="seg" data-metric="recency" data-i18n="near.byrecency">Laatst actief</button>
-    <button class="seg" data-metric="qso" data-i18n="near.byqso">Aantal QSO's</button>
+  <div class="segs" id="nearTab">
+    <button class="seg on" data-neartab="areas" data-i18n="near.tabareas">Gebieden</button>
+    <button class="seg" data-neartab="info" data-i18n="near.tabinfo">Info</button>
   </div>
-  <div id="nearBox"></div>
-  <div class="card"><div id="nearList" style="margin:0 -4px"></div></div>
-  <button class="btn ghost" id="nearMore" hidden>Toon 100 meer</button>
-  <p class="hint" data-i18n="near.source">Aantal QSO's en laatste activatie komen uit de WWFF-directory, meegeleverd met deze versie.</p>
+  <div id="nearAreas">
+    <p class="sub" data-i18n="near.sub">De dichtstbijzijnde referenties vanaf waar je staat</p>
+    <div class="segs" id="nearMetric">
+      <button class="seg on" data-metric="dist" data-i18n="near.bydist">Afstand</button>
+      <button class="seg" data-metric="recency" data-i18n="near.byrecency">Laatst actief</button>
+      <button class="seg" data-metric="qso" data-i18n="near.byqso">Aantal QSO's</button>
+    </div>
+    <div id="nearBox"></div>
+    <div class="card"><div id="nearList" style="margin:0 -4px"></div></div>
+    <button class="btn ghost" id="nearMore" hidden>Toon 100 meer</button>
+    <p class="hint" data-i18n="near.source">Aantal QSO's en laatste activatie komen uit de WWFF-directory, meegeleverd met deze versie.</p>
+  </div>
+  <!-- Nearby > Info: drawn by js/nearinfo.js. -->
+  <div id="nearInfoWrap" hidden>
+    <p class="sub" data-i18n="info.sub">Waar je staat, in radiotermen</p>
+    <div id="nearInfo"></div>
+  </div>
 </section>
 
 <section class="view" id="viewRules">
@@ -647,6 +658,7 @@
      must also go into SHELL_FILES in sw.js, or the app works online and is
      silently broken offline. -->
 <script src="js/core.js" defer></script>
+<script src="js/radiogeo.js" defer></script>
 <script src="js/i18n-strings.js" defer></script>
 <script src="js/i18n.js" defer></script>
 <script src="js/map-data.js" defer></script>
@@ -663,6 +675,7 @@
 <script src="js/session.js" defer></script>
 <script src="js/rules.js" defer></script>
 <script src="js/nearby.js" defer></script>
+<script src="js/nearinfo.js" defer></script>
 <script src="js/offline.js" defer></script>
 <script src="js/geo.js" defer></script>
 </body>
