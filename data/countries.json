@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-24T11:49:23Z",
+  "generated": "2026-09-24T20:39:41Z",
   "countries": [
     {
       "program": "DLFF",
@@ -8,7 +8,7 @@
       "points": 2,
       "release": null,
       "source_file": "DLFF-Gebiete_jun26_2.kmz",
-      "generated": "2026-09-24T05:59:52Z",
+      "generated": "2026-09-24T20:39:11Z",
       "bytes": 13053066,
       "files": {
         "zones": "zones/dlff.geojson",
@@ -19,12 +19,12 @@
     {
       "program": "ONFF",
       "country": "Belgium",
-      "refs": 946,
-      "points": 2,
+      "refs": 947,
+      "points": 1,
       "release": "2026-08-02",
       "source_file": "ONFF 20260802.kmz",
-      "generated": "2026-09-24T06:00:13Z",
-      "bytes": 3852361,
+      "generated": "2026-09-24T20:39:41Z",
+      "bytes": 3851961,
       "files": {
         "zones": "zones/onff.geojson",
         "points": "zones/onff-points.geojson",
@@ -38,7 +38,7 @@
       "points": 6,
       "release": null,
       "source_file": "All OZFF.kmz",
-      "generated": "2026-09-24T05:59:59Z",
+      "generated": "2026-09-24T20:39:18Z",
       "bytes": 1348069,
       "files": {
         "zones": "zones/ozff.geojson",
@@ -53,7 +53,7 @@
       "points": 11,
       "release": "2026-09-24",
       "source_file": "PAFF 20260924.kmz",
-      "generated": "2026-09-24T11:49:23Z",
+      "generated": "2026-09-24T20:39:25Z",
       "bytes": 2097637,
       "files": {
         "zones": "zones/paff.geojson",
