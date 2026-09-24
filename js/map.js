@@ -242,6 +242,11 @@ async function loadWorldPoints(){
     const optW = $('optWorld');
     if(optW) optW.hidden = worldPoints.features.length === 0;
     paintWorld();
+    // Agenda pins for a reference outside the loaded country now resolve
+    // their position from this same file too (refPosition() in spots.js).
+    // Redraw once it lands so those pins show up right away instead of
+    // waiting for the next 30 s spots refresh.
+    if(typeof paintSpots === 'function') paintSpots();
   })();
   return worldLoading;
 }
@@ -572,6 +577,43 @@ function clearOutline(){
 function clearSelection(){
   clearOutline();
   selected = null;
+  selectedPos = null;
+}
+
+/* Locator, CQ zone, ITU zone and ITU region for whichever area is in the
+   sheet right now. The Info tab (nearinfo.js) shows the same four numbers
+   for wherever you are standing; this is the same idea for wherever you
+   tapped. Locator needs nothing but the position, so it is there right
+   away. The zone file is the one nearinfo.js already loads on first use
+   (geo/radio-zones.json), and can still be loading, or not asked for yet
+   if the Info tab has never been opened this session; ensureRadioZones()
+   triggers that load, and refreshSelectedRadioFacts() below fills the tile
+   in once it lands, without redrawing or re-fitting the rest of the sheet. */
+let selectedPos = null;   // [lon, lat] of whatever the sheet is showing, or null when it is closed
+
+function radioZonesFactHtml(lon, lat){
+  if(typeof ensureRadioZones === 'function') ensureRadioZones();
+  if(typeof radioZones === 'undefined' || !radioZones){
+    // No empty box while we wait or if the fetch has not succeeded yet, see
+    // the comment above select() about facts that are not there. The id
+    // stays, so refreshSelectedRadioFacts() has something to replace.
+    return `<div id="zoneRadioZones" style="display:none"></div>`;
+  }
+  const val = list => { const hits = zonesAt(list, lat, lon); return hits.length ? hits.join('/') : t('info.unknown'); };
+  return `<div class="fact wide" id="zoneRadioZones">
+    <div class="k">${t('info.cq')} · ${t('info.itu')} · ${t('info.region')}</div>
+    <div class="s">${val(radioZones.cq)} · ${val(radioZones.itu)} · ${val(radioZones.region)}</div>
+  </div>`;
+}
+function radioFactsHtml(lon, lat){
+  return `<div class="fact"><div class="k">Locator</div><div class="v">${maidenhead(lat, lon, 3)}</div></div>`
+    + radioZonesFactHtml(lon, lat);
+}
+function refreshSelectedRadioFacts(){
+  if(!selectedPos || !$('sheet').classList.contains('open')) return;
+  const el = $('zoneRadioZones');
+  if(!el) return;   // the sheet has moved on to something else since
+  el.outerHTML = radioZonesFactHtml(selectedPos[0], selectedPos[1]);
 }
 
 /* A reference without a boundary. The same panel, but without an area figure and
@@ -581,6 +623,7 @@ function selectPoint(f){
   const p = f.properties;
   selected = p.ref;
   clearOutline();
+  selectedPos = f.geometry.coordinates;
 
   $('badges').innerHTML =
     `<span class="pill">${p.ref}</span>` +
@@ -589,6 +632,7 @@ function selectPoint(f){
   $('zoneName').textContent = p.name || p.ref;
   $('facts').innerHTML = (p.place
     ? `<div class="fact"><div class="k">${t('zone.place')}</div><div class="v">${p.place}</div></div>` : '')
+    + radioFactsHtml(selectedPos[0], selectedPos[1])
     + activityFacts(p.ref);
   $('zoneNote').textContent = t('zone.nopolynote');
 
@@ -619,6 +663,8 @@ function select(ref, alsoIn){
   if(!f){ const p = noPolyByRef.get(ref); if(p) selectPoint(p); return; }
   selected = ref;
   const p = f.properties;
+  const b = bboxOf(f.geometry);
+  selectedPos = [(b[0]+b[2])/2, (b[1]+b[3])/2];
 
   $('badges').innerHTML =
     `<span class="pill">${p.ref}</span>` +
@@ -634,6 +680,7 @@ function select(ref, alsoIn){
     .map(([k,label,fmt])=>`<div class="fact"><div class="k">${t(label)}</div><div class="v">${fmt(p[k])}</div></div>`)
     .join('')
     + (nParts>1 ? `<div class="fact"><div class="k">${t('zone.parts')}</div><div class="v">${nParts}</div></div>` : '')
+    + radioFactsHtml(selectedPos[0], selectedPos[1])
     + activityFacts(ref);
 
   const parts = f.geometry.coordinates.length;
@@ -646,7 +693,6 @@ function select(ref, alsoIn){
   markSelected(ref);
   openSheet();
 
-  const b = bboxOf(f.geometry);
   map.fitBounds([[b[0],b[1]],[b[2],b[3]]],{padding:{top:90,bottom:260,left:40,right:40},maxZoom:14});
 }
 
@@ -660,6 +706,7 @@ function openSheet(){
 function closeSheet(){
   $('sheet').classList.remove('open');
   document.body.classList.remove('sheet-open');
+  selectedPos = null;
 }
 $('closeSheet').onclick = closeSheet;
 $('zoneSpot').onclick = () => {

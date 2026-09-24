@@ -51,6 +51,10 @@ function ensureRadioZones(){
     .finally(() => {
       radioZonesLoading = null;
       if(infoVisible()) renderNearInfo();
+      // The map's own zone panel (map.js) shows the same four numbers for
+      // whichever area is selected, and can be open before this tab ever
+      // was; give it a chance to fill in its CQ/ITU/region tile too.
+      if(typeof refreshSelectedRadioFacts === 'function') refreshSelectedRadioFacts();
     });
 }
 
