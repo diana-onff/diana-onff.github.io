@@ -18,6 +18,7 @@
 # one to try it with.
 import json, pathlib, re, sys
 from playwright.sync_api import sync_playwright
+import preconsent  # noqa: F401  answered welcome screen, see preconsent.py
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 BASE = "http://localhost:8011/web/"

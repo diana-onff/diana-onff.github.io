@@ -14,6 +14,7 @@ though the Worker enforces them too, so a bad date never costs a request.
 import re, json, os, sys
 from datetime import datetime, timedelta, timezone
 from playwright.sync_api import sync_playwright
+import preconsent  # noqa: F401  answered welcome screen, see preconsent.py
 
 BASE = "http://localhost:8011/web/"
 WORKER = re.compile(r"https://diana-spotline\.diana-onff\.workers\.dev/agenda")

@@ -237,6 +237,10 @@ function applyHomeView(){
   // marker, move there and check whether you are inside an area. Quietly,
   // because this was not asked for by a tap on the button: no "finding
   // location…" panel at startup, and a refused permission passes without a word.
+  // On the very first launch it waits for the welcome screen instead, so the
+  // browser's permission prompt never arrives before the explanation does
+  // (privacy.js starts it once that screen is answered or its button used).
+  if(typeof holdLocateForConsent === 'function' && holdLocateForConsent()) return;
   locate(true);
 }
 

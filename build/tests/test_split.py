@@ -23,6 +23,7 @@ What it guards, and why each one is here rather than obvious:
 """
 import re, json, os, sys, pathlib
 from playwright.sync_api import sync_playwright
+import preconsent  # noqa: F401  answered welcome screen, see preconsent.py
 
 BASE = "http://localhost:8011/web/"
 WEB = pathlib.Path(__file__).resolve().parents[2] / "web"

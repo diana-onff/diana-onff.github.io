@@ -5,6 +5,7 @@ location button — without there being a setting for it any more.
 """
 import re, json, sys
 from playwright.sync_api import sync_playwright
+import preconsent  # noqa: F401  answered welcome screen, see preconsent.py
 
 BASE = "http://localhost:8011/web/"
 fails = []

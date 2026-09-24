@@ -418,5 +418,15 @@ necessarily has to send to a visitor's browser.
 **Privacy.** Settings has its own Privacy page: what stays on the device,
 which outside services Diana talks to and why, the anonymous-statistics
 choice (asked once, up front, never on by default), and a button that
-clears everything Diana has stored on that device. See the app for the
+clears everything Diana has stored on that device.
+
+**Precise location.** On the first visit the welcome screen has an "Allow
+precise location" button, and Diana does not ask for the position before
+that screen is answered. Diana always asks the browser for the most precise
+position it can give, but whether a site gets the exact position or a
+deliberately blurred one is the phone's or browser's setting, not Diana's.
+When a fix stays wider than about 75 m, the welcome screen and the Privacy
+page say so and show the steps to switch precise location on for that
+phone (Android, iPhone with Safari, iPhone with another browser, or a
+computer). See the app for the
 current text; it renders in whichever language Settings is set to.

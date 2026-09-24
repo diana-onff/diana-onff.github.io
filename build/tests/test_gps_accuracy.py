@@ -8,6 +8,7 @@
 # accuracy is bigger than the real distance to the edge.
 import re, json, sys
 from playwright.sync_api import sync_playwright
+import preconsent  # noqa: F401  answered welcome screen, see preconsent.py
 
 URL = "http://localhost:8011/web/index.html"
 

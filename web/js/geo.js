@@ -226,6 +226,8 @@ function fixApply(pos, final){
     if(typeof syncAccHint === 'function') syncAccHint();
   }
   if(typeof paintFixAcc === 'function') paintFixAcc();
+  // The location line on the welcome screen and the privacy page (privacy.js).
+  if(typeof syncLocState === 'function') syncLocState();
   marker.setLngLat([lon,lat]).addTo(map);
   if(final) map.easeTo({center:[lon,lat], zoom:Math.max(map.getZoom(),12)});
   renderSpots();
@@ -373,9 +375,13 @@ function locate(quiet){
     err => {
       const say = loud();
       if(say) showStatus('out', t('gps.failed'), err ? err.message : t('gps.nofix'));
+      if(typeof noteLocError === 'function') noteLocError(err);
     },
     // The watch is closed: only now is another one allowed to start.
-    () => { if(fixRun === mine) fixRun = null; });
+    () => {
+      if(fixRun === mine) fixRun = null;
+      if(typeof syncLocState === 'function') syncLocState();
+    });
   if(!mine.run && fixRun === mine) fixRun = null;
 }
 function evaluate(lat,lon,accuracy){

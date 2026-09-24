@@ -16,6 +16,7 @@
 # the wrong answer.
 import re, json, sys
 from playwright.sync_api import sync_playwright
+import preconsent  # noqa: F401  answered welcome screen, see preconsent.py
 
 BASE = "http://localhost:8011/web/"
 fails = []

@@ -90,7 +90,7 @@ $('privBack').onclick = () => {
   document.querySelector('#nav button[data-view="viewSet"]').click();
   // Read the page instead of answering the welcome screen: still ask, once
   // you are done reading, rather than letting the question quietly lapse.
-  if(!isEmbed && statsConsent() === '') $('consent').hidden = false;
+  if(consentPending) consentEl.hidden = false;
 };
 
 /* ---------- clear everything on this device ----------
@@ -126,9 +126,35 @@ $('privClearBtn2').onclick = clearEverything;
    business asking a visitor for consent on Diana's behalf) or the question
    has already been answered on this device. */
 const consentEl = $('consent');
+
+/* While the welcome screen is still unanswered, the startup position request
+   waits. Otherwise, on a device that has never been asked, the browser's own
+   location prompt pops up during the splash screen, before the explanation of
+   why Diana wants it is even on screen. The request then comes either from
+   the location button below (a tap, which is also what browsers like best)
+   or, if that button is never used, the moment the screen is answered. */
+let consentPending = !isEmbed && recall('consent.seen') !== '1';
+let locateAsked = false;       // the location button has been used
+let locateDeferred = false;    // the startup request is waiting on us
+
+/* Called by applyHomeView() in settings.js instead of locating right away.
+   true = "not now, privacy.js will take care of it". */
+function holdLocateForConsent(){
+  if(!consentPending) return false;
+  if(!locateAsked) locateDeferred = true;
+  return true;
+}
+function releaseLocate(){
+  if(!locateDeferred) return;
+  locateDeferred = false;
+  locate(true);
+}
+
 function closeConsent(){
   remember('consent.seen', '1');
+  consentPending = false;
   consentEl.hidden = true;
+  releaseLocate();
 }
 $('consentYes').onclick = () => { setStatsConsent(true);  closeConsent(); };
 $('consentNo').onclick  = () => { setStatsConsent(false); closeConsent(); };
@@ -138,7 +164,105 @@ $('consentReadMore').onclick = () => {
   openPrivacy();
 };
 
-if(!isEmbed && recall('consent.seen') !== '1') consentEl.hidden = false;
+/* ---------- location: permission and precision ----------
+   A web page can ask for the most precise position the browser will give,
+   and Diana always does (enableHighAccuracy in geo.js). Whether that is the
+   exact position or a deliberately blurred "approximate" one is decided by
+   the person holding the phone, in the browser or phone settings, and no
+   page can overrule that choice or even read it directly. What a page CAN
+   see is the permission state, and how wide the fixes turn out to be. So
+   this shows both, and when a fix stays wide, the steps to switch precise
+   location on for the platform in hand. */
+let geoPerm = 'unknown';        // 'granted' | 'prompt' | 'denied' | 'unknown'
+let locDenied = false;          // a request came back refused (browsers without the Permissions API)
+
+if(navigator.permissions && navigator.permissions.query){
+  navigator.permissions.query({name:'geolocation'}).then(st => {
+    geoPerm = st.state;
+    syncLocState();
+    st.onchange = () => { geoPerm = st.state; if(geoPerm !== 'denied') locDenied = false; syncLocState(); };
+  }).catch(() => {});
+}
+
+/* geo.js reports a refused request here; a PositionError code 1 is a refusal,
+   anything else (timeout, no signal) is not a permission question. */
+function noteLocError(err){
+  if(err && err.code === 1) locDenied = true;
+  syncLocState();
+}
+
+function locSteps(){
+  const p = platform();
+  if(p === 'ios') return t('loc.steps.ios');
+  if(p === 'iosother') return t('loc.steps.iosother');
+  if(p === 'android') return t('loc.steps.android');
+  return t('loc.steps.desktop');
+}
+
+/* What to say about location right now. Globals from geo.js are read with a
+   typeof guard: geo.js loads after this file, and the Permissions API answer
+   can in principle arrive before it has. */
+function locView(){
+  const run   = typeof fixRun  !== 'undefined' ? fixRun  : null;
+  const last  = typeof lastFix !== 'undefined' ? lastFix : null;
+  const ring  = typeof ringFix !== 'undefined' ? ringFix : null;
+  const limit = typeof FIX_HINT_M !== 'undefined' ? FIX_HINT_M : 75;
+  const searching = !!run && !(run.run && run.run.answered);
+  const m = a => String(Math.round(a));
+
+  if(geoPerm === 'denied' || locDenied) return {msg: t('loc.denied'), steps: true, kind: 'bad'};
+  if(searching) return {msg: ring && ring.acc != null ? t('loc.searching').replace('{a}', m(ring.acc)) : t('loc.searchingnofix'), kind: ''};
+  if(last && last.acc != null){
+    if(last.acc > limit) return {msg: t('loc.coarse').replace('{a}', m(last.acc)), steps: true, indoors: true, kind: 'warn'};
+    return {msg: t('loc.good').replace('{a}', m(last.acc)), kind: 'good'};
+  }
+  if(geoPerm === 'granted') return {msg: t('loc.granted'), kind: 'good'};
+  if(geoPerm === 'prompt')  return {msg: t('loc.prompt'), kind: ''};
+  return {msg: '', kind: ''};
+}
+
+function paintLocState(box){
+  if(!box) return;
+  const v = locView();
+  box.textContent = '';
+  if(!v.msg) return;
+  const p = document.createElement('div');
+  p.className = 'locmsg' + (v.kind ? ' ' + v.kind : '');
+  p.textContent = v.msg;
+  box.appendChild(p);
+  if(v.indoors){
+    const i = document.createElement('div');
+    i.className = 'locstep';
+    i.textContent = t('loc.indoors');
+    box.appendChild(i);
+  }
+  if(v.steps){
+    const s = document.createElement('div');
+    s.className = 'locstep';
+    s.textContent = locSteps();
+    box.appendChild(s);
+  }
+}
+
+/* Called from geo.js on every position, from the Permissions API, and from
+   rerender() in i18n.js when the language changes. */
+function syncLocState(){
+  paintLocState($('consentLocState'));
+  paintLocState($('privLocState'));
+}
+
+function askLocation(){
+  locateAsked = true;
+  locateDeferred = false;
+  locDenied = false;
+  locate(false);
+  syncLocState();
+}
+$('consentLoc').onclick = askLocation;
+$('privLocBtn').onclick = askLocation;
+
+if(consentPending) consentEl.hidden = false;
+syncLocState();
 
 // A returning visitor's earlier choice takes effect immediately; someone who
 // has not decided yet gets no Umami until they do.

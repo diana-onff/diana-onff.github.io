@@ -18,6 +18,7 @@
 # no network, no token, and the pull request is invented on the spot.
 import json, re, sys
 from playwright.sync_api import sync_playwright
+import preconsent  # noqa: F401  answered welcome screen, see preconsent.py
 
 BASE = "http://localhost:8011/web/"
 fails = []
