@@ -14,8 +14,9 @@
 <meta name="apple-mobile-web-app-title" content="Diana">
 <link rel="stylesheet" href="vendor/maplibre-gl.css">
 <link rel="stylesheet" href="css/app.css">
-<!-- Umami — bezoekersstatistieken, cookieloos. -->
-<script defer src="https://cloud.umami.is/script.js" data-website-id="74231ae3-744a-4618-81d2-59cc10f6d217"></script>
+<!-- Umami is loaded from js/privacy.js, and only after explicit consent,
+     never unconditionally from here. See the welcome screen and Settings →
+     Privacy. -->
 </head>
 <body>
 <div id="map"></div>
@@ -280,6 +281,19 @@
     <p class="hint" style="margin:8px 0 0" data-i18n="set.langnote">Zonder keuze start Diana in het Engels.</p>
   </div>
 
+  <div class="card" id="privCard">
+    <h4 style="margin:0 0 10px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
+        data-i18n="privacy.title">Privacy</h4>
+    <p class="hint" style="margin:0 0 10px" data-i18n="set.privacylead">What Diana stores, what it sends, and your choice about anonymous statistics.</p>
+    <button class="btn ghost" id="privOpenBtn" style="font-size:13.5px;padding:10px" data-i18n="set.privacybtn">Open the privacy page</button>
+    <p class="hint" style="margin:14px 0 6px" data-i18n="privacy.statsh">Anonymous statistics</p>
+    <div class="segs" id="setStats">
+      <button class="seg" data-stats="1" data-i18n="privacy.statsyes">Yes, I'll help</button>
+      <button class="seg" data-stats="0" data-i18n="privacy.statsno">No, rather not</button>
+    </div>
+    <button class="btn danger" id="privClearBtn" style="margin-top:14px;font-size:13.5px;padding:10px" data-i18n="privacy.clearbtn">Clear everything on this device</button>
+  </div>
+
   <div class="card" id="instCard">
     <h4 style="margin:0 0 6px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
         data-i18n="inst.title">Als app installeren</h4>
@@ -436,6 +450,107 @@
   <p class="hint" data-i18n="rules.src">Bron: IARU Regio 1-bandplan en WWFF Global Rules §14.7. Je vergunningsklasse kan verder beperken.</p>
 </section>
 
+<!-- Not reachable from the bottom bar: it opens over whatever screen you were
+     on, from the button in Settings or from the welcome screen, and its own
+     back button returns you to Settings. See js/privacy.js: openPrivacy(). -->
+<section class="view" id="viewPrivacy">
+  <h1 data-i18n="privacy.title">Privacy</h1>
+  <p class="sub" data-i18n="privacy.sub">What Diana knows, what it doesn't, and why.</p>
+
+  <div class="card">
+    <h4 style="margin:0 0 8px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
+        data-i18n="privacy.abouth">About Diana</h4>
+    <p data-i18n="privacy.aboutbody">Diana is a volunteer project, built as a hobby, to support WWFF-ONFF activity for radio amateurs. It is not an official WWFF service; it simply uses their public services. Diana is not a commercial product and may not be used for commercial purposes.</p>
+  </div>
+
+  <div class="card">
+    <h4 style="margin:0 0 8px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
+        data-i18n="privacy.tldrh">In short</h4>
+    <ul class="privlist">
+      <li data-i18n="privacy.tldr1">Your station details, locator and settings stay in the browser of this device. Nothing is uploaded.</li>
+      <li data-i18n="privacy.tldr2">Your GPS position is only used on the screen in front of you. It is never sent anywhere.</li>
+      <li data-i18n="privacy.tldr3">Spotting yourself sends your callsign, frequency, mode and reference to WWFF Spotline, never your position.</li>
+      <li data-i18n="privacy.tldr4">With your separate permission, Diana can count an anonymous visit. Nothing is collected unless you say yes, and you can change your mind at any time under Settings.</li>
+      <li data-i18n="privacy.tldr5">Diana sets no advertising cookies and builds no profile of you.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h4 style="margin:0 0 8px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
+        data-i18n="privacy.deviceh">What stays on this device</h4>
+    <p data-i18n="privacy.devicebody">Your callsign, portable callsign, locator, and settings such as bands, the "nearby" distance, quick-reply chips and language all live in this browser's local storage, together with your statistics choice and whether you have seen the welcome screen. If you use the Beheer/Admin screen with your own GitHub access token, that token is stored the same way, on this device only. Diana also keeps an offline copy of the map tiles and of the app itself, so it keeps working without a connection; that is ordinary browser cache, not personal data.</p>
+    <button class="btn danger" id="privClearBtn2" style="font-size:13.5px;padding:10px" data-i18n="privacy.clearbtn">Clear everything on this device</button>
+  </div>
+
+  <div class="card">
+    <h4 style="margin:0 0 8px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
+        data-i18n="privacy.servicesh">Services Diana talks to</h4>
+    <ul class="privlist">
+      <li data-i18n="privacy.svc.spotline">WWFF Spotline (spots.wwff.co): delivers live spots and agenda entries, and receives your callsign, frequency, mode, reference and remark when you spot yourself. It never receives your position.</li>
+      <li data-i18n="privacy.svc.tiles">OpenFreeMap (tiles.openfreemap.org): supplies the map tiles, built from OpenStreetMap data. An ordinary request for map images; Diana sets no cookies for this.</li>
+      <li data-i18n="privacy.svc.relay">The Diana Spotline relay (a Cloudflare Worker): passes your spot or agenda entry through to Spotline. It counts requests per hashed IP address to prevent abuse, and never logs your callsign, position or remark.</li>
+      <li data-i18n="privacy.svc.umami">Umami (cloud.umami.is): counts an anonymous visit, only with your permission. No cookies, no cross-site tracking, no personal data.</li>
+      <li data-i18n="privacy.svc.github">GitHub (api.github.com): only reached if you use the Beheer/Admin screen with your own access token, to publish new source files. Ordinary use of Diana never touches this.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h4 style="margin:0 0 8px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
+        data-i18n="privacy.statsh">Anonymous statistics</h4>
+    <p data-i18n="privacy.statsbody">Umami is a privacy-oriented tool: it sets no cookies and builds no profile. Even so, European law treats any script that reads information from your device as something that needs your permission, cookies or not. So Diana asks first, and only loads Umami after you say yes. You can change your answer at any time in Settings.</p>
+  </div>
+
+  <div class="card">
+    <h4 style="margin:0 0 8px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
+        data-i18n="privacy.selfspoth">What a self-spot sends</h4>
+    <p data-i18n="privacy.selfspotbody">Reporting yourself active sends exactly five things to WWFF Spotline: the activator's callsign, the spotter's callsign, the frequency, the mode, the reference, and an optional remark you typed yourself. Nothing else, and never your position.</p>
+  </div>
+
+  <div class="card">
+    <h4 style="margin:0 0 8px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
+        data-i18n="privacy.legalh">Legal basis</h4>
+    <ul class="privlist">
+      <li data-i18n="privacy.legal1">Showing your position on this device: your own action, through the permission your browser asks on Diana's behalf. It is never transmitted.</li>
+      <li data-i18n="privacy.legal2">Sending a spot or agenda entry: carrying out the request you made by tapping send.</li>
+      <li data-i18n="privacy.legal3">Anonymous statistics: your consent, freely given, and withdrawable at any time under Settings.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h4 style="margin:0 0 8px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
+        data-i18n="privacy.retainh">How long</h4>
+    <p data-i18n="privacy.retainbody">Settings on this device remain until you clear them, uninstall Diana, or clear your browser data yourself. Spots and agenda entries live on WWFF Spotline, under their own retention rules, not Diana's. Statistics, if you enabled them, are handled by Umami Cloud under their own terms; Diana keeps none of it itself.</p>
+  </div>
+
+  <div class="card">
+    <h4 style="margin:0 0 8px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
+        data-i18n="privacy.transferh">Outside the European Union</h4>
+    <p data-i18n="privacy.transferbody">If you agreed to statistics, Umami Cloud may process that anonymous data outside the European Union, depending on their own infrastructure. Their privacy notice describes the safeguards they use.</p>
+  </div>
+
+  <div class="card">
+    <h4 style="margin:0 0 8px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
+        data-i18n="privacy.rightsh">Your rights</h4>
+    <p><span data-i18n="privacy.rightsbody">Because Diana keeps your personal settings only on your own device, exercising most of your rights, access, correction, deletion, is as simple as opening this page and using the button above. For anything about the anonymous statistics, or a complaint, you can reach us at</span> <a href="mailto:diana.faunaflora@outlook.com">diana.faunaflora@outlook.com</a>.</p>
+    <p class="hint" data-i18n="privacy.rightsauthority">You can also lodge a complaint with the Belgian Data Protection Authority: Drukpersstraat 35, 1000 Brussels, gegevensbeschermingsautoriteit.be.</p>
+  </div>
+
+  <div class="card">
+    <h4 style="margin:0 0 8px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
+        data-i18n="privacy.liabh">Liability and licence</h4>
+    <p data-i18n="privacy.liabbody">Diana is offered as-is, without warranty of any kind, and, to the extent the law allows, without liability for errors or omissions in the data it shows. It comes about entirely as volunteer work and may not be used for commercial purposes. The full terms are in the licence.</p>
+    <a href="https://github.com/diana-onff/diana-onff.github.io/blob/main/LICENSE" target="_blank" rel="noopener" data-i18n="privacy.licencelink">Read the licence on GitHub</a>
+  </div>
+
+  <p class="hint" style="text-align:center;margin:2px 0 0">
+    <span data-i18n="privacy.updated">Last updated</span> <span id="privUpdated"></span>
+  </p>
+  <p class="hint" style="text-align:center;margin:2px 0 16px">
+    <span data-i18n="privacy.contact">Contact</span> <a href="mailto:diana.faunaflora@outlook.com">diana.faunaflora@outlook.com</a>
+  </p>
+  <button class="btn ghost" id="privBack" data-i18n="privacy.back">← Back to Settings</button>
+</section>
+
 <!-- Only appears when the browser genuinely offers to install, and only once:
      dismiss it and it stays gone. Settings remains the permanent place for it. -->
 <div class="instbar" id="instBar" hidden>
@@ -483,6 +598,23 @@
   </div>
 </div>
 
+<!-- First launch only: explains the location permission the browser is about
+     to ask for, and asks a separate, real question about anonymous
+     statistics. Nothing is pre-selected. See js/privacy.js. -->
+<div class="consent" id="consent" hidden>
+  <div class="ccard">
+    <div class="cbrand"><img class="mark" src="logo.png" alt="" width="34" height="23"> Diana</div>
+    <h4 class="ch" data-i18n="consent.loch">Your location</h4>
+    <p data-i18n="consent.locbody">Diana uses your device's GPS to show which nature area you are in and to find WWFF references nearby. Your position is used only on the screen in front of you; it is never sent to a server.</p>
+    <h4 class="ch" style="margin-top:16px" data-i18n="consent.statsh">Anonymous statistics</h4>
+    <p data-i18n="consent.statsbody">With your permission, Diana can count visits with a privacy-friendly tool, so we know the app is actually being used. No account, no profile, no tracking across other websites, and nothing at all unless you choose yes.</p>
+    <button class="btn ghost" id="consentYes" data-i18n="consent.yes">Yes, I'll help</button>
+    <button class="btn ghost" id="consentNo" data-i18n="consent.no">No, rather not</button>
+    <p class="privacy">🔒 <span data-i18n="consent.footer">You can change this any time under Settings → Privacy.</span></p>
+    <button class="btn ghost" id="consentReadMore" style="font-size:13px" data-i18n="consent.readmore">Read the full privacy policy</button>
+  </div>
+</div>
+
 <button class="ver" id="verBadge" type="button" title="Diana"></button>
 
 <div class="status" id="status">
@@ -514,6 +646,7 @@
 <script src="js/gestures.js" defer></script>
 <script src="js/nav.js" defer></script>
 <script src="js/settings.js" defer></script>
+<script src="js/privacy.js" defer></script>
 <script src="js/admin.js" defer></script>
 <script src="js/self-spot.js" defer></script>
 <script src="js/agenda.js" defer></script>

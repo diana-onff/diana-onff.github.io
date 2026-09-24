@@ -70,6 +70,7 @@ function loadSettingsUI(){
   syncCountryUI();
   syncFixUI();
   [...$('setLang').children].forEach(b => b.classList.toggle('on', b.dataset.lang === langPref));
+  syncStatsToggle();
   checkGrid();
 }
 
