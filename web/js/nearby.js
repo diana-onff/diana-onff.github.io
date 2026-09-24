@@ -90,6 +90,10 @@ function lastActiveText(r){
 }
 
 function renderNearby(){
+  // The Info tab (nearinfo.js) shares this entry point, so every place that
+  // already redraws Nearby (opening it, a new position, a language change)
+  // redraws whichever tab is showing.
+  if(typeof nearInfoActive === 'function' && nearInfoActive()){ renderNearInfo(); return; }
   const box = $('nearBox'), list = $('nearList');
   if(!box || !list) return;
   const rows = nearbyRows();

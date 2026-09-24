@@ -87,7 +87,8 @@ with sync_playwright() as p:
                        ("STR", "i18n-strings.js"), ("map", "map.js"), ("toggle", "map.js"),
                        ("syncSwitch", "map.js"), ("refLookup", "self-spot.js"),
                        ("agendaOpen", "agenda.js"), ("prefetchArea", "offline.js"),
-                       ("haversine", "geo.js"), ("showStatus", "geo.js")]:
+                       ("haversine", "radiogeo.js"), ("maidenhead", "radiogeo.js"),
+                       ("showStatus", "geo.js"), ("renderNearInfo", "nearinfo.js")]:
         ok(pg.evaluate(f"() => typeof {name} !== 'undefined'"), f"{name} (from {home}) is reachable")
     ok(pg.evaluate("() => Object.keys(STR).length === 8"), "all eight languages survived the cut")
 

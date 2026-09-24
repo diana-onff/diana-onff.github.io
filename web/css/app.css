@@ -132,6 +132,20 @@
   .fact .k{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);font-weight:650}
   .fact .v{margin-top:3px;font-weight:600;color:var(--green)}
   .fact.wide{grid-column:1/-1}
+
+  /* Nearby > Info (nearinfo.js). Its own grid rather than .facts, which drops
+     to one column on a phone: two or three short numbers side by side are
+     exactly what fits there. */
+  .infotiles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .infotiles.three{grid-template-columns:repeat(3,1fr)}
+  .infotiles .fact{padding:9px 10px;min-width:0}
+  .fact .v.big{font-size:21px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+  .fact .s{font-size:11.5px;color:var(--ink-3);margin-top:2px;line-height:1.35}
+  .fact .s.edge{color:#b45309}
+  .infocoord{margin:10px 2px 0;font-size:13.5px;font-variant-numeric:tabular-nums}
+  .infocoord span{color:var(--ink-3);font-size:12.5px}
+  .infonote{font-size:12.5px;color:#b45309;margin:8px 2px 0}
+  .infosrc{margin:10px 2px 0}
   .note{margin-top:12px;font-size:12.5px;color:var(--ink-3)}
   .closex{position:absolute;top:14px;right:14px;border:0;background:none;font-size:20px;color:var(--ink-3);cursor:pointer}
 

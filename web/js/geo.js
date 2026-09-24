@@ -1,28 +1,5 @@
 /* ---------- GPS: am I inside the zone? ---------- */
-function pointInRing(x,y,ring){
-  let inside=false;
-  for(let i=0,j=ring.length-1;i<ring.length;j=i++){
-    const [xi,yi]=ring[i], [xj,yj]=ring[j];
-    if(((yi>y)!==(yj>y)) && (x < (xj-xi)*(y-yi)/(yj-yi)+xi)) inside=!inside;
-  }
-  return inside;
-}
-function pointInGeom(x,y,geom){
-  for(const poly of geom.coordinates){
-    if(pointInRing(x,y,poly[0])){
-      let inHole=false;
-      for(let h=1;h<poly.length;h++) if(pointInRing(x,y,poly[h])) inHole=true;
-      if(!inHole) return true;
-    }
-  }
-  return false;
-}
-function haversine(lat1,lon1,lat2,lon2){
-  const R=6371000, t=Math.PI/180;
-  const a=Math.sin((lat2-lat1)*t/2)**2 +
-          Math.cos(lat1*t)*Math.cos(lat2*t)*Math.sin((lon2-lon1)*t/2)**2;
-  return 2*R*Math.asin(Math.sqrt(a));
-}
+/* pointInRing(), pointInGeom() and haversine() live in radiogeo.js. */
 function distanceToZone(lat,lon,f){
   // Shortest distance to an edge point. Plenty good enough for "how far are you from the boundary".
   let best=Infinity;

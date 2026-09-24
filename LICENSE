@@ -184,3 +184,8 @@ another project, ask ONFF — they are approachable, and it is their work.
   * Base map tiles — OpenFreeMap, from OpenStreetMap data, ODbL.
     Attribution required and shown in the app:
     "OpenFreeMap © OpenMapTiles Data from OpenStreetMap"
+  * CQ and ITU zone boundaries (web/geo/radio-zones.json): simplified from
+    HB9HIL/hamradio-zones-geojson, MIT licence, Copyright (c) 2024 HB9HIL.
+    The full MIT notice is published with the file, in web/geo/NOTICE.txt.
+  * ITU region boundaries (same file): built from the ITU Radio Regulations,
+    Article 5, with country borders from Natural Earth (public domain).

@@ -232,6 +232,14 @@ themselves the way an expired password does:
   (used by the nightly run) refuses to build on a truncated or unreachable
   copy rather than publishing bad data; see §10 for what that failure looks
   like.
+- **The zone file for Nearby > Info (`web/geo/radio-zones.json`) is not part
+  of the nightly build.** CQ and ITU zones and ITU regions change perhaps
+  once a decade, so the file is built by hand and committed. If
+  HB9HIL/hamradio-zones-geojson publishes corrected lines, or a country in
+  the Article 5 exceptions changes its borders, rebuild it with
+  `build/radiozones.py` (its header lists the two source checkouts and the
+  exact command), run `build/tests/test_nearinfo.py`, and commit the new file
+  together with `web/geo/NOTICE.txt` if the source's licence text changed.
 
 ---
 

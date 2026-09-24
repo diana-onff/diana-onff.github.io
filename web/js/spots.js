@@ -364,22 +364,13 @@ function fitSpots(){
 }
 
 /* ---------- direction, distance, locator ---------- */
-function bearing(lat1,lon1,lat2,lon2){
-  const t=Math.PI/180, y=Math.sin((lon2-lon1)*t)*Math.cos(lat2*t);
-  const x=Math.cos(lat1*t)*Math.sin(lat2*t)-Math.sin(lat1*t)*Math.cos(lat2*t)*Math.cos((lon2-lon1)*t);
-  return (Math.atan2(y,x)/t+360)%360;
-}
+/* bearing() lives in radiogeo.js. */
 const COMPASS = ['N','NNO','NO','ONO','O','OZO','ZO','ZZO','Z','ZZW','ZW','WZW','W','WNW','NW','NNW'];
 const compassName = d => COMPASS[Math.round(d/22.5)%16];
 
-function locator(lat,lon){
-  const A='A'.charCodeAt(0);
-  let x=lon+180, y=lat+90;
-  const f1=String.fromCharCode(A+Math.floor(x/20)), f2=String.fromCharCode(A+Math.floor(y/10));
-  const s1=Math.floor((x%20)/2), s2=Math.floor(y%10);
-  const t1=String.fromCharCode(A+Math.floor(((x%2)*60)/5)), t2=String.fromCharCode(A+Math.floor(((y%1)*60)/2.5));
-  return `${f1}${f2}${s1}${s2}${t1.toLowerCase()}${t2.toLowerCase()}`.toUpperCase();
-}
+/* Six-character locator. One implementation for the whole app: maidenhead()
+   in radiogeo.js, which the Info tab also uses for eight characters. */
+function locator(lat, lon){ return maidenhead(lat, lon, 3); }
 const fmtKm = m => m>=1000 ? `${(m/1000).toFixed(m<10000?1:0)} km` : `${Math.round(m)} m`;
 
 /* ---------- list ---------- */

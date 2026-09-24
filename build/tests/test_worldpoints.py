@@ -44,16 +44,13 @@ with sync_playwright() as p:
     pg.wait_for_function("() => worldLoaded === true", timeout=15000)
     n = pg.evaluate("() => worldPoints.features.length")
     ok(n > 60000, f"more than 60.000 points loaded (got {n})")
-    # This checkout's data/wwff-world.geojson is a fixture from before a second
-    # country existed, when the build still left ONFF out of this file entirely.
-    # It no longer does that (see kmz2geojson.py: the file now carries every
-    # country, this run's own included, because it is shared by every viewer and
-    # only the app can tell which ONE of them a given visitor has loaded — see
-    # worldFilteredData() below). A freshly built file would have ONFF in it too;
-    # this fixture simply predates that build and is not meant to prove the point
-    # by itself — worldFilteredData() in step [3] is what actually tests it.
+    # Whether ONFF itself is in data/wwff-world.geojson depends on how old the
+    # checkout's data is: files built before every country was carried left it
+    # out, files built since (every nightly refresh) have it. Neither is wrong,
+    # so this only reports it; worldFilteredData() in step [3] is what tests
+    # that the app keeps the country on board out of this layer either way.
     has_onff = pg.evaluate("() => worldPoints.features.some(f => f.properties.ref.startsWith('ONFF'))")
-    ok(not has_onff, "this fixture (from before the build carried every country) still has none")
+    print(f"  · ONFF points in this data's world file: {'yes' if has_onff else 'no'} (either is fine)")
     src_exists = pg.evaluate("() => !!map.getSource('wwff-world')")
     ok(src_exists, "MapLibre source 'wwff-world' exists")
     # world-cluster-count is a text layer and needs glyphs — the mock test style

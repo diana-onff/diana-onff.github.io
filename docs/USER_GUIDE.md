@@ -317,6 +317,25 @@ its source as "never activated".
 This screen replaced the activation Heatmap in v1.8.0; the reasoning is in
 [ARCHITECTURE.md §2.2](ARCHITECTURE.md#22-the-onff-activation-history-sheet-and-why-it-is-no-longer-used).
 
+**The Info tab.** The switch at the top of Nearby has a second tab, Info:
+where you are standing, in radio terms. UTC and local time (with the time
+zone), your Maidenhead locator in six and eight characters, your position in
+decimal degrees and in degrees, minutes and seconds with its accuracy, your
+CQ zone, ITU zone and ITU region, and the three nearest WWFF references
+anywhere in the world, with distance and bearing. Tapping one opens it on the
+map. Diana remembers which tab you had open.
+
+Everything on it is worked out on the phone: the position is the one the map
+already has (no second GPS request), and the zone file ships with the app, so
+the tab works offline. The zone lines come from a public dataset simplified to
+about 3 km, so when you are within about 3.5 km of a boundary, or your
+position is that uncertain, the tile names the neighbouring zone as well
+("boundary close: also 15") rather than pretending to know. ITU regions follow
+lines A, B and C of the Radio Regulations plus their country exceptions:
+Russia, the Caucasus, Central Asia, Mongolia, Turkey and Ukraine are Region 1
+even east of line A, and Iran is Region 3. Without GPS the tab uses the middle
+of the locator from Settings, and says so.
+
 ### Rules (☰)
 The IARU Region 1 bandplan per band, with CW/Digi/SSB/FM segments drawn as a
 visual bar, FT8 frequencies marked, and WWFF's own preferred SSB/CW
