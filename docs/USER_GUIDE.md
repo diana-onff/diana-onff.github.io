@@ -407,8 +407,16 @@ can appear as a ring first and gain its outline later.
 
 **Data usage terms.** The zone boundaries and activation figures shown in
 Diana come from ONFF, WDPA, Flemish/Walloon government sources, and WWFF
-Spotline, and remain their owners' data — Diana's *code* is open source
-(MIT), but the *data and content* may not be freely redistributed or reused
-elsewhere without permission. See [LICENSE](../LICENSE) for the exact terms
-and the honest technical caveat about what a web map necessarily has to send
-to a visitor's browser.
+Spotline, and remain their owners' data. Diana's *code* is source-available
+under the PolyForm Noncommercial License (personal, hobby and noncommercial
+use only, since Diana itself is a volunteer project and may not be used
+commercially), and the *data and content* may not be freely redistributed
+or reused elsewhere without permission either. See [LICENSE](../LICENSE)
+for the exact terms and the honest technical caveat about what a web map
+necessarily has to send to a visitor's browser.
+
+**Privacy.** Settings has its own Privacy page: what stays on the device,
+which outside services Diana talks to and why, the anonymous-statistics
+choice (asked once, up front, never on by default), and a button that
+clears everything Diana has stored on that device. See the app for the
+current text; it renders in whichever language Settings is set to.
