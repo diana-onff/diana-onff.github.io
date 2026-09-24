@@ -70,10 +70,12 @@ Notes
 from __future__ import annotations
 
 import argparse
+import difflib
 import gzip
 import json
 import re
 import sys
+import unicodedata
 import zipfile
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
@@ -81,7 +83,7 @@ from pathlib import Path
 
 from lxml import etree
 from pyproj import Geod
-from shapely.geometry import MultiPolygon, Polygon, mapping
+from shapely.geometry import MultiPolygon, Point, Polygon, mapping, shape
 from shapely.ops import unary_union
 
 KML_NS = "{http://www.opengis.net/kml/2.2}"
@@ -90,7 +92,11 @@ KML_NS = "{http://www.opengis.net/kml/2.2}"
 # started as a Belgian app with ONFF baked in, and a second country must be a
 # flag on a build rather than an edit to this file.
 PROGRAM = "ONFF"
-REF_RE = re.compile(r"ONFF[- ]?(\d{4})")
+# The (?!\d) keeps a release date such as "ONFF 20260801.kmz" from reading as
+# "ONFF-2026": without it \d{4} happily grabs the first four digits of an
+# eight-digit date and calls that a reference. A real reference is never
+# immediately followed by a fifth digit, so this costs nothing on real names.
+REF_RE = re.compile(r"ONFF[- ]?(\d{4})(?!\d)")
 # Every WWFF reference worldwide, e.g. ONFF-0104, GFF-0231, VKFF-1234.
 FF_RE  = re.compile(r"\b[A-Z0-9]{1,3}FF-\d{3,5}\b")
 GEOD = Geod(ellps="WGS84")
@@ -192,17 +198,86 @@ def _extended_data(placemark) -> dict[str, str]:
     return out
 
 
-def _ref_from_ancestors(placemark) -> tuple[str | None, str | None]:
-    """Walk up the tree to find the nearest <PROG>-nnnn name. Returns (ref, raw name)."""
+def _ancestor_ref_candidates(placemark) -> list[tuple[str, str]]:
+    """Every <PROG>-nnnn name found from the placemark itself up to the root,
+    nearest first, consecutive repeats collapsed. Almost always this is one
+    reference, sometimes repeated at several levels; _resolve_ref() decides
+    what to do when it is not."""
+    found: list[tuple[str, str]] = []
     node = placemark
     while node is not None:
         name = _name(node)
         if name:
             match = REF_RE.search(name)
             if match:
-                return PROGRAM + "-" + match.group(1), re.sub(r"\.kml$", "", name).strip()
+                ref = PROGRAM + "-" + match.group(1)
+                raw = re.sub(r"\.kml$", "", name).strip()
+                if not found or found[-1][0] != ref:
+                    found.append((ref, raw))
         node = node.getparent()
-    return None, None
+    return found
+
+
+def _norm_name(name: str) -> str:
+    """Lower case, no reference prefix, no accents, no punctuation, so that
+    'Kollintenbos' and 'Kollinten-bos.kml' compare as the same thing."""
+    name = _clean_name(name)
+    name = unicodedata.normalize("NFKD", name)
+    name = "".join(c for c in name if not unicodedata.combining(c))
+    return re.sub(r"[^a-z0-9]+", " ", name.lower()).strip()
+
+
+def _name_score(raw: str, official: str) -> float:
+    """How well one KMZ-side name matches a reference's official WWFF-directory
+    name. 1.0 when either is a plain substring of the other (short official
+    names are common), otherwise plain string similarity."""
+    a, b = _norm_name(raw), _norm_name(official)
+    if not a or not b:
+        return 0.0
+    if a in b or b in a:
+        return 1.0
+    return difflib.SequenceMatcher(None, a, b).ratio()
+
+
+def _resolve_ref(candidates: list[tuple[str, str]],
+                  directory_names: dict[str, str]) -> tuple[str | None, str | None, str | None]:
+    """Pick the reference for one placemark out of every <PROG>-nnnn name found
+    among it and its ancestors.
+
+    Normally there is exactly one, or none. When the names disagree, the
+    nearest container is not automatically the correct one: real ONFF releases
+    have both grouped several sub-areas under one broader outer label (where
+    the closer, more specific name is right) and carried a plain typo in the
+    innermost placemark's own number while an outer container had it right
+    (see ONFF-0253/0254 and ONFF-0076/0079), and the two look identical from
+    tree position alone. The tie is broken by the WWFF directory instead: whichever
+    candidate's official name best matches the disagreeing name here wins.
+
+    Returns (ref, raw_name, note). note is set only when there really was a
+    disagreement to resolve, for the conversion report.
+    """
+    if not candidates:
+        return None, None, None
+    nearest_ref, nearest_raw = candidates[0]
+    distinct = sorted({ref for ref, _ in candidates})
+    if len(distinct) == 1 or not directory_names:
+        return nearest_ref, nearest_raw, None
+
+    best_ref, best_raw, best_score = nearest_ref, nearest_raw, -1.0
+    for ref, raw in candidates:
+        official = directory_names.get(ref)
+        if not official:
+            continue
+        score = _name_score(raw, official)
+        if score > best_score:
+            best_ref, best_raw, best_score = ref, raw, score
+
+    official = directory_names.get(best_ref)
+    note = (f"one placemark's name disagreed between {', '.join(distinct)}; the WWFF "
+            f"directory's name for {best_ref}" + (f" ('{official}')" if official else "") +
+            " matched best, so it was used" +
+            ("" if best_ref == nearest_ref else f" instead of the nearer {nearest_ref}"))
+    return best_ref, best_raw, note
 
 
 def _foreign_program(placemark) -> str | None:
@@ -618,22 +693,22 @@ def _province(row: dict[str, str]) -> str | None:
     return BE_REGIONS.get(code)
 
 
-def point_refs(source: str | None, programs: list[str], have: set[str],
-               overrides: dict, decimals: int):
-    """Join the WWFF directory with the polygons we already have.
+def _read_directory_rows(source: str | None) -> tuple[list[dict[str, str]], list[str], bool]:
+    """Read the WWFF directory once, up front, so both convert() (to break a
+    reference tie) and point_refs() (for the points themselves) work from the
+    same rows instead of two separate downloads.
 
-    Returns (features, index_entries, activity, warnings, stats). Never raises:
-    a directory that has moved, or a runner without network, must not break a
-    data build — it degrades to "manual points from overrides.json only".
+    Returns (rows, warnings, read_failed). Never raises: a directory that has
+    moved, or a runner without network, must not break a data build, so the
+    caller degrades to whatever it can do without it.
     """
     warnings: list[str] = []
-    stats = {"listed": 0, "deleted": 0, "nonwwff": 0, "orphan_polygons": [], "renamed": []}
     rows: list[dict[str, str]] = []
     read_failed = False
     if source:
         try:
             rows = _read_rows(source)
-        except Exception as exc:                      # noqa: BLE001 — any failure is non-fatal
+        except Exception as exc:                      # noqa: BLE001 (any failure here is non-fatal)
             warnings.append(f"WWFF directory not read ({type(exc).__name__}): "
                             f"used only the manual points from overrides.json")
             read_failed = True
@@ -644,9 +719,78 @@ def point_refs(source: str | None, programs: list[str], have: set[str],
             # under a few thousand is never the real list.
             if len(rows) < MIN_DIRECTORY_ROWS:
                 warnings.append(f"WWFF directory looks incomplete: {len(rows)} rows read, "
-                                f"at least {MIN_DIRECTORY_ROWS} expected — ignored")
+                                f"at least {MIN_DIRECTORY_ROWS} expected, ignored")
                 rows = []
                 read_failed = True
+    return rows, warnings, read_failed
+
+
+def _directory_name_lookup(rows: list[dict[str, str]], program: str) -> dict[str, str]:
+    """ref -> official WWFF-directory name, for one programme.
+
+    Used only to break a tie when the KMZ's own names disagree on which
+    reference something is (_resolve_ref()); the polygons themselves are never
+    sourced from here.
+    """
+    out: dict[str, str] = {}
+    for row in rows:
+        ref = (row.get("reference") or _row_value(row, "ref", "onff", "nummer") or "").strip().upper()
+        if not ref:
+            head = " ".join(list(row.values())[:4])
+            m = REF_RE.search(head)
+            ref = f"{program}-{m.group(1)}" if m else ""
+        if not ref or not ref.startswith(program):
+            continue
+        name = (row.get("name") or _row_value(row, "name", "naam", "nom") or "").strip()
+        if name:
+            out[ref] = name
+    return out
+
+
+def _point_inside_other_polygon_warnings(geojson: dict, pt_features: list[dict]) -> list[str]:
+    """A reference marked as having no polygon of its own, whose WWFF-directory
+    position nonetheless falls inside another reference's finished boundary,
+    is usually not "no polygon" at all: it is the other reference's KMZ
+    placemark carrying the wrong number (see ONFF-0253/0254). Flags it instead
+    of silently drawing a marker on top of somebody else's polygon.
+    """
+    polys = []
+    for feat in geojson["features"]:
+        try:
+            polys.append((feat["properties"]["ref"], shape(feat["geometry"])))
+        except Exception:                              # noqa: BLE001 (a bad geometry is not this check's job)
+            continue
+    warnings: list[str] = []
+    for pt in pt_features:
+        ref = pt["properties"]["ref"]
+        lon, lat = pt["geometry"]["coordinates"]
+        point = Point(lon, lat)
+        for other_ref, poly in polys:
+            if other_ref == ref:
+                continue
+            try:
+                inside = poly.contains(point)
+            except Exception:                          # noqa: BLE001 (same)
+                continue
+            if inside:
+                warnings.append(
+                    f"{ref} has no polygon of its own, but its position from the WWFF "
+                    f"directory falls inside {other_ref}'s boundary: likely a reference "
+                    f"mixed up somewhere in the source KMZ, worth checking")
+                break
+    return warnings
+
+
+def point_refs(rows: list[dict[str, str]], read_warnings: list[str], read_failed: bool,
+               programs: list[str], have: set[str], overrides: dict, decimals: int):
+    """Join the WWFF directory with the polygons we already have.
+
+    Returns (features, index_entries, activity, warnings, stats). `rows` is
+    whatever _read_directory_rows() returned; this function never reads the
+    directory itself.
+    """
+    warnings: list[str] = list(read_warnings)
+    stats = {"listed": 0, "deleted": 0, "nonwwff": 0, "orphan_polygons": [], "renamed": []}
     stats["rows"] = len(rows)
 
     wanted = tuple(p.strip().upper() for p in programs if p.strip())
@@ -825,7 +969,8 @@ def point_refs(source: str | None, programs: list[str], have: set[str],
     return features, entries, activity, warnings, stats, programs_map, world_features
 
 
-def convert(kml_path: Path, tolerance: float, decimals: int, overrides: dict) -> tuple[dict, dict, dict]:
+def convert(kml_path: Path, tolerance: float, decimals: int, overrides: dict,
+            directory_names: dict[str, str] | None = None) -> tuple[dict, dict, dict]:
     tree = etree.parse(str(kml_path))
     # Google Earth writes the outermost container as either a <Document> or a
     # <Folder>, depending on how the person who made the file organised it, and
@@ -857,13 +1002,17 @@ def convert(kml_path: Path, tolerance: float, decimals: int, overrides: dict) ->
     seen_polygons = 0
     foreign: Counter = Counter()
     stray_names: list[str] = []
+    directory_names = directory_names or {}
 
     for placemark, province, layer in _placemarks(document):
         kml_polys = placemark.findall(".//" + KML_NS + "Polygon")
         if not kml_polys:
             continue
         seen_polygons += 1
-        ref, raw_name = _ref_from_ancestors(placemark)
+        candidates = _ancestor_ref_candidates(placemark)
+        ref, raw_name, note = _resolve_ref(candidates, directory_names)
+        if note:
+            warnings.append(note)
         if not ref:
             skipped_no_ref += 1
             other = _foreign_program(placemark)
@@ -1168,7 +1317,7 @@ def main() -> int:
         print(f"--program {PROGRAM!r} does not look like a WWFF programme code "
               f"(ONFF, PAFF, DLFF, …)", file=sys.stderr)
         return 2
-    REF_RE = re.compile(PROGRAM + r"[- ]?(\d{4})")
+    REF_RE = re.compile(PROGRAM + r"[- ]?(\d{4})(?!\d)")
 
     if not args.kmz.exists():
         raise SystemExit(f"KMZ not found: {args.kmz}")
@@ -1178,16 +1327,27 @@ def main() -> int:
         raw = json.loads(args.overrides.read_text(encoding="utf-8"))
         overrides = raw.get("zones", raw)
 
+    # Read the WWFF directory before the KMZ itself: convert() needs its names
+    # to break a tie when the KMZ's own names disagree on a reference number
+    # (see _resolve_ref()). A directory that cannot be read at all just means
+    # no names to break a tie with, so convert() then falls back to the nearest
+    # name, as it always did.
+    print("→ WWFF directory", file=sys.stderr)
+    dir_rows, dir_warnings, dir_read_failed = _read_directory_rows(
+        None if args.no_refs else args.refs_csv)
+    directory_names = _directory_name_lookup(dir_rows, PROGRAM)
+
     print(f"→ unpacking {args.kmz.name}", file=sys.stderr)
     kml_path = extract_kmz(args.kmz, args.workdir)
 
     print("→ parsing and converting", file=sys.stderr)
-    geojson, index_doc, stats = convert(kml_path, args.tolerance, args.decimals, overrides)
+    geojson, index_doc, stats = convert(kml_path, args.tolerance, args.decimals, overrides,
+                                        directory_names)
 
     # Stop here if the file cannot be read as this country, before anything is
-    # written and before the directory is fetched. Writing an empty country
-    # would take the real one off the map; saying nothing would leave whoever
-    # sent the file guessing. So: nothing written, and a reason.
+    # written. Writing an empty country would take the real one off the map;
+    # saying nothing would leave whoever sent the file guessing. So: nothing
+    # written, and a reason.
     complaint = format_complaint(stats, PROGRAM, args.kmz.name)
     if complaint:
         args.report.write_text(
@@ -1211,12 +1371,12 @@ def main() -> int:
                 f"({uit_naam}) — the filename was used")
         stats["release"] = uit_naam
 
-    print("→ WWFF directory", file=sys.stderr)
     have = {r["ref"] for r in index_doc["refs"]}
     programs = [PROGRAM]
     pt_features, pt_entries, activity, pt_warnings, pt_stats, programs_map, world_features = point_refs(
-        None if args.no_refs else args.refs_csv, programs, have, overrides, args.decimals)
+        dir_rows, dir_warnings, dir_read_failed, programs, have, overrides, args.decimals)
     stats["warnings"].extend(pt_warnings)
+    stats["warnings"].extend(_point_inside_other_polygon_warnings(geojson, pt_features))
 
     args.out.mkdir(parents=True, exist_ok=True)
     zones_dir = args.out / "zones"
