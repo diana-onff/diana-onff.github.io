@@ -385,9 +385,25 @@ const compassName = d => COMPASS[Math.round(d/22.5)%16];
 function locator(lat, lon){ return maidenhead(lat, lon, 3); }
 const fmtKm = m => m>=1000 ? `${(m/1000).toFixed(m<10000?1:0)} km` : `${Math.round(m)} m`;
 
+/* QSO count for a spot's or an agenda entry's reference, or, when the WWFF
+   directory has no activation on record for it, ATNO in the existing "bad"
+   red instead. It sits on the callsign line, not after the reference: the
+   reference line is one line with an ellipsis, and on a phone narrower than
+   about 412 px the tag at its end was exactly what got cut off. A reference we have no figures for at all (not in the
+   directory, or the worldwide file not loaded yet) stays silent rather than
+   claiming a zero it cannot back up. See qsoCountAnywhere() in map-data.js
+   for why this reads differently from the area panel's own QSO figure. */
+function qsoTag(ref){
+  const n = typeof qsoCountAnywhere === 'function' ? qsoCountAnywhere(ref) : null;
+  if(n == null) return '';
+  if(n === 0) return `<span class="atno">${t('spots.atno')}</span>`;
+  return `<span class="qso">${n.toLocaleString(locale())} ${t('zone.qso')}</span>`;
+}
+
 /* ---------- list ---------- */
 function renderSpots(){
   const list=$('spotList'), meta=$('spotMeta');
+  if(typeof ensureWorldActivity === 'function') ensureWorldActivity();
   if(spotTab==='agenda') return renderAgenda(list, meta);
   if(spotsError){
     list.innerHTML = `<p class="hint" style="color:#b45309">${spotsError}</p>`;
@@ -408,7 +424,7 @@ function renderSpots(){
                    : `${age}${s.mode||''}`;
     return `<div class="spot${ageMin(s)>30?' stale':''}" data-id="${s.id}">
       <span class="sig">((·))</span>
-      <span class="who"><div class="c">${s.activator||'?'}</div>
+      <span class="who"><div class="c">${s.activator||'?'}${qsoTag(s.reference)}</div>
         <div class="f">${s.frequency_khz||'?'} kHz · ${s.mode||'?'} · ${s.reference||''}</div></span>
       <span class="d">${d}</span></div>`;
   }).join('') : `<p class="hint">${t('spots.none')}</p>`;
@@ -433,7 +449,7 @@ function renderAgenda(list, meta){
     const running = a.utc_start <= nowUTC && nowUTC <= a.utc_end;
     return `<div class="spot${running?'':' stale'}">
       <span class="sig" style="${running?'':'background:var(--paper);color:var(--ink-3)'}">${running?'●':'○'}</span>
-      <span class="who"><div class="c">${a.activator_call||'?'}</div>
+      <span class="who"><div class="c">${a.activator_call||'?'}${qsoTag(a.reference)}</div>
         <div class="f">${a.reference||''} · ${a.band||'?'} · ${a.mode||'?'}</div></span>
       <span class="d"><b>${running?t('spots.now'):(a.utc_start||'').slice(5,10)}</b>${
         running ? t('spots.until')+' '+(a.utc_end||'').slice(11,16) : (a.utc_start||'').slice(11,16)+' UTC'}</span>

@@ -52,6 +52,59 @@ function activityFacts(ref){
                  + `<div class="v">${a.date}</div></div>` : '');
 }
 
+/* QSO counts worldwide, for the spots screen (spots.js): data/wwff-activity.json,
+   ref -> count for every active WWFF reference, any programme, not only the
+   one country whose boundaries happen to be loaded. 0 means the directory has
+   no activation on record (ATNO). Lazy, because it runs to about a megabyte and
+   the spots list itself has nothing to wait for it to show; ensureWorldActivity()
+   below loads it on first use and spots.js repaints once it lands, the same
+   shape as ensureRadioZones() in nearinfo.js. Deliberately not in the service
+   worker's precache: that would make every visitor fetch it again on every
+   release, nightly data commits included, while the ordinary data cache
+   (versEerst() in sw.js) already keeps a copy once it has been fetched, and
+   its 3.5 s timeout only covers waiting for the response to start, not the
+   download itself. A failed load is tried again, at most
+   once a minute, on a later repaint of the spots list: the list refreshes
+   every 30 s anyway, and a field connection that failed once often comes back. */
+let worldActivity = {}, worldActivityLoaded = false, worldActivityLoading = null, worldActivityFailedAt = 0;
+function ensureWorldActivity(){
+  if(worldActivityLoaded || worldActivityLoading) return worldActivityLoading;
+  if(worldActivityFailedAt && Date.now() - worldActivityFailedAt < 60000) return null;
+  worldActivityLoading = (async () => {
+    try{
+      const doc = await fetchFirst(dataURL('wwff-activity.json'));
+      worldActivity = doc.refs || {};
+      worldActivityLoaded = true;
+    }catch{ worldActivityFailedAt = Date.now(); }
+    worldActivityLoading = null;
+    if(worldActivityLoaded && typeof renderSpots === 'function') renderSpots();
+  })();
+  return worldActivityLoading;
+}
+
+/* The QSO count for one reference, for spots.js: a number (0 = never activated,
+   ATNO) or null when there is nothing to go on. Prefers the home country's own
+   `activity` table when the reference is in it, and falls back to the
+   worldwide file otherwise (the same fallback refPosition() uses for a pin's
+   own position).
+
+   Why not activityOf(): that one hides "no count, no date" so the area panel
+   shows no empty box, and the per-country table leaves a never-activated
+   reference out altogether (the directory gives it an empty count, never a
+   literal 0). Either way the very case this is for would come back as "no
+   data". So a reference missing from `activity` is looked up in the worldwide
+   file, which does carry it, as 0. */
+function qsoCountAnywhere(ref){
+  ref = String(ref || '').toUpperCase();   // as refPosition() does: both tables are keyed in capitals
+  const a = activity[ref];
+  if(a){
+    if(a.q) return a.q;
+    return a.last ? null : 0;   // activated but no count: say nothing, not ATNO
+  }
+  const w = worldActivity[ref];
+  return typeof w === 'number' ? w : null;
+}
+
 /* ---------- loading data ---------- */
 async function fetchFirst(urls){
   let lastErr;

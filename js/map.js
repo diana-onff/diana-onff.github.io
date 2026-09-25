@@ -602,7 +602,7 @@ function radioZonesFactHtml(lon, lat){
   const val = list => { const hits = zonesAt(list, lat, lon); return hits.length ? hits.join('/') : t('info.unknown'); };
   return `<div class="fact wide" id="zoneRadioZones">
     <div class="k">${t('info.cq')} · ${t('info.itu')} · ${t('info.region')}</div>
-    <div class="s">${val(radioZones.cq)} · ${val(radioZones.itu)} · ${val(radioZones.region)}</div>
+    <div class="v">${val(radioZones.cq)} · ${val(radioZones.itu)} · ${val(radioZones.region)}</div>
   </div>`;
 }
 function radioFactsHtml(lon, lat){
