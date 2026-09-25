@@ -37,6 +37,16 @@ Shared by every country, in data/:
                             can only ever be right for whichever country a build
                             happens to touch, not for whatever any given viewer
                             actually has loaded. See the comment at the write itself.
+                            Positions are the directory's, except where that lies
+                            more than 2 km outside a boundary Diana has (then a
+                            point inside it, see _world_corrections()) or where
+                            overrides.json places a point by hand
+    data/wwff-activity.json QSO count for EVERY active WWFF reference worldwide,
+                            every programme included, for a spot's or an
+                            announced activation's reference: ref -> count,
+                            nothing else. 0 means never activated (ATNO on the
+                            spots screen). Published by build/site.sh alongside
+                            wwff-world.geojson
 
 Nothing is written to data/<slug>.geojson at the top level any more. Files by
 those names may still be lying around from before the manifest; they are a
@@ -73,6 +83,7 @@ import argparse
 import difflib
 import gzip
 import json
+import math
 import re
 import sys
 import unicodedata
@@ -84,7 +95,7 @@ from pathlib import Path
 from lxml import etree
 from pyproj import Geod
 from shapely.geometry import MultiPolygon, Point, Polygon, mapping, shape
-from shapely.ops import unary_union
+from shapely.ops import nearest_points, unary_union
 
 KML_NS = "{http://www.opengis.net/kml/2.2}"
 # Which programme this run is converting, and the pattern that finds its
@@ -583,9 +594,13 @@ def _to_float(raw: str) -> float | None:
     if not raw:
         return None
     try:
-        return float(raw.replace(",", ".")) if raw.count(",") <= 1 else None
+        value = float(raw.replace(",", ".")) if raw.count(",") <= 1 else None
     except ValueError:
         return None
+    # float() also accepts "nan" and "inf". Neither is a coordinate or a QSO
+    # count, and int(nan) raises: one such cell anywhere in the worldwide
+    # directory would otherwise stop the build for every country.
+    return value if value is not None and math.isfinite(value) else None
 
 
 def _orient(a: float, b: float) -> tuple[float, float] | None:
@@ -781,6 +796,89 @@ def _point_inside_other_polygon_warnings(geojson: dict, pt_features: list[dict])
     return warnings
 
 
+def _world_corrections(out_dir: Path, program: str, index_doc: dict,
+                       points: list[dict]) -> dict[str, list[float]]:
+    """ref -> [lon, lat] to use in wwff-world.geojson instead of the WWFF
+    directory's position, for every country Diana has boundaries for, not only
+    the one this run builds.
+
+    Two kinds, both decided when their own country was built and stored in
+    that country's index file: a reference whose directory position lies more
+    than 2 km outside its own boundary (index entry "world", a point inside
+    the boundary; see _position_mismatches()), and a position set by hand in
+    overrides.json for a reference without a boundary. Everything else keeps
+    the directory's position, including the many that sit a few metres off an
+    edge: that is rounding, not an error, and moving thousands of points for it
+    would only make every build's diff noisy.
+
+    Read from every country's index file on disk, plus this run's fresh index
+    and points (the points are not in index_doc yet at this stage) instead of
+    its stale ones: a world file corrected only for whichever country
+    was built last would lose the others' corrections at the next build, which
+    is exactly the build-order bug this file has already had once.
+    """
+    pos: dict[str, list[float]] = {}
+
+    def take(doc: dict) -> None:
+        for r in doc.get("refs") or []:
+            if r.get("ref") and isinstance(r.get("world"), list) and len(r["world"]) == 2:
+                pos[r["ref"]] = [round(r["world"][0], 4), round(r["world"][1], 4)]
+        for r in doc.get("points") or []:
+            if r.get("src") == "overrides" and r.get("placed") and r.get("lat") is not None:
+                pos[r["ref"]] = [round(r["lon"], 4), round(r["lat"], 4)]
+
+    own = f"{program.lower()}-index.json"
+    for path in sorted((out_dir / "zones").glob("*-index.json")):
+        if path.name == own:
+            continue
+        try:
+            take(json.loads(path.read_text(encoding="utf-8")))
+        except Exception:                              # noqa: BLE001 (a broken file is simply not used)
+            continue
+    take({"refs": index_doc.get("refs") or [], "points": points})
+    return pos
+
+
+def _position_mismatches(geojson: dict, index_doc: dict, dir_pos: dict[str, tuple[float, float]],
+                         limit_m: float = 2000) -> list[dict]:
+    """References of this run whose WWFF-directory position lies more than
+    `limit_m` outside their own boundary. Real cases, all in the directory, not
+    in the KMZ: ONFF-0850 Helschot carries the exact coordinates of ONFF-0849
+    Tommelen, 41 km away, and four more ONFF references copy a neighbour the
+    same way. Listed in the report, with the neighbour when the coordinates are
+    an exact copy and a point inside the boundary, so the list can go to WWFF
+    for the root fix; wwff-world.geojson already uses the boundary instead.
+    """
+    same_spot: dict[tuple[float, float], list[str]] = defaultdict(list)
+    for ref, xy in dir_pos.items():
+        same_spot[tuple(xy)].append(ref)
+    inside = {r["ref"]: (r.get("lat"), r.get("lon"), r.get("name")) for r in index_doc.get("refs") or []}
+    out = []
+    for feat in geojson.get("features") or []:
+        ref = feat["properties"]["ref"]
+        xy = dir_pos.get(ref)
+        if not xy:
+            continue
+        try:
+            poly = shape(feat["geometry"])
+            point = Point(xy)
+            if poly.contains(point):
+                continue
+            near = nearest_points(poly, point)[0]
+            _, _, metres = GEOD.inv(xy[0], xy[1], near.x, near.y)
+        except Exception:                              # noqa: BLE001 (a bad geometry is not this check's job)
+            continue
+        if metres <= limit_m:
+            continue
+        lat, lon, name = inside.get(ref, (None, None, None))
+        out.append({"ref": ref, "name": name or feat["properties"].get("name") or ref,
+                    "km": round(metres / 1000, 1),
+                    "same_as": sorted(r for r in same_spot[tuple(xy)] if r != ref),
+                    "directory": [xy[1], xy[0]], "inside": [lat, lon]})
+    out.sort(key=lambda m: -m["km"])
+    return out
+
+
 def point_refs(rows: list[dict[str, str]], read_warnings: list[str], read_failed: bool,
                programs: list[str], have: set[str], overrides: dict, decimals: int):
     """Join the WWFF directory with the polygons we already have.
@@ -943,6 +1041,27 @@ def point_refs(rows: list[dict[str, str]], read_warnings: list[str], read_failed
     # makes that decision correctly, dynamically, per viewer: see
     # worldFilteredData() in map.js.
     world_features = []
+    # QSO count per reference, worldwide, every programme included, same
+    # reasoning as world_features just above: a spot or an announced activation
+    # can be for any country, not only the one this run happens to be building,
+    # and the app already picks the right one per viewer dynamically. Unlike
+    # the per-programme `activity` table above, a reference lands in here
+    # whether or not it also has a polygon, since a spot needs no boundary.
+    #
+    # Every ACTIVE reference is written, including the ones the directory has
+    # no count for at all: that empty count is how the directory says "never
+    # activated" (it never writes a literal 0; checked against the real file,
+    # where ONFF's 21 never-activated references, mostly the newest ones, have
+    # an empty qsoCount AND an empty lastAct). Written here as 0, which is what
+    # the spots screen turns into ATNO. The one case left out is a missing or
+    # zero count WITH a last activation date: that reference has been
+    # activated, so 0 would be a false ATNO (the app reads the per-country
+    # table the same way, see qsoCountAnywhere() in map-data.js).
+    #
+    # Only the count, no date: the spots screen uses nothing else, and at some
+    # 65,000 references the date alone would more than double the file.
+    world_activity: dict[str, int] = {}
+    counts_seen = 0
     for row in rows:
         ref = (row.get("reference") or "").strip().upper()
         if not ref:
@@ -956,6 +1075,14 @@ def point_refs(rows: list[dict[str, str]], read_warnings: list[str], read_failed
         status = (row.get("status") or "").strip().lower()
         if status != "active":
             continue
+        q = _to_float(row.get("qsoCount") or "")
+        last = (row.get("lastAct") or "").strip()
+        if q is not None:
+            counts_seen += 1
+        if q:
+            world_activity[ref] = int(q)
+        elif not last:
+            world_activity[ref] = 0
         latlon = _row_latlon(row)
         if not latlon:
             continue
@@ -966,7 +1093,18 @@ def point_refs(rows: list[dict[str, str]], read_warnings: list[str], read_failed
             "geometry": {"type": "Point", "coordinates": [lon, lat]},
         })
 
-    return features, entries, activity, warnings, stats, programs_map, world_features
+    # "No count" reads as "never activated" only because the real directory
+    # does have a count for every reference that has been. A directory with no
+    # counts at all (the column renamed or dropped in some future export) would
+    # turn every reference on earth into an ATNO. So: not written at all then,
+    # the previous file stays, and the report says why.
+    if world_activity and not counts_seen:
+        warnings.append("WWFF directory has no QSO counts at all (qsoCount column missing or "
+                        "empty): wwff-activity.json not rewritten, rather than calling every "
+                        "reference an ATNO")
+        world_activity = {}
+
+    return features, entries, activity, warnings, stats, programs_map, world_features, world_activity
 
 
 def convert(kml_path: Path, tolerance: float, decimals: int, overrides: dict,
@@ -1262,6 +1400,29 @@ def diff_report(new_index: dict, prev_path: Path, stats: dict, source_name: str)
                          "You can set a coordinate in `overrides.json`: "
                          "`\"ONFF-0123\": { \"point\": [4.47, 50.85] }` (longitude, latitude).")
 
+    mismatch = stats.get("position_mismatch") or []
+    if mismatch:
+        lines.append("")
+        lines.append(f"<details><summary>📍 {len(mismatch)} references whose WWFF-directory position "
+                     f"lies more than 2 km outside their own boundary</summary>")
+        lines.append("")
+        lines.append("Diana puts these at a point inside the boundary instead (worldwide points, "
+                     "Nearby > Info, agenda pins), so the dot matches the area on the map. Where the "
+                     "directory copies a neighbour's exact coordinates the directory is wrong and this "
+                     "list can go to WWFF as it is; for the others it is worth a look which of the two "
+                     "is wrong, the directory or the boundary in the KMZ. Coordinates are latitude, "
+                     "longitude.")
+        lines.append("")
+        for m in mismatch:
+            copy = (f"; the directory gives it the exact coordinates of "
+                    + ", ".join(f"`{r}`" for r in m["same_as"]) if m["same_as"] else "")
+            inside = (f", a point inside the boundary is {m['inside'][0]:.4f}, {m['inside'][1]:.4f}"
+                      if m["inside"][0] is not None else "")
+            lines.append(f"- `{m['ref']}` {m['name']}: {m['km']} km outside its boundary{copy} "
+                         f"(directory {m['directory'][0]:.4f}, {m['directory'][1]:.4f}{inside})")
+        lines.append("")
+        lines.append("</details>")
+
     if stats["warnings"]:
         lines.append("")
         lines.append(f"<details><summary>⚠️ {len(stats['warnings'])} warnings</summary>")
@@ -1373,10 +1534,49 @@ def main() -> int:
 
     have = {r["ref"] for r in index_doc["refs"]}
     programs = [PROGRAM]
-    pt_features, pt_entries, activity, pt_warnings, pt_stats, programs_map, world_features = point_refs(
+    pt_features, pt_entries, activity, pt_warnings, pt_stats, programs_map, world_features, world_activity = point_refs(
         dir_rows, dir_warnings, dir_read_failed, programs, have, overrides, args.decimals)
     stats["warnings"].extend(pt_warnings)
     stats["warnings"].extend(_point_inside_other_polygon_warnings(geojson, pt_features))
+
+    # The worldwide points layer takes each position from the WWFF directory,
+    # and for a reference with a boundary that position is sometimes plainly
+    # wrong: more than 2 km outside the boundary, often an exact copy of a
+    # neighbour's coordinates (see _position_mismatches()). Diana knows better
+    # there, so those, and only those, get a point inside their boundary in the
+    # world file: Nearby > Info's nearest references, other viewers' points
+    # layer and agenda pins all read it. The decision is stored in this
+    # country's index ("world"), so a later build of another country, which
+    # rewrites the shared world file, still applies it (_world_corrections()).
+    if world_features:
+        dir_pos = {f["properties"]["ref"]: tuple(f["geometry"]["coordinates"]) for f in world_features}
+        stats["position_mismatch"] = _position_mismatches(geojson, index_doc, dir_pos)
+        wrong = {m["ref"] for m in stats["position_mismatch"]}
+        for entry in index_doc["refs"]:
+            if entry["ref"] in wrong:
+                entry["world"] = [entry["lon"], entry["lat"]]
+    else:
+        # No directory this time (unreachable, or --no-refs): nothing to compare
+        # against, so keep what the previous build of this country decided.
+        # Dropping it would let the next build of any other country put the
+        # wrong positions back into the shared world file.
+        try:
+            earlier = json.loads((args.out / "zones" / f"{PROGRAM.lower()}-index.json")
+                                 .read_text(encoding="utf-8"))
+        except Exception:                              # noqa: BLE001 (no previous build, nothing to keep)
+            earlier = {}
+        kept = {r["ref"]: r["world"] for r in earlier.get("refs") or [] if r.get("world")}
+        for entry in index_doc["refs"]:
+            if entry["ref"] in kept:
+                entry["world"] = kept[entry["ref"]]
+    corrections = _world_corrections(args.out, PROGRAM, index_doc, pt_entries)
+    moved = 0
+    for feat in world_features:
+        better = corrections.get(feat["properties"]["ref"])
+        if better and better != feat["geometry"]["coordinates"]:
+            feat["geometry"]["coordinates"] = better
+            moved += 1
+    stats["world_moved"] = moved
 
     args.out.mkdir(parents=True, exist_ok=True)
     zones_dir = args.out / "zones"
@@ -1557,6 +1757,16 @@ def main() -> int:
                         "features": world_features}, separators=(",", ":"), ensure_ascii=False),
             encoding="utf-8")
 
+    # Same reasoning, same guard: the QSO count per reference, worldwide, for
+    # the spots screen (qsoCountAnywhere() in map-data.js). Kept separate from
+    # wwff-world.geojson: a spot needs no boundary and no position either,
+    # only a number, so this file has no geometry in it at all. build/site.sh
+    # has to publish it by name, like every other shared file.
+    if world_activity and not directory_failed:
+        (args.out / "wwff-activity.json").write_text(
+            json.dumps({"generated": index_doc["generated"], "refs": world_activity},
+                       separators=(",", ":")), encoding="utf-8")
+
     # If the directory was unreachable, all of these counts are zero — but the
     # corresponding files were deliberately not rewritten above. Writing zeros out
     # would make meta.json lie about what is on disk, and worse: it would wipe the
@@ -1581,6 +1791,11 @@ def main() -> int:
         "points_unplaced": vorige("points_unplaced", stats["points_unplaced"]),
         "activity_refs": vorige("activity_refs", len(activity)),
         "world_points": vorige("world_points", len(world_features)),
+        # Only a count of what is actually on disk: when wwff-activity.json was
+        # not rewritten (directory failed, or the no-counts guard fired), the
+        # previous file is still there, and so is its figure.
+        "world_activity_refs": (len(world_activity) if world_activity and not directory_failed
+                                else previous_meta.get("world_activity_refs", 0)),
         "source_polygons": stats["polygons"],
         "tolerance_deg": args.tolerance,
         "decimals": args.decimals,
@@ -1597,6 +1812,8 @@ def main() -> int:
         if stats["points_unplaced"]:
             pts += f" (+{stats['points_unplaced']} without a coordinate)"
     world_note = f" · {len(world_features)} worldwide WWFF points" if world_features else ""
+    if stats.get("world_moved"):
+        world_note += f" ({stats['world_moved']} moved off a wrong directory position)"
     print(f"✓ {stats['zones']} zones · {size:.2f} MB{note}{pts}{world_note}", file=sys.stderr)
     if stats["warnings"]:
         print(f"⚠ {len(stats['warnings'])} warnings — see {args.report}", file=sys.stderr)

@@ -45,10 +45,13 @@ if [ -d data/zones ]; then
   cp -r data/zones "$OUT/data/"
 fi
 
-# Shared by every country: provenance, the worldwide programme list, and the
-# worldwide points layer. The last two only exist after a build that could
-# actually reach the WWFF directory.
-for gedeeld in data/meta.json data/wwff-programs.json data/wwff-world.geojson; do
+# Shared by every country: provenance, the worldwide programme list, the
+# worldwide points layer and the worldwide QSO counts (spots screen, ATNO).
+# The last three only exist after a build that could actually reach the WWFF
+# directory. A shared file missing from this list is never published at all:
+# the app then gets a 404 and quietly shows nothing, while every test that
+# reads data/ directly still passes. test_site.py checks this list.
+for gedeeld in data/meta.json data/wwff-programs.json data/wwff-world.geojson data/wwff-activity.json; do
   if [ -f "$gedeeld" ]; then
     cp "$gedeeld" "$OUT/data/"
   fi

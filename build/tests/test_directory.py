@@ -83,9 +83,12 @@ junk = [f["properties"]["ref"] for f in world if not f["properties"]["ref"][:1].
 ok(not junk, f"no junk rows as a reference (found: {junk[:5]})")
 
 print("\n[3] the two layers do not leak into each other")
+# The world layer holds every country, the one just built included, on
+# purpose since several countries have boundaries (see kmz2geojson.py's
+# header); which one to leave out is decided per viewer in the app.
 onff_in_world = [f["properties"]["ref"] for f in world if f["properties"]["ref"].startswith("ONFF")]
-ok(not onff_in_world, "no ONFF in the world layer")
-pts = json.loads((good / "onff-points.geojson").read_text())["features"]
+ok(len(onff_in_world) > 900, f"the world layer holds ONFF too ({len(onff_in_world)})")
+pts = json.loads((good / "zones" / "onff-points.geojson").read_text())["features"]
 ok(all(f["properties"]["ref"].startswith("ONFF") for f in pts),
    "only ONFF in the boundary-less points layer")
 
@@ -111,10 +114,10 @@ ok((good / "wwff-world.geojson").read_bytes() == before, "world file still untou
 print("\n[7] without --strict the points from the previous build stay put")
 r = build(good, "https://example.invalid/weg.csv")
 ok(r.returncode == 0, f"exit code 0 without --strict (got {r.returncode})")
-idx = json.loads((good / "onff-index.json").read_text())
+idx = json.loads((good / "zones" / "onff-index.json").read_text())
 ok(idx["point_count"] == len(pts),
    f"{idx['point_count']} points kept instead of wiped (was {len(pts)})")
-ok(len(json.loads((good / "onff-points.geojson").read_text())["features"]) == len(pts),
+ok(len(json.loads((good / "zones" / "onff-points.geojson").read_text())["features"]) == len(pts),
    "onff-points.geojson not written empty")
 
 print("\n" + ("ALL OK" if not fails else f"{len(fails)} PROBLEMS: " + " | ".join(fails)))

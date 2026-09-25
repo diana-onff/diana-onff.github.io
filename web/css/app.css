@@ -172,6 +172,9 @@
   .spot .who{flex:1;min-width:0}
   .spot .c{font-weight:650;letter-spacing:-.01em}
   .spot .f{font-size:12.5px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .spot .c .qso,.spot .c .atno{margin-left:7px;font-size:12px;letter-spacing:0;white-space:nowrap}
+  .spot .c .qso{font-weight:400;color:var(--ink-3)}
+  .spot .c .atno{color:#b91c1c;font-weight:650}
   .spot .d{text-align:right;flex:0 0 auto;font-size:12.5px;color:var(--ink-3);line-height:1.35}
   .spot .d b{display:block;color:var(--green-2);font-size:13px}
   .spothead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}

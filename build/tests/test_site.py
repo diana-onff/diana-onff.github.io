@@ -55,7 +55,12 @@ def directory(path):
             "ONFF,Belgium,ONFF-0002,Gebied Twee,active,50.90,4.40,80,2024-05-02,IV,,JO20",
             "ONFF,Belgium,ONFF-0003,Gebied Zonder Grens,active,50.95,4.45,10,2023-04-03,IV,,JO20",
             "DLFF,Federal Republic Of Germany,DLFF-0001,Gebiet Eins,active,51.10,7.10,55,2025-07-07,II,,JO31",
-            "DLFF,Federal Republic Of Germany,DLFF-0002,Gebiet Ohne Grenze,active,51.20,7.20,5,2022-01-01,II,,JO31"]
+            "DLFF,Federal Republic Of Germany,DLFF-0002,Gebiet Ohne Grenze,active,51.20,7.20,5,2022-01-01,II,,JO31",
+            # How the real directory writes a reference nobody has activated
+            # yet: no count and no date at all, never a literal 0.
+            "PAFF,Netherlands,PAFF-0001,Nooit Geactiveerd,active,52.10,5.10,,,II,,JO22",
+            # Activated (it has a date), only the count is missing: not an ATNO.
+            "PAFF,Netherlands,PAFF-0002,Telling Ontbreekt,active,52.20,5.20,,2025-05-05,II,,JO22"]
     for i in range(3, 2600):
         rows.append(f"VKFF,Australia,VKFF-{i:04d},Park {i},active,"
                     f"-{33 + i % 5}.{i % 90:02d},{150 + i % 4}.{i % 80:02d},{i % 300},2023-02-02,II,,QF56")
@@ -151,6 +156,19 @@ with tempfile.TemporaryDirectory() as tmp:
     # who did not happen to have that one loaded.
     ok("DLFF" in progs, "the country just built is in it too, not only ONFF")
     ok("ONFF" in progs, "and so is the one built before it")
+
+    # The worldwide QSO counts for the spots screen. site.sh publishes shared
+    # files from a fixed list; this one was once missing from it, which the
+    # app only answers with a quiet 404 and no QSO figures at all.
+    af = site / "data" / "wwff-activity.json"
+    ok(af.is_file(), "the worldwide QSO counts (wwff-activity.json) are published too")
+    telling = json.loads(af.read_text()).get("refs", {}) if af.is_file() else {}
+    ok(telling.get("ONFF-0001") == 120 and telling.get("VKFF-0010") == 10,
+       f"with the directory's own counts, any programme ({telling.get('ONFF-0001')}, {telling.get('VKFF-0010')})")
+    ok(telling.get("PAFF-0001") == 0,
+       f"an active reference with no count and no date is 0, which the app shows as ATNO ({telling.get('PAFF-0001')!r})")
+    ok("PAFF-0002" not in telling,
+       "one with a date but no count is left out rather than called a false ATNO")
 
     print("\n[6] source/ stays private")
     ok(not (site / "source").exists(), "no source/ folder in the published site")
