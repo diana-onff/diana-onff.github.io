@@ -126,20 +126,12 @@ Diana puts these at a point inside the boundary instead (worldwide points, Nearb
 
 Every reference appears only once: if there is a polygon in the KMZ, that one wins and the directory row is used only to check against.
 
-<details><summary>📍 10 references whose WWFF-directory position lies more than 2 km outside their own boundary</summary>
+<details><summary>📍 2 references whose WWFF-directory position lies more than 2 km outside their own boundary</summary>
 
 Diana puts these at a point inside the boundary instead (worldwide points, Nearby > Info, agenda pins), so the dot matches the area on the map. Where the directory copies a neighbour's exact coordinates the directory is wrong and this list can go to WWFF as it is; for the others it is worth a look which of the two is wrong, the directory or the boundary in the KMZ. Coordinates are latitude, longitude.
 
-- `ONFF-0736` Vague des Gomhetsl: 82.0 km outside its boundary; the directory gives it the exact coordinates of `ONFF-0735` (directory 50.4800, 5.6898, a point inside the boundary is 49.7574, 5.4432)
-- `ONFF-0171` Souterrain de Neufmoulin: 74.2 km outside its boundary; the directory gives it the exact coordinates of `ONFF-0178` (directory 50.2417, 5.7682, a point inside the boundary is 49.6317, 5.3492)
-- `ONFF-0138` Moinet: 50.4 km outside its boundary (directory 50.5117, 5.8534, a point inside the boundary is 50.0511, 5.8513)
-- `ONFF-0850` Helschot: 28.1 km outside its boundary; the directory gives it the exact coordinates of `ONFF-0849` (directory 50.9333, 5.3073, a point inside the boundary is 51.0612, 4.9507)
-- `ONFF-0240` Bord nord du bassin de la Hainel: 15.5 km outside its boundary (directory 50.5359, 3.4570, a point inside the boundary is 50.4922, 3.8489)
-- `ONFF-0218` Pays des Collines: 12.3 km outside its boundary (directory 50.7250, 3.7037, a point inside the boundary is 50.7591, 3.5150)
-- `ONFF-0638` Walputbeekl: 11.1 km outside its boundary; the directory gives it the exact coordinates of `ONFF-0640` (directory 50.7319, 4.0234, a point inside the boundary is 50.8327, 4.0610)
-- `ONFF-0697` 't Asbroek: 10.3 km outside its boundary; the directory gives it the exact coordinates of `ONFF-0696` (directory 51.1684, 4.5446, a point inside the boundary is 51.2543, 4.4787)
-- `ONFF-0408` Praatbos: 2.2 km outside its boundary (directory 51.0726, 2.9654, a point inside the boundary is 51.0702, 2.9257)
-- `ONFF-0578` Vallée de la Vierre: 2.2 km outside its boundary (directory 49.8253, 5.3274, a point inside the boundary is 49.8132, 5.3605)
+- `ONFF-0218` Pays des Collines: 3.4 km outside its boundary (directory 50.7261, 3.5356, a point inside the boundary is 50.7591, 3.5150)
+- `ONFF-0138` Moinet: 2.2 km outside its boundary (directory 50.0510, 5.8153, a point inside the boundary is 50.0511, 5.8513)
 
 </details>
 
