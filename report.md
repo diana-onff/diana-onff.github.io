@@ -126,11 +126,10 @@ Diana puts these at a point inside the boundary instead (worldwide points, Nearb
 
 Every reference appears only once: if there is a polygon in the KMZ, that one wins and the directory row is used only to check against.
 
-<details><summary>📍 2 references whose WWFF-directory position lies more than 2 km outside their own boundary</summary>
+<details><summary>📍 1 references whose WWFF-directory position lies more than 2 km outside their own boundary</summary>
 
 Diana puts these at a point inside the boundary instead (worldwide points, Nearby > Info, agenda pins), so the dot matches the area on the map. Where the directory copies a neighbour's exact coordinates the directory is wrong and this list can go to WWFF as it is; for the others it is worth a look which of the two is wrong, the directory or the boundary in the KMZ. Coordinates are latitude, longitude.
 
-- `ONFF-0218` Pays des Collines: 3.4 km outside its boundary (directory 50.7261, 3.5356, a point inside the boundary is 50.7591, 3.5150)
 - `ONFF-0138` Moinet: 2.2 km outside its boundary (directory 50.0510, 5.8153, a point inside the boundary is 50.0511, 5.8513)
 
 </details>
