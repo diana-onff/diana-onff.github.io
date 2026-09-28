@@ -132,6 +132,13 @@
   .fact .k{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);font-weight:650}
   .fact .v{margin-top:3px;font-weight:600;color:var(--green)}
   .fact.wide{grid-column:1/-1}
+  /* "More info" on the spot sheet: the directory's website for the reference.
+     Same colour as every other value, with a small globe, so it reads as one
+     more fact that happens to be tappable. */
+  .fact.site .v a{display:inline-flex;align-items:center;gap:6px;color:var(--green);
+    text-decoration:none;overflow-wrap:anywhere;min-height:24px}
+  .fact.site .v a:hover,.fact.site .v a:focus-visible{text-decoration:underline}
+  .fact.site .v svg{flex:none}
 
   /* Nearby > Info (nearinfo.js). Its own grid rather than .facts, which drops
      to one column on a phone: two or three short numbers side by side are

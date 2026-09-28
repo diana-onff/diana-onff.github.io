@@ -51,10 +51,10 @@ def directory(path):
     """Fewer than 5000 rows is treated as an outage rather than as data, so the
     filler below is not padding: without it this exercises the wrong branch."""
     rows = ["program,country,reference,name,status,latitude,longitude,qsoCount,lastAct,IUCNcat,website,iaruLocator",
-            "ONFF,Belgium,ONFF-0001,Gebied Een,active,50.85,4.35,120,2025-06-01,IV,,JO20",
+            "ONFF,Belgium,ONFF-0001,Gebied Een,active,50.85,4.35,120,2025-06-01,IV,http://www.gebied-een.be/,JO20",
             "ONFF,Belgium,ONFF-0002,Gebied Twee,active,50.90,4.40,80,2024-05-02,IV,,JO20",
-            "ONFF,Belgium,ONFF-0003,Gebied Zonder Grens,active,50.95,4.45,10,2023-04-03,IV,,JO20",
-            "DLFF,Federal Republic Of Germany,DLFF-0001,Gebiet Eins,active,51.10,7.10,55,2025-07-07,II,,JO31",
+            "ONFF,Belgium,ONFF-0003,Gebied Zonder Grens,active,50.95,4.45,10,2023-04-03,IV,-,JO20",
+            "DLFF,Federal Republic Of Germany,DLFF-0001,Gebiet Eins,active,51.10,7.10,55,2025-07-07,II,www.gebiet-eins.de,JO31",
             "DLFF,Federal Republic Of Germany,DLFF-0002,Gebiet Ohne Grenze,active,51.20,7.20,5,2022-01-01,II,,JO31",
             # How the real directory writes a reference nobody has activated
             # yet: no count and no date at all, never a literal 0.
@@ -62,8 +62,9 @@ def directory(path):
             # Activated (it has a date), only the count is missing: not an ATNO.
             "PAFF,Netherlands,PAFF-0002,Telling Ontbreekt,active,52.20,5.20,,2025-05-05,II,,JO22"]
     for i in range(3, 2600):
+        site = "https://parks.example.au/10" if i == 10 else ""
         rows.append(f"VKFF,Australia,VKFF-{i:04d},Park {i},active,"
-                    f"-{33 + i % 5}.{i % 90:02d},{150 + i % 4}.{i % 80:02d},{i % 300},2023-02-02,II,,QF56")
+                    f"-{33 + i % 5}.{i % 90:02d},{150 + i % 4}.{i % 80:02d},{i % 300},2023-02-02,II,{site},QF56")
     for i in range(3, 2600):
         rows.append(f"KFF,United States,KFF-{i:04d},Park {i},active,"
                     f"{38 + i % 5}.{i % 90:02d},-{90 + i % 4}.{i % 80:02d},{i % 300},2024-02-02,II,,EM48")
@@ -169,6 +170,23 @@ with tempfile.TemporaryDirectory() as tmp:
        f"an active reference with no count and no date is 0, which the app shows as ATNO ({telling.get('PAFF-0001')!r})")
     ok("PAFF-0002" not in telling,
        "one with a date but no count is left out rather than called a false ATNO")
+
+    # The website link per reference, one file per programme, for the spot
+    # detail sheet. A folder, not a single shared file, so it needs its own
+    # line in site.sh; this checks that line exists.
+    sd = site / "data" / "sites"
+    ok(sd.is_dir(), "the website links (data/sites/) are published too")
+    def links(prog):
+        f = sd / f"{prog}.json"
+        return json.loads(f.read_text()).get("refs", {}) if f.is_file() else {}
+    ok(links("onff").get("ONFF-0001") == "http://www.gebied-een.be/",
+       f"a reference WITH a boundary gets its link ({links('onff').get('ONFF-0001')!r})")
+    ok("ONFF-0003" not in links("onff"), "a '-' in the website column is no link")
+    ok(links("dlff").get("DLFF-0001") == "http://www.gebiet-eins.de",
+       f"a bare www. address gets http:// in front ({links('dlff').get('DLFF-0001')!r})")
+    ok(links("vkff").get("VKFF-0010") == "https://parks.example.au/10",
+       "and every programme is in there, not only the ones with boundaries")
+    ok(not (sd / "paff.json").exists(), "a programme without a single link gets no file")
 
     print("\n[6] source/ stays private")
     ok(not (site / "source").exists(), "no source/ folder in the published site")

@@ -45,6 +45,13 @@ if [ -d data/zones ]; then
   cp -r data/zones "$OUT/data/"
 fi
 
+# The website link per reference, one file per programme (data/sites/<prog>.json),
+# for the "More info" link on the spot detail sheet. Only there after a build
+# that could read the WWFF directory; without it the sheet simply shows no link.
+if [ -d data/sites ]; then
+  cp -r data/sites "$OUT/data/"
+fi
+
 # Shared by every country: provenance, the worldwide programme list, the
 # worldwide points layer and the worldwide QSO counts (spots screen, ATNO).
 # The last three only exist after a build that could actually reach the WWFF

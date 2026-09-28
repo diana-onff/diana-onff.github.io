@@ -47,6 +47,11 @@ Shared by every country, in data/:
                             nothing else. 0 means never activated (ATNO on the
                             spots screen). Published by build/site.sh alongside
                             wwff-world.geojson
+    data/sites/<prog>.json  the directory's website link per reference, one file
+                            per programme, every programme included, with or
+                            without a polygon: ref -> http(s) URL, cleaned by
+                            clean_website(). For the "More info" link on the
+                            spot detail sheet
 
 Nothing is written to data/<slug>.geojson at the top level any more. Files by
 those names may still be lying around from before the manifest; they are a
@@ -91,6 +96,7 @@ import zipfile
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from lxml import etree
 from pyproj import Geod
@@ -560,6 +566,15 @@ def _read_rows(source: str, timeout: int = 120) -> list[dict[str, str]]:
         dialect = csv.Sniffer().sniff(sample, delimiters=",;\t")
     except csv.Error:
         dialect = csv.excel
+    # The sniffer only sees the first 4 KB. When no doubled quote ("") happens
+    # to occur in there, it decides the file does not use them, and every later
+    # row whose text contains one ('Part ""Bovenloop van de Grote Nete""') is
+    # split in the wrong places: all columns after it shift by one. In the real
+    # directory that hit ONFF-0103 Scheps (209 QSOs and last activation "1059"
+    # instead of 1059 QSOs on 2023-03-11, and its website lost), CTFF-0564 and
+    # LYFF-0315. A doubled quote inside a quoted field is standard CSV, and a
+    # file without any is read exactly the same either way, so: always on.
+    dialect = type("DianaDialect", (dialect,), {"doublequote": True})
     rows = list(csv.reader(io.StringIO(text), dialect))
     if not rows:
         return []
@@ -617,6 +632,72 @@ def _row_value(row: dict[str, str], *words: str) -> str | None:
         if value and value not in ("-", "n/a") and any(w in key.lower() for w in words):
             return value.strip()
     return None
+
+
+# The directory's "website" column, as it really comes in (checked against the
+# real export, some 64,000 filled-in cells): mostly a plain http(s) link, but
+# also "-", a bare "www.something.org", a bare "protectedplanet.net/123", two
+# links in one cell ("http://- https://...", "http:// https://...", "a ; b"),
+# and free text with or without a link somewhere in it ("NSG Steinbruchgelaende
+# Hohenhagen", "... Operation only with permission http://www.societe.org.gg/").
+# The app puts whatever comes out of here behind a tap, so only a real http or
+# https address with a proper host name gets through; never a javascript: or
+# data: link, never a sentence.
+_SITE_SPLIT_RE = re.compile(r"[\s;]+")
+_SITE_HOST_RE = re.compile(r"^(?=.{4,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$")
+_SITE_BARE_RE = re.compile(r"^[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:[/?#].*)?$", re.IGNORECASE)
+_SITE_SCHEME_RE = re.compile(r"https?://", re.IGNORECASE)
+
+
+def clean_website(raw: str | None) -> str | None:
+    """The first usable http(s) link in a directory "website" cell, or None.
+
+    A token counts when it starts with http:// or https://, or with "www.";
+    a bare "domain.tld/path" only when it is the whole cell (in free text,
+    "St.Johns" or "e.g." would otherwise pass for a web address)."""
+    if not raw:
+        return None
+    text = raw.replace("\xa0", " ").strip()
+    if not text or text.lower() in ("-", "n/a", "none", "http://", "https://"):
+        return None
+    tokens = [tok.strip(".,;)(\"'") for tok in _SITE_SPLIT_RE.split(text)]
+    tokens = [tok for tok in tokens if tok]
+    alone = len(tokens) == 1
+    for tok in tokens:
+        low = tok.lower()
+        candidates = []
+        # A link glued to junk in front of it ("-https://...", "http://-https://...")
+        # is still a link: try it from every place a scheme starts.
+        candidates += [tok[m.start():] for m in _SITE_SCHEME_RE.finditer(tok)]
+        if low.startswith("www.") or (alone and not candidates and _SITE_BARE_RE.match(tok)):
+            candidates.append("http://" + tok)
+        for url in candidates:
+            good = _usable_link(url)
+            if good:
+                return good
+    return None
+
+
+def _usable_link(url: str) -> str | None:
+    """The link itself if it is a real http(s) address with a proper host name,
+    else None. A host written with a closing dot ("www.hetleen.be./bos", as in
+    ONFF-0115) is a valid name; it comes back without the dot."""
+    try:
+        parts = urlsplit(url)
+        host = (parts.hostname or "").lower()
+    except ValueError:
+        return None
+    if parts.scheme.lower() not in ("http", "https"):
+        return None
+    # A backslash too: Python and the browser disagree on where the host
+    # ends in "http://a.be\@b.be/" (a backslash before the @), and the two
+    # checks must agree.
+    if any(ord(c) < 33 or c in '<>"`\\' for c in url):
+        return None
+    if host.endswith(".") and parts.netloc.endswith("."):
+        url = parts._replace(netloc=parts.netloc.rstrip(".")).geturl()
+        host = host.rstrip(".")
+    return url if _SITE_HOST_RE.match(host) else None
 
 
 # How the directory writes "position unknown": null island, both as a coordinate
@@ -952,7 +1033,7 @@ def point_refs(rows: list[dict[str, str]], read_warnings: list[str], read_failed
             "name": name,
             "prov": _province(row),
             "iucn": (row.get("IUCNcat") or "").strip() or None,
-            "site": (row.get("website") or "").strip() or None,
+            "site": clean_website(row.get("website")),
             "loc": (row.get("iaruLocator") or "").strip().upper() or None,
             "latlon": _row_latlon(row),
             "src": "wwff",
@@ -1062,6 +1143,15 @@ def point_refs(rows: list[dict[str, str]], read_warnings: list[str], read_failed
     # 65,000 references the date alone would more than double the file.
     world_activity: dict[str, int] = {}
     counts_seen = 0
+    # The directory's website link per reference, worldwide, for the spot
+    # detail sheet (a spot can be for any country, same reasoning as above).
+    # Every active reference with a usable link, with or without a polygon:
+    # until now this column was only read for the handful of references that
+    # have no boundary, while more than three quarters of ONFF, DLFF, OZFF and
+    # PAFF together carry a link in the directory. Cleaned up by clean_website().
+    world_sites: dict[str, str] = {}
+    site_cells = 0
+    active_world = 0
     for row in rows:
         ref = (row.get("reference") or "").strip().upper()
         if not ref:
@@ -1075,6 +1165,7 @@ def point_refs(rows: list[dict[str, str]], read_warnings: list[str], read_failed
         status = (row.get("status") or "").strip().lower()
         if status != "active":
             continue
+        active_world += 1
         q = _to_float(row.get("qsoCount") or "")
         last = (row.get("lastAct") or "").strip()
         if q is not None:
@@ -1083,6 +1174,12 @@ def point_refs(rows: list[dict[str, str]], read_warnings: list[str], read_failed
             world_activity[ref] = int(q)
         elif not last:
             world_activity[ref] = 0
+        site_raw = (row.get("website") or "").strip()
+        if site_raw:
+            site_cells += 1
+            site = clean_website(site_raw)
+            if site:
+                world_sites[ref] = site
         latlon = _row_latlon(row)
         if not latlon:
             continue
@@ -1104,7 +1201,18 @@ def point_refs(rows: list[dict[str, str]], read_warnings: list[str], read_failed
                         "reference an ATNO")
         world_activity = {}
 
-    return features, entries, activity, warnings, stats, programs_map, world_features, world_activity
+    # Same kind of guard for the links: a directory where not one active
+    # reference has anything in its website column (the column renamed or
+    # dropped in some future export) must not be read as "no links anywhere",
+    # which would empty every data/sites/ file. Then nothing is rewritten.
+    if active_world and not site_cells:
+        warnings.append("WWFF directory has no website links at all (website column missing or "
+                        "empty): data/sites/ not rewritten")
+        world_sites = {}
+    stats["site_cells"] = site_cells
+
+    return (features, entries, activity, warnings, stats, programs_map, world_features,
+            world_activity, world_sites)
 
 
 def convert(kml_path: Path, tolerance: float, decimals: int, overrides: dict,
@@ -1534,7 +1642,8 @@ def main() -> int:
 
     have = {r["ref"] for r in index_doc["refs"]}
     programs = [PROGRAM]
-    pt_features, pt_entries, activity, pt_warnings, pt_stats, programs_map, world_features, world_activity = point_refs(
+    (pt_features, pt_entries, activity, pt_warnings, pt_stats, programs_map, world_features,
+     world_activity, world_sites) = point_refs(
         dir_rows, dir_warnings, dir_read_failed, programs, have, overrides, args.decimals)
     stats["warnings"].extend(pt_warnings)
     stats["warnings"].extend(_point_inside_other_polygon_warnings(geojson, pt_features))
@@ -1767,6 +1876,39 @@ def main() -> int:
             json.dumps({"generated": index_doc["generated"], "refs": world_activity},
                        separators=(",", ":")), encoding="utf-8")
 
+    # The website link per reference, for the spot detail sheet (siteFor() in
+    # map-data.js). One small file per programme, data/sites/<prog>.json, not
+    # one worldwide file: the sheet only ever needs the programme of the spot
+    # you tapped, and all links together run to some 3.5 MB, which is a lot to
+    # pull over one bar of signal for a single link. No "generated" stamp in
+    # these files on purpose: that would change every one of them every night
+    # and turn each nightly commit into a couple of hundred changed files; now
+    # a file only changes when a link in it does. Same guard as above, plus:
+    # a programme that no longer has a single link loses its file, so the app
+    # does not keep offering a link the directory has since dropped.
+    sites_written = 0
+    if world_sites and not directory_failed:
+        per_prog: dict[str, dict[str, str]] = defaultdict(dict)
+        for ref, site in world_sites.items():
+            per_prog[ref.split("-")[0]][ref] = site
+        sites_dir = args.out / "sites"
+        sites_dir.mkdir(parents=True, exist_ok=True)
+        keep = set()
+        for prog, refs in per_prog.items():
+            if not re.fullmatch(r"[A-Z0-9]{1,5}FF", prog):
+                continue
+            name = prog.lower() + ".json"
+            keep.add(name)
+            body = json.dumps({"refs": dict(sorted(refs.items()))},
+                              separators=(",", ":"), ensure_ascii=False)
+            target = sites_dir / name
+            if not target.is_file() or target.read_text(encoding="utf-8") != body:
+                target.write_text(body, encoding="utf-8")
+            sites_written += len(refs)
+        for old in sites_dir.glob("*.json"):
+            if old.name not in keep:
+                old.unlink()
+
     # If the directory was unreachable, all of these counts are zero — but the
     # corresponding files were deliberately not rewritten above. Writing zeros out
     # would make meta.json lie about what is on disk, and worse: it would wipe the
@@ -1796,6 +1938,8 @@ def main() -> int:
         # previous file is still there, and so is its figure.
         "world_activity_refs": (len(world_activity) if world_activity and not directory_failed
                                 else previous_meta.get("world_activity_refs", 0)),
+        # Same idea for the website links in data/sites/.
+        "world_site_refs": sites_written or previous_meta.get("world_site_refs", 0),
         "source_polygons": stats["polygons"],
         "tolerance_deg": args.tolerance,
         "decimals": args.decimals,
