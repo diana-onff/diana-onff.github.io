@@ -206,7 +206,10 @@ function fixApply(pos, final){
   // The location line on the welcome screen and the privacy page (privacy.js).
   if(typeof syncLocState === 'function') syncLocState();
   marker.setLngLat([lon,lat]).addTo(map);
-  if(final) map.easeTo({center:[lon,lat], zoom:Math.max(map.getZoom(),12)});
+  // Not while a spot opened from the Spots list is showing: then the position
+  // is where the map goes once that spot is closed (deferFixMove in spots.js).
+  if(final && !(typeof deferFixMove === 'function' && deferFixMove(lon, lat)))
+    map.easeTo({center:[lon,lat], zoom:Math.max(map.getZoom(),12)});
   renderSpots();
   // Nearby was drawn from the centre of your locator square until now, or not
   // at all — a real fix changes every distance on it. A new position is a new

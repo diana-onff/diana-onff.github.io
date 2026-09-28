@@ -635,6 +635,7 @@ function selectPoint(f){
     + radioFactsHtml(selectedPos[0], selectedPos[1])
     + activityFacts(p.ref);
   $('zoneNote').textContent = t('zone.nopolynote');
+  addAreaSite(p.ref);
 
   openSheet();
   map.easeTo({center:f.geometry.coordinates, zoom:Math.max(map.getZoom(),12),
@@ -689,6 +690,7 @@ function select(ref, alsoIn){
   const overlap = (alsoIn||[]).filter(r=>r!==ref);
   if(overlap.length) notes.push(t('zone.overlap').replace('{refs}', overlap.join(', ')));
   $('zoneNote').textContent = notes.join(' ');
+  addAreaSite(ref);
 
   markSelected(ref);
   openSheet();
@@ -696,8 +698,29 @@ function select(ref, alsoIn){
   map.fitBounds([[b[0],b[1]],[b[2],b[3]]],{padding:{top:90,bottom:260,left:40,right:40},maxZoom:14});
 }
 
+/* "More info" at the end of the area panel's facts, the same line as on the
+   spot sheet. The programme's link file may still be on its way: then the line
+   is added when it lands, if this panel still shows the same area. */
+function addAreaSite(ref){
+  const put = () => {
+    const box = $('facts');
+    if(selected !== ref || !box || box.querySelector('.fact.site')) return;
+    const html = siteFactHtml(ref);
+    if(!html) return;
+    box.insertAdjacentHTML('beforeend', html);
+    if($('sheet').classList.contains('open'))
+      requestAnimationFrame(()=>document.body.style.setProperty('--sheet-h', $('sheet').offsetHeight+'px'));
+  };
+  put();
+  const loading = ensureSites(refProgram(ref));
+  if(loading) loading.then(put);
+}
+
 function openSheet(){
   const el = $('sheet');
+  // A new area starts at the top: without this the panel kept the previous
+  // area's scroll position, with the name and the first facts out of view.
+  el.scrollTop = 0;
   el.classList.add('open');
   // The height varies with the number of facts, so measure after rendering.
   requestAnimationFrame(()=>document.body.style.setProperty('--sheet-h', el.offsetHeight+'px'));

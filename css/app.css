@@ -119,6 +119,16 @@
     max-height:72vh; overflow:auto;
   }
   .sheet.open{transform:none}
+  /* The spot sheet leaves at least a strip of map above it, below the top bar,
+     for the spot itself: on a small phone 72vh left none, and a spot opened
+     from the list sat behind its own sheet. What does not fit scrolls. */
+  #spotSheet{max-height:min(72vh, calc(100vh - var(--nav-h, 62px) - 200px))}
+  /* That strip is for the spot: the GPS message that would otherwise sit
+     right there waits until the spot is closed again. */
+  body.spot-view .status:not(.top){visibility:hidden}
+  @supports (height:100dvh){
+    #spotSheet{max-height:min(72dvh, calc(100dvh - var(--nav-h, 62px) - 200px))}
+  }
   .grip{width:38px;height:4px;border-radius:99px;background:var(--line);margin:2px auto 12px}
   .badges{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
   .pill{

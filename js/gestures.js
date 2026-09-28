@@ -15,6 +15,12 @@ function swipeToClose(el, close){
     // this is a scroll, not a close gesture.
     const sc = e.target.closest ? e.target.closest('.scroll,.spotlist,.card,.facts') : null;
     if(sc && sc.scrollTop > 0) return;
+    // The panel itself scrolls too, once its content is taller than the room
+    // it gets (a zone with many facts on a phone). Scrolled down, a downward
+    // swipe is the way back up, not a close gesture: without this check the
+    // swipe dragged the whole panel instead, and the name and first facts at
+    // the top could not be reached any more.
+    if(el.scrollTop > 0) return;
     // Already tucked away? Then a touch is meant to bring it back, not to push
     // it further away.
     if(el.classList.contains('minimized')) return;

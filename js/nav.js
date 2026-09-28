@@ -26,6 +26,9 @@ if(typeof ResizeObserver !== 'undefined') new ResizeObserver(syncNavHeight).obse
 
 $('nav').addEventListener('click', e=>{
   const b=e.target.closest('button[data-view]'); if(!b) return;
+  // A spot opened from the Spots list: leaving it through the bottom bar puts
+  // the map back where it was instead of returning to the list (spots.js).
+  if(typeof dropListReturn === 'function') dropListReturn();
   [...$('nav').children].forEach(c=>c.classList.toggle('on',c===b));
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
   if(b.dataset.view!=='map'){ $(b.dataset.view).classList.add('on'); toggle(null); }
