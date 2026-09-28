@@ -132,6 +132,10 @@ function ensureSites(prog){
   return siteLoading[prog];
 }
 
+/* For anything from outside (Spotline, the WWFF directory) that ends up in innerHTML. */
+const escH = v => String(v).replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
 /* The link for one reference as a parsed URL, or null. Checked again here,
    not only at build time: whatever comes out of this goes straight into an
    href, so only http and https get through, never javascript: or data:. */
@@ -450,3 +454,17 @@ function bboxOf(geom){
   return [x1,y1,x2,y2];
 }
 
+/* "More info": the directory's website for a reference, as one wide fact, for
+   the spot sheet (spots.js) and the area panel (map.js). It always opens in a
+   new tab or window (target=_blank), never in Diana's own: the app, the map and
+   a running GPS fix stay exactly where they were, and you come back to them
+   with the back gesture or the app switcher. noopener: the page that opens gets
+   no handle on Diana's window. Empty string when there is no (safe) link. */
+const SITE_ICON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 3 2.5 15 0 18M12 3c-2.5 3-2.5 15 0 18"/></svg>';
+function siteFactHtml(ref){
+  const u = siteFor(ref); if(!u) return '';
+  const host = u.hostname.replace(/^www\./, '');
+  return `<div class="fact wide site"><div class="k">${t('spot.site')}</div>
+      <div class="v"><a href="${escH(u.href)}" target="_blank" rel="noopener noreferrer">${SITE_ICON}<span>${escH(host)}</span></a></div>
+      <div class="s">${t('spot.siteopens')}</div></div>`;
+}

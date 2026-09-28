@@ -383,9 +383,6 @@ const compassName = d => COMPASS[Math.round(d/22.5)%16];
 /* Six-character locator. One implementation for the whole app: maidenhead()
    in radiogeo.js, which the Info tab also uses for eight characters. */
 function locator(lat, lon){ return maidenhead(lat, lon, 3); }
-/* For anything someone typed into Spotline that ends up in innerHTML. */
-const escH = v => String(v).replace(/[&<>"']/g, c =>
-  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmtKm = m => m>=1000 ? `${(m/1000).toFixed(m<10000?1:0)} km` : `${Math.round(m)} m`;
 
 /* QSO count for a spot's or an agenda entry's reference, or, when the WWFF
@@ -471,9 +468,53 @@ function renderAgenda(list, meta){
    its own attribute and its own opener. Agenda rows used to have neither: the
    row looked the same as a live spot, and a tap on it did nothing at all. */
 $('spotList').addEventListener('click', e=>{
-  const row=e.target.closest('.spot[data-id]'); if(row) return openSpot(Number(row.dataset.id));
-  const ag=e.target.closest('.spot[data-ag]'); if(ag) openAgenda(ag.dataset.ag);
+  const row=e.target.closest('.spot[data-id]'); if(row) return openFromList(openSpot, Number(row.dataset.id));
+  const ag=e.target.closest('.spot[data-ag]'); if(ag) openFromList(openAgenda, ag.dataset.ag);
 });
+
+/* From the list to the map and back. The detail sheet belongs to the map, and
+   the Spots screen lies over the whole map, so a tap on a row used to open the
+   sheet (and move the map) behind the list, where nobody could see it: you had
+   to know to go to Map yourself, find the spot there, and find your way back.
+   Now a tap on a row goes to the map, zoomed in on the spot, with its sheet
+   open; closing the sheet (the x, swiping it down, Escape) brings you back to
+   the list you came from, same tab, same scroll position, and puts the map back
+   where it was. Going anywhere else from the bottom bar in the meantime also
+   puts the map back, so Map never shows a spot's location nobody asked for. */
+let listReturn = null;
+function openFromList(open, id){
+  const view = $('viewSpots');
+  const back = {
+    scroll: view ? view.scrollTop : 0,
+    cam: {center: map.getCenter(), zoom: map.getZoom(), bearing: map.getBearing(), pitch: map.getPitch(),
+          padding: map.getPadding()},
+  };
+  listReturn = null;
+  document.querySelector('#nav button[data-view="map"]').click();   // map on, anything open closed
+  listReturn = back;
+  document.body.classList.add('spot-view');
+  open(id);
+}
+/* A GPS position that comes in while such a spot is showing: geo.js would
+   move the map to it, away from the spot. Instead it becomes where the map
+   goes back to when the spot is closed. True when it was taken care of here. */
+function deferFixMove(lon, lat){
+  if(!listReturn) return false;
+  listReturn.cam.center = [lon, lat];
+  listReturn.cam.zoom = Math.max(listReturn.cam.zoom, 12);
+  return true;
+}
+/* Leave the spot that was opened from the list without going back to the
+   list: the map goes back to where it was, the sheet closes. Called by the
+   bottom bar before it switches screens. */
+function dropListReturn(){
+  const back = listReturn; if(!back) return;
+  listReturn = null;
+  document.body.classList.remove('spot-view');
+  $('spotSheet').classList.remove('open');
+  document.body.classList.remove('sheet-open');
+  map.stop(); map.jumpTo(back.cam);
+}
 $('spotTab').addEventListener('click', e=>{
   const b=e.target.closest('.seg[data-tab]'); if(!b) return;
   spotTab=b.dataset.tab;
@@ -658,10 +699,35 @@ function showSpotSheet(ref, pos){
   } else {
     $('spBearing').innerHTML = '';
   }
+  $('spotSheet').scrollTop = 0;            // a new spot starts at the top
   $('spotSheet').classList.add('open');
   document.body.classList.add('sheet-open');
   fitSpotSheet();
-  if(pos) map.easeTo({center:pos, zoom:Math.max(map.getZoom(),9)});
+  // Centred in the part of the map the sheet leaves free, not behind the sheet.
+  // From the list at a fixed zoom that shows the area around the spot (the map
+  // was showing something else entirely); from the map itself, not further out
+  // than it already was.
+  if(pos){
+    if(listReturn){
+      // From the list: the spot in the strip of map between the top bar (with
+      // the area count under it) and the sheet, whatever the phone's size.
+      // As padding rather than an offset, so that padding an earlier panel
+      // left on the map (it persists in MapLibre) cannot push the spot away;
+      // the camera from before, padding included, comes back on closing.
+      // Measured from the sheet's height, not its current position: it is
+      // still sliding up at this moment.
+      const mc = map.getContainer().getBoundingClientRect();
+      const navH = $('nav') ? $('nav').offsetHeight : 62;
+      const sheetTop = mc.bottom - navH - $('spotSheet').offsetHeight;
+      const chrome = $('counts') ? $('counts').getBoundingClientRect().bottom - mc.top + 8 : 110;
+      const bottom = Math.max(0, mc.bottom - sheetTop);
+      const top = Math.max(0, Math.min(chrome, mc.height - bottom - 40));
+      map.easeTo({center:pos, zoom:11, padding:{top, bottom, left:0, right:0}});
+    } else {
+      const free = Math.max(0, $('spotSheet').offsetHeight);
+      map.easeTo({center:pos, zoom:Math.max(map.getZoom(), 9), offset:[0, -free/2]});
+    }
+  }
   // The link file for this programme may not be here yet: the sheet does not
   // wait for it, the line is added the moment it lands (if the sheet is still
   // showing the same reference by then).
@@ -676,21 +742,12 @@ function fitSpotSheet(){
   requestAnimationFrame(()=>document.body.style.setProperty('--sheet-h',$('spotSheet').offsetHeight+'px'));
 }
 
-/* "More info": the directory's website for this reference. It always opens in
-   a new tab or window (target=_blank), never in Diana's own: the app, the map
-   and a running GPS fix stay exactly where they were, and you come back to
-   them with the back gesture or the app switcher. noopener: the page that
-   opens gets no handle on Diana's window. */
-const SITE_ICON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 3 2.5 15 0 18M12 3c-2.5 3-2.5 15 0 18"/></svg>';
+/* "More info" on the spot sheet: see siteFactHtml() in map-data.js. */
 function addSiteFact(ref){
   const box = $('spFacts');
   if(!box || box.querySelector('.fact.site')) return;
-  const u = siteFor(ref); if(!u) return;
-  const host = u.hostname.replace(/^www\./, '');
-  box.insertAdjacentHTML('beforeend',
-    `<div class="fact wide site"><div class="k">${t('spot.site')}</div>
-      <div class="v"><a href="${escH(u.href)}" target="_blank" rel="noopener noreferrer">${SITE_ICON}<span>${escH(host)}</span></a></div>
-      <div class="s">${t('spot.siteopens')}</div></div>`);
+  const html = siteFactHtml(ref);
+  if(html) box.insertAdjacentHTML('beforeend', html);
 }
 
 /* The name of a reference from our own data: the loaded country's boundaries
@@ -702,7 +759,13 @@ function refName(ref){
   return (f && f.properties.name) || '';
 }
 $('closeSpot').onclick = ()=>{
+  const back = listReturn;
+  dropListReturn();
   $('spotSheet').classList.remove('open');
   document.body.classList.remove('sheet-open');
+  if(back){
+    document.querySelector('#nav button[data-view="viewSpots"]').click();
+    requestAnimationFrame(() => { $('viewSpots').scrollTop = back.scroll; });
+  }
 };
 

@@ -61,7 +61,7 @@ ONFF_SITES = {"refs": {
 }}
 
 
-def routes(ctx, sites_delay=0, seen=None):
+def routes(ctx, held=None, seen=None):
     ctx.route(re.compile(r"https://tiles\.openfreemap\.org/.*"), lambda r: r.fulfill(
         status=200, content_type="application/json",
         body=json.dumps({"version": 8, "sources": {}, "layers": [
@@ -80,8 +80,9 @@ def routes(ctx, sites_delay=0, seen=None):
         prog = route.request.url.rsplit("/", 1)[-1]
         if seen is not None:
             seen.append(prog)
-        if sites_delay:
-            time.sleep(sites_delay)
+        if held is not None:          # answer later, when the test says so
+            held.append(route)
+            return
         if prog == "onff.json":
             route.fulfill(status=200, content_type="application/json", body=json.dumps(ONFF_SITES))
         else:
@@ -91,6 +92,17 @@ def routes(ctx, sites_delay=0, seen=None):
 
 def tap(pg, selector):
     pg.evaluate("(s) => document.querySelector(s).click()", selector)
+
+
+def release(held):
+    """Let the held-back link files through, in the order they were asked for."""
+    while held:
+        route = held.pop(0)
+        prog = route.request.url.rsplit("/", 1)[-1]
+        if prog == "onff.json":
+            route.fulfill(status=200, content_type="application/json", body=json.dumps(ONFF_SITES))
+        else:
+            route.fulfill(status=404, body="not found")
 
 
 SHEET = """() => {
@@ -228,16 +240,22 @@ with sync_playwright() as p:
 
     print("\n[11] a slow connection: the sheet does not wait for the link")
     ctx = br.new_context(service_workers="block", viewport={"width": 420, "height": 860})
-    routes(ctx, sites_delay=1.5)
+    held = []
+    routes(ctx, held=held)
     pg = ctx.new_page()
     errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)))
     pg.goto(BASE, wait_until="load")
     pg.wait_for_function("() => document.querySelectorAll('#spotList .spot[data-id]').length >= 4", timeout=15000)
     tap(pg, '#spotList .spot[data-id="101"]')
-    pg.wait_for_timeout(150)
+    for _ in range(50):                      # until the link file has been asked for (and held back)
+        if held:
+            break
+        pg.wait_for_timeout(100)
     s = pg.evaluate(SHEET)
-    ok(s["open"] and s["links"] == 0, "the sheet is open at once, still without the link")
+    ok(s["open"] and s["links"] == 0 and len(held) >= 1,
+       f"the sheet is open at once, still without the link ({len(held)} request(s) held back)")
+    release(held)
     pg.wait_for_function("() => document.querySelector('#spotSheet .fact.site a')", timeout=8000)
     s = pg.evaluate(SHEET)
     ok(s["links"] == 1 and s["text"] == "valleivandezuidleie.be", "and the link joins it once the file lands")
@@ -246,14 +264,17 @@ with sync_playwright() as p:
 
     print("\n[12] closed or moved on before the file lands: no stray link")
     ctx = br.new_context(service_workers="block", viewport={"width": 420, "height": 860})
-    routes(ctx, sites_delay=1.5)
+    held = []
+    routes(ctx, held=held)
     pg = ctx.new_page()
     pg.goto(BASE, wait_until="load")
     pg.wait_for_function("() => document.querySelectorAll('#spotList .spot[data-id]').length >= 4", timeout=15000)
     tap(pg, '#spotList .spot[data-id="101"]')
     pg.wait_for_timeout(100)
     tap(pg, '#spotList .spot[data-id="103"]')        # PAFF: no file, no link
-    pg.wait_for_timeout(2500)
+    pg.wait_for_timeout(300)
+    release(held)                                     # now the ONFF file lands
+    pg.wait_for_timeout(1000)
     s = pg.evaluate(SHEET)
     ok(s["ref"] == "PAFF-0001" and s["links"] == 0, f"the PAFF sheet did not get ONFF-0037's link ({s['links']})")
     ctx.close()
