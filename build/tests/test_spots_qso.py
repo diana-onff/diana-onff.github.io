@@ -132,6 +132,58 @@ with sync_playwright() as p:
     nl2 = pg.evaluate(ROW, "PAFF-0002")
     ok(nl and "42 QSO's" in nl["text"], f"Dutch: 42 QSO's ({nl})")
     ok(nl2 and "ATNO" in nl2["text"], f"and ATNO stays ATNO ({nl2})")
+
+    print("\n[6b] the same figure in the spot's own detail sheet")
+    SHEET_QSO = """() => { const f = document.querySelector('#spFacts .fact.qso');
+      const facts = [...document.querySelectorAll('#spFacts .fact')];
+      return f ? {v: f.querySelector('.v').textContent, atno: !!f.querySelector('.atno'),
+                  red: f.querySelector('.atno') ? getComputedStyle(f.querySelector('.atno')).color : null,
+                  after: (facts[facts.indexOf(f) - 1] || {}).textContent} : null; }"""
+    def sheet_for(ref):
+        rid = next(sp["id"] for sp in SPOTS if sp["reference"] == ref)
+        pg.evaluate("(id) => openSpot(id)", rid)
+        pg.wait_for_timeout(200)
+        return pg.evaluate(SHEET_QSO)
+    q = sheet_for("PAFF-0001")
+    ok(q and q["v"] == "42" and not q["atno"], f"a count: 42 ({q})")
+    ok(q and "Gebied" in (q["after"] or ""), "right after the area's name")
+    q = sheet_for("PAFF-0002")
+    ok(q and q["atno"] and q["red"] == "rgb(185, 28, 28)", f"never activated: ATNO, in red ({q})")
+    ok(sheet_for("PAFF-0003") is None, "no figures: no line at all")
+    q = sheet_for("ONFF-0001")
+    ok(q and q["v"] in ("3.675", "3,675"), f"the home country's own table wins here too ({q})")
+    ok(sheet_for("ONFF-0005") is None, "activated without a count: silent, not a false ATNO")
+    pg.evaluate("() => document.getElementById('closeSpot').click()")
+    pg.evaluate("() => openAgenda(1)")
+    pg.wait_for_timeout(200)
+    q = pg.evaluate(SHEET_QSO)
+    ok(q and q["v"] == "42", f"and in an announcement's sheet ({q})")
+    ctx.close()
+
+    print("\n[6c] the counts arrive after the sheet was opened")
+    held = []
+    ctx = br.new_context(service_workers="block", viewport={"width": 420, "height": 860})
+    base_routes(ctx)
+    ctx.route(re.compile(r".*data/wwff-activity\.json"), lambda r: held.append(r))
+    pg = ctx.new_page()
+    pg.on("pageerror", lambda e: errs.append(str(e)))
+    pg.goto(BASE, wait_until="load")
+    pg.wait_for_function("() => document.querySelectorAll('#spotList .spot').length >= 6", timeout=15000)
+    for _ in range(50):
+        if held:
+            break
+        pg.wait_for_timeout(100)
+    pid = next(sp["id"] for sp in SPOTS if sp["reference"] == "PAFF-0002")
+    pg.evaluate("(id) => openSpot(id)", pid)
+    pg.wait_for_timeout(200)
+    ok(pg.evaluate("() => document.querySelector('#spFacts .fact.qso')") is None, "not there yet: no guess")
+    for r in held:
+        r.fulfill(status=200, content_type="application/json", body=json.dumps({"refs": WORLD}))
+    held.clear()
+    pg.wait_for_function("() => document.querySelector('#spFacts .fact.qso')", timeout=5000)
+    ok("ATNO" in pg.evaluate("() => document.querySelector('#spFacts .fact.qso').textContent"),
+       "and the line joins the open sheet once they land")
+    ok(pg.evaluate("() => document.querySelectorAll('#spFacts .fact.qso').length") == 1, "once")
     ctx.close()
 
     print("\n[7] a failed download is tried again later, not given up for the session")

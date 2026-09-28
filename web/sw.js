@@ -47,7 +47,7 @@ const SHELL_FILES = [
   './js/map.js', './js/spots.js', './js/install.js', './js/gestures.js',
   './js/nav.js', './js/settings.js', './js/privacy.js', './js/admin.js', './js/self-spot.js',
   './js/agenda.js', './js/session.js', './js/rules.js', './js/nearby.js', './js/nearinfo.js',
-  './js/offline.js', './js/geo.js',
+  './js/offline.js', './js/geo.js', './js/releases.js',
   './icon-192.png', './icon-512.png', './apple-touch-icon.png', './start.jpg', './logo.png',
   './vendor/maplibre-gl.js', './vendor/maplibre-gl.css',
   // CQ/ITU zones and ITU regions for Nearby > Info. Precached rather than

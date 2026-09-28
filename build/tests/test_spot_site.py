@@ -277,6 +277,66 @@ with sync_playwright() as p:
     pg.wait_for_timeout(1000)
     s = pg.evaluate(SHEET)
     ok(s["ref"] == "PAFF-0001" and s["links"] == 0, f"the PAFF sheet did not get ONFF-0037's link ({s['links']})")
+    release(held)                                     # nothing left hanging when the context closes
+    ctx.unroute_all(behavior="ignoreErrors")
+    ctx.close()
+    br.close()
+
+# ---------------------------------------------------------------- [13]
+# Everything in Spotline's files was typed in by someone: every field is shown
+# as text, in the list, the agenda list and the sheet, never as page code.
+EVIL = '<img src=x onerror="window.__pwned=(window.__pwned||0)+1">'
+HOSTILE_SPOTS = [{"id": 901, "activator": "ON9XX" + EVIL, "reference": "ONFF-0037" + EVIL,
+                  "reference_name": "Name" + EVIL, "frequency_khz": "14285" + EVIL, "mode": "SSB" + EVIL,
+                  "remarks": "hi" + EVIL, "spotter": "ON1ZZ" + EVIL,
+                  "latitude": 50.95, "longitude": 3.10, "spot_time": time.time() - 60}]
+HOSTILE_AGENDA = [{"id": 902, "reference": "ONFF-0002" + EVIL, "activator_call": "ON8YY" + EVIL,
+                   "band": "40m" + EVIL, "mode": "CW" + EVIL, "remarks": "x" + EVIL,
+                   "utc_start": ts(-600) + EVIL, "utc_end": ts(3600)}]
+
+with sync_playwright() as p:
+    print("\n[13] text typed into Spotline stays text")
+    br = p.chromium.launch()
+    ctx = br.new_context(service_workers="block", viewport={"width": 420, "height": 860})
+    routes(ctx)
+    ctx.route(re.compile(r"https://spots\.wwff\.co/static/spots\.json"), lambda r: r.fulfill(
+        status=200, content_type="application/json", body=json.dumps(HOSTILE_SPOTS)))
+    ctx.route(re.compile(r"https://spots\.wwff\.co/static/agendas_active\.json"), lambda r: r.fulfill(
+        status=200, content_type="application/json", body=json.dumps(HOSTILE_AGENDA)))
+    ctx.route(re.compile(r"https://spots\.wwff\.co/static/agendas\.json"), lambda r: r.fulfill(
+        status=200, content_type="application/json", body="[]"))
+    pg = ctx.new_page()
+    errs = []
+    pg.on("pageerror", lambda e: errs.append(str(e)))
+    pg.goto(BASE, wait_until="load")
+    pg.evaluate("() => setSpotFilter && setSpotFilter('all')")
+    pg.wait_for_function("() => document.querySelectorAll('#spotList .spot[data-id]').length >= 1", timeout=15000)
+    pg.wait_for_timeout(800)
+    INJECTED = "(sel) => document.querySelectorAll(sel + ' img, ' + sel + ' [onerror]').length"
+    ok(pg.evaluate(INJECTED, "#spotList") == 0, "the live list: no element made of it")
+    row = pg.evaluate("() => document.querySelector('#spotList .spot[data-id]').textContent")
+    ok("ON9XX<img" in row and "SSB<img" in row and "ONFF-0037<img" in row,
+       "it shows as the literal text that was sent")
+    tap(pg, '#spotList .spot[data-id="901"]')
+    pg.wait_for_function("() => document.getElementById('spotSheet').classList.contains('open')", timeout=5000)
+    pg.wait_for_timeout(500)
+    ok(pg.evaluate(INJECTED, "#spotSheet") == 0, "the spot sheet: no element made of it either")
+    facts = pg.evaluate("() => document.getElementById('spFacts').textContent")
+    ok("Name<img" in facts and "hi<img" in facts and "14285<img" in facts, "remark, name and frequency shown as text")
+    pg.evaluate("() => document.getElementById('closeSpot').click()")
+    pg.evaluate("() => document.querySelector('#spotTab .seg[data-tab=\"agenda\"]').click()")
+    pg.wait_for_function("() => document.querySelector('#spotList .spot[data-ag]')", timeout=5000)
+    pg.wait_for_timeout(300)
+    ok(pg.evaluate(INJECTED, "#spotList") == 0, "the agenda list: no element made of it")
+    ag = pg.evaluate("() => document.querySelector('#spotList .spot[data-ag]').textContent")
+    ok("ON8YY<img" in ag and "40m<img" in ag and "CW<img" in ag, "call, band and mode as text")
+    tap(pg, '#spotList .spot[data-ag="902"]')
+    pg.wait_for_function("() => document.getElementById('spotSheet').classList.contains('open')", timeout=5000)
+    pg.wait_for_timeout(500)
+    ok(pg.evaluate(INJECTED, "#spotSheet") == 0, "the agenda sheet: nothing either")
+    pg.wait_for_timeout(500)
+    ok(pg.evaluate("() => window.__pwned") is None, "and nothing ran, anywhere")
+    ok(not errs, f"no page errors ({errs[:2]})")
     ctx.close()
     br.close()
 

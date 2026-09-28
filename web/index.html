@@ -307,6 +307,18 @@
   <p class="hint" style="text-align:center;margin:2px 0 0"><span data-i18n="set.version">Versie</span> <span id="setVer"></span></p>
   <p class="hint" style="text-align:center;margin:2px 0 0"><span data-i18n="set.data">Gegevens</span> <span id="setData">…</span></p>
   <p style="text-align:center;margin:8px 0 0"><button class="btn ghost" id="btnRefresh" style="font-size:12.5px;padding:8px 14px" data-i18n="set.refresh">Op updates controleren</button></p>
+  <p style="text-align:center;margin:8px 0 0"><button class="btn ghost" id="relOpenBtn" style="font-size:12.5px;padding:8px 14px" data-i18n="set.releases">Wat is er nieuw</button></p>
+</section>
+
+<!-- What's new: the release overview. Like the privacy page, not a screen of
+     the bottom bar: opened from Settings, back leads to Settings. The text of
+     each version is in js/releases.js. -->
+<section class="view" id="viewReleases">
+  <button class="btn ghost" id="relBackTop" style="width:auto;font-size:12.5px;padding:6px 12px;margin:0 0 8px" data-i18n="privacy.back">← Back to Settings</button>
+  <h1 data-i18n="rel.title">Wat is er nieuw</h1>
+  <p class="sub" data-i18n="rel.sub">Wat elke versie bracht, de nieuwste bovenaan.</p>
+  <div id="relList"></div>
+  <button class="btn ghost" id="relBack" data-i18n="privacy.back">← Back to Settings</button>
 </section>
 
 <section class="view" id="viewSelf">
@@ -669,6 +681,7 @@
 <script src="js/nav.js" defer></script>
 <script src="js/settings.js" defer></script>
 <script src="js/privacy.js" defer></script>
+<script src="js/releases.js" defer></script>
 <script src="js/admin.js" defer></script>
 <script src="js/self-spot.js" defer></script>
 <script src="js/agenda.js" defer></script>

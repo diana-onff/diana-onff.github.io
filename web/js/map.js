@@ -339,7 +339,7 @@ function paintWorld(tries){
       const f = e.features[0];
       new maplibregl.Popup({closeButton:true, maxWidth:'240px'})
         .setLngLat(f.geometry.coordinates)
-        .setHTML(`<b>${f.properties.ref}</b><br>${f.properties.name||''}`)
+        .setHTML(`<b>${escH(f.properties.ref)}</b><br>${escH(f.properties.name||'')}`)
         .addTo(map);
     });
     map.on('mouseenter','world-clusters',()=>map.getCanvas().style.cursor='pointer');
@@ -754,9 +754,9 @@ function search(term){
 $('q').addEventListener('input', e => {
   const rows = search(e.target.value);
   $('results').innerHTML = rows.map(z =>
-    `<div class="res" data-ref="${z.ref}"><span class="r">${z.ref.replace('ONFF-','')}</span>
-     <span class="n">${z.name}${z.nopoly?` <span class="np">◌ ${t('zone.nopoly')}</span>`:''}</span>
-     <span class="p">${z.prov||''}</span></div>`).join('')
+    `<div class="res" data-ref="${escH(z.ref)}"><span class="r">${escH(z.ref.replace('ONFF-',''))}</span>
+     <span class="n">${escH(z.name)}${z.nopoly?` <span class="np">◌ ${t('zone.nopoly')}</span>`:''}</span>
+     <span class="p">${escH(z.prov||'')}</span></div>`).join('')
     || (e.target.value.trim().length>1 ? '<div class="res"><span class="n">Niets gevonden</span></div>' : '');
 });
 $('results').addEventListener('click', e => {

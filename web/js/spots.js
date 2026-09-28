@@ -406,7 +406,7 @@ function renderSpots(){
   if(typeof ensureWorldActivity === 'function') ensureWorldActivity();
   if(spotTab==='agenda') return renderAgenda(list, meta);
   if(spotsError){
-    list.innerHTML = `<p class="hint" style="color:#b45309">${spotsError}</p>`;
+    list.innerHTML = `<p class="hint" style="color:#b45309">${escH(spotsError)}</p>`;
     meta.textContent = spotsAt ? `${t('spots.updated')} ${spotsAt.toLocaleTimeString(locale(),{hour:'2-digit',minute:'2-digit'})}` : '';
     return;
   }
@@ -421,11 +421,11 @@ function renderSpots(){
   list.innerHTML = rows.length ? rows.map(s=>{
     const age = `<b>${Math.max(0,Math.round(ageMin(s)))}′</b>`;
     const d = here ? `${age}${Math.round(bearing(here.lat,here.lon,s.latitude,s.longitude))}° · ${fmtKm(dist(s))}`
-                   : `${age}${s.mode||''}`;
-    return `<div class="spot${ageMin(s)>30?' stale':''}" data-id="${s.id}">
+                   : `${age}${escH(s.mode||'')}`;
+    return `<div class="spot${ageMin(s)>30?' stale':''}" data-id="${escH(s.id)}">
       <span class="sig">((·))</span>
-      <span class="who"><div class="c">${s.activator||'?'}${qsoTag(s.reference)}</div>
-        <div class="f">${s.frequency_khz||'?'} kHz · ${s.mode||'?'} · ${s.reference||''}</div></span>
+      <span class="who"><div class="c">${escH(s.activator||'?')}${qsoTag(s.reference)}</div>
+        <div class="f">${escH(s.frequency_khz||'?')} kHz · ${escH(s.mode||'?')} · ${escH(s.reference||'')}</div></span>
       <span class="d">${d}</span></div>`;
   }).join('') : `<p class="hint">${t('spots.none')}</p>`;
   meta.textContent = spotsAt
@@ -438,7 +438,7 @@ function dist(s){ return here ? haversine(here.lat,here.lon,s.latitude,s.longitu
    what is running and what is still to come, with "on air now" marked separately. */
 function renderAgenda(list, meta){
   if(spotsError){
-    list.innerHTML = `<p class="hint" style="color:#b45309">${spotsError}</p>`;
+    list.innerHTML = `<p class="hint" style="color:#b45309">${escH(spotsError)}</p>`;
     meta.textContent=''; return;
   }
   const rows = agenda
@@ -450,10 +450,10 @@ function renderAgenda(list, meta){
     const ag = a.id != null && a.id !== '' ? ` data-ag="${escH(a.id)}"` : '';
     return `<div class="spot${running?'':' stale'}"${ag}>
       <span class="sig" style="${running?'':'background:var(--paper);color:var(--ink-3)'}">${running?'●':'○'}</span>
-      <span class="who"><div class="c">${a.activator_call||'?'}${qsoTag(a.reference)}</div>
-        <div class="f">${a.reference||''} · ${a.band||'?'} · ${a.mode||'?'}</div></span>
-      <span class="d"><b>${running?t('spots.now'):(a.utc_start||'').slice(5,10)}</b>${
-        running ? t('spots.until')+' '+(a.utc_end||'').slice(11,16) : (a.utc_start||'').slice(11,16)+' UTC'}</span>
+      <span class="who"><div class="c">${escH(a.activator_call||'?')}${qsoTag(a.reference)}</div>
+        <div class="f">${escH(a.reference||'')} · ${escH(a.band||'?')} · ${escH(a.mode||'?')}</div></span>
+      <span class="d"><b>${running?t('spots.now'):escH(String(a.utc_start||'').slice(5,10))}</b>${
+        running ? t('spots.until')+' '+escH(String(a.utc_end||'').slice(11,16)) : escH(String(a.utc_start||'').slice(11,16))+' UTC'}</span>
     </div>`;
   }).join('') : `<p class="hint">${t('spots.noagenda')}</p>`;
   meta.textContent = (spotsAt
@@ -494,6 +494,8 @@ function openFromList(open, id){
   listReturn = back;
   document.body.classList.add('spot-view');
   open(id);
+  // The phone's back button closes the spot and returns to the list (nav.js).
+  pushBack(() => $('closeSpot').onclick());
 }
 /* A GPS position that comes in while such a spot is showing: geo.js would
    move the map to it, away from the spot. Instead it becomes where the map
@@ -511,6 +513,7 @@ function dropListReturn(){
   const back = listReturn; if(!back) return;
   listReturn = null;
   document.body.classList.remove('spot-view');
+  dropBack();
   $('spotSheet').classList.remove('open');
   document.body.classList.remove('sheet-open');
   map.stop(); map.jumpTo(back.cam);
@@ -638,12 +641,12 @@ function openSpot(id){
   $('spAgo').textContent  = agoText(s) + (s.spotter ? ` door ${s.spotter}` : '');
   $('spRef').textContent  = s.reference || '';
   const facts = [
-    [t('spot.freqmode'), `${s.frequency_khz||'?'} kHz · ${s.mode||'?'}`],
-    [t('spot.area'), s.reference_name || s.reference || '—'],
+    [t('spot.freqmode'), `${escH(s.frequency_khz||'?')} kHz · ${escH(s.mode||'?')}`],
+    [t('spot.area'), escH(s.reference_name || s.reference || '-')],
     [t('spot.locthere'), locator(s.latitude,s.longitude)],
   ];
   if(here) facts.push([t('spot.locyou'), locator(here.lat,here.lon)]);
-  if(s.remarks) facts.push([t('spot.remark'), s.remarks, true]);
+  if(s.remarks) facts.push([t('spot.remark'), escH(s.remarks), true]);
   $('spFacts').innerHTML = facts.map(([k,v,wide])=>
     `<div class="fact${wide?' wide':''}"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
   showSpotSheet(s.reference, [s.longitude, s.latitude]);
@@ -686,6 +689,7 @@ function openAgenda(id){
 let sheetRef = null;
 function showSpotSheet(ref, pos){
   sheetRef = String(ref || '').toUpperCase();
+  addQsoFact(sheetRef);
   addSiteFact(sheetRef);
   if(here && pos){
     const br = bearing(here.lat,here.lon,pos[1],pos[0]);
@@ -740,6 +744,28 @@ function showSpotSheet(ref, pos){
 }
 function fitSpotSheet(){
   requestAnimationFrame(()=>document.body.style.setProperty('--sheet-h',$('spotSheet').offsetHeight+'px'));
+}
+
+/* The area's QSO count, or ATNO when it has never been activated: the same
+   figure the list shows next to the call (qsoTag() above), right after the
+   area's name. Nothing when there are no figures for it. The worldwide counts
+   may still be on their way when the sheet opens; then the line joins it once
+   they land, if the sheet still shows the same reference. */
+function addQsoFact(ref){
+  const put = () => {
+    const box = $('spFacts');
+    if(!box || sheetRef !== ref || box.querySelector('.fact.qso')) return true;
+    const n = typeof qsoCountAnywhere === 'function' ? qsoCountAnywhere(ref) : null;
+    if(n == null) return false;
+    const v = n === 0 ? `<span class="atno">${t('spots.atno')}</span>` : n.toLocaleString(locale());
+    const html = `<div class="fact qso"><div class="k">${t('zone.qso')}</div><div class="v">${v}</div></div>`;
+    const area = box.children[1];
+    if(area) area.insertAdjacentHTML('afterend', html); else box.insertAdjacentHTML('beforeend', html);
+    return true;
+  };
+  if(put()) return;
+  const loading = typeof ensureWorldActivity === 'function' ? ensureWorldActivity() : null;
+  if(loading) loading.then(() => { if($('spotSheet').classList.contains('open') && put()) fitSpotSheet(); });
 }
 
 /* "More info" on the spot sheet: see siteFactHtml() in map-data.js. */

@@ -23,6 +23,9 @@
 #   [3c] padding an earlier panel left on the map does not hide the spot
 #   [3d] on a small phone the spot is still visible above its sheet
 #   [5] "More info" in the area panel, for an area with and without a boundary
+#   [6] the phone's back button: from a spot or agenda entry back to the list
+#       and tab it came from, never out of the app; closed any other way, no
+#       back entry is left behind
 # Screenshots of [1], [2] and [5] go to $DIANA_SHOTS if that is set.
 import json, os, re, sys, time
 from playwright.sync_api import sync_playwright
@@ -313,6 +316,55 @@ with sync_playwright() as p:
     ok(pg.evaluate("() => document.querySelector('#facts .fact.site a').getAttribute('href')") == SITES["refs"]["ONFF-0004"],
        "an area without a boundary: its link too")
     ok(pg.evaluate("() => document.querySelectorAll('#facts .fact.site').length") == 1, "once")
+    print("\n[6] the phone's back button")
+    pg.evaluate("() => closeSheet()")
+    pg.tap('#nav button[data-view="viewSpots"]')
+    pg.tap('#spotTab .seg[data-tab="spots"]')
+    pg.wait_for_function("() => document.querySelectorAll('#spotList .spot[data-id]').length >= 2", timeout=5000)
+    cam0 = pg.evaluate(STATE)
+    pg.tap('#spotList .spot[data-id="501"]')
+    pg.wait_for_function("() => document.getElementById('spotSheet').classList.contains('open')", timeout=5000)
+    settle(pg)
+    pg.go_back()
+    pg.wait_for_timeout(500)
+    s = pg.evaluate(STATE)
+    ok(s["view"] == ["viewSpots"] and not s["sheet"] and s["tab"] == "spots",
+       f"back from a spot: the list you came from ({s['view']}, {s['tab']})")
+    ok(km(s["center"], cam0["center"]) < 0.5, "the map back where it was")
+    ok(pg.url.startswith("http://localhost:8011/web/"), f"still inside Diana ({pg.url})")
+    ok(pg.evaluate("() => history.state") is None, "and no back entry left behind")
+    pg.tap('#spotTab .seg[data-tab="agenda"]')
+    pg.wait_for_function("() => document.querySelector('#spotList .spot[data-ag]')", timeout=5000)
+    pg.tap('#spotList .spot[data-ag="71"]')
+    pg.wait_for_function("() => document.getElementById('spotSheet').classList.contains('open')", timeout=5000)
+    settle(pg)
+    pg.go_back()
+    pg.wait_for_timeout(500)
+    s = pg.evaluate(STATE)
+    ok(s["view"] == ["viewSpots"] and s["tab"] == "agenda" and not s["sheet"], "from an agenda entry: the Agenda tab")
+    # Closed with x, then straight away the next spot: the back entry of the
+    # first is removed (asynchronously) while the second one needs its own.
+    pg.tap('#spotTab .seg[data-tab="spots"]')
+    pg.tap('#spotList .spot[data-id="501"]')
+    pg.wait_for_function("() => document.getElementById('spotSheet').classList.contains('open')", timeout=5000)
+    pg.tap("#closeSpot")
+    pg.tap('#spotList .spot[data-id="502"]')
+    pg.wait_for_function("() => document.getElementById('spotSheet').classList.contains('open')", timeout=5000)
+    pg.wait_for_timeout(600)
+    ok(pg.evaluate("() => history.state && history.state.diana") == "back", "(a quick second spot still gets its back entry)")
+    pg.go_back()
+    pg.wait_for_timeout(500)
+    s = pg.evaluate(STATE)
+    ok(s["view"] == ["viewSpots"] and not s["sheet"], "and back closes that one too, into the list")
+    ok(pg.evaluate("() => history.state") is None, "(nothing left over)")
+    # Left through the bottom bar: back is no longer tied to the spot.
+    pg.tap('#spotList .spot[data-id="501"]')
+    pg.wait_for_function("() => document.getElementById('spotSheet').classList.contains('open')", timeout=5000)
+    pg.tap('#nav button[data-view="viewNearby"]')
+    pg.wait_for_timeout(600)
+    ok(pg.evaluate("() => history.state") is None and not pg.evaluate(STATE)["sheet"],
+       "left through the bottom bar: the back entry is gone with the spot")
+
     ok(not errs, f"no page errors ({errs[:2]})")
     ctx.close()
     br.close()
