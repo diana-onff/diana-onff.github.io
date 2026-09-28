@@ -126,9 +126,9 @@ function renderNearby(){
   $('nearMore').textContent = t('near.more').replace('{n}', Math.min(NEAR_MAX_ROWS, rows.total - rows.length));
 
   list.innerHTML = rows.map(r => `
-    <div class="spot" data-ref="${r.ref}">
+    <div class="spot" data-ref="${escH(r.ref)}">
       <span class="sig">◎</span>
-      <span class="who"><div class="c">${r.ref} · ${r.name}</div>
+      <span class="who"><div class="c">${escH(r.ref)} · ${escH(r.name)}</div>
         <div class="f">${r.known ? `${r.qso.toLocaleString(locale())} QSO · ` : ''}${lastActiveText(r)}</div></span>
       <span class="d"><b>${fmtKm(r.d)}</b>${Math.round(r.br)}°</span>
     </div>`).join('');

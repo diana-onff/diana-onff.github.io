@@ -149,6 +149,8 @@
     text-decoration:none;overflow-wrap:anywhere;min-height:24px}
   .fact.site .v a:hover,.fact.site .v a:focus-visible{text-decoration:underline}
   .fact.site .v svg{flex:none}
+  /* ATNO in the spot sheet, the same red as next to the call in the list. */
+  .fact.qso .v .atno{color:#b91c1c;font-weight:650}
 
   /* Nearby > Info (nearinfo.js). Its own grid rather than .facts, which drops
      to one column on a phone: two or three short numbers side by side are
@@ -268,6 +270,13 @@
   .view.panel.minimized .peek{display:block}
   .view.panel .sub{margin-bottom:10px}
   .view h1{font-size:22px;letter-spacing:-.02em;margin:4px 0 2px}
+  /* What's new (releases.js): one card per version. */
+  .rel .relhead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+  .rel .relhead b{font-size:16px;color:var(--green)}
+  .rel .relhead .reldate{margin-left:auto;font-size:12.5px;color:var(--ink-3)}
+  .rel ul{margin:8px 0 0;padding-left:18px}
+  .rel li{margin:0 0 5px;line-height:1.45}
+  .rel.current{box-shadow:var(--shadow), inset 3px 0 0 var(--amber)}
   .view .sub{color:var(--ink-3);font-size:13.5px;margin:0 0 16px}
   .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:12px}
   .btn{
