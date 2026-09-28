@@ -105,6 +105,47 @@ function qsoCountAnywhere(ref){
   return typeof w === 'number' ? w : null;
 }
 
+/* The WWFF directory's website link per reference, for the "More info" line
+   on the spot detail sheet (spots.js): data/sites/<prog>.json, ref -> http(s)
+   URL, one small file per programme, built from the directory's website
+   column (clean_website() in kmz2geojson.py). Lazy and per programme: the
+   sheet only ever needs the programme of the spot you tapped, so only that
+   file is fetched, and only when you tap. The sheet opens straight away and
+   the link is added the moment the file lands. A failed load (no signal, or a
+   programme with no links and so no file) is tried again at most once a
+   minute, the same way ensureWorldActivity() above does it. */
+const siteTables = {}, siteLoading = {}, siteFailedAt = {};
+function ensureSites(prog){
+  prog = String(prog || '').toUpperCase();
+  if(!/^[A-Z0-9]{1,5}FF$/.test(prog)) return null;
+  if(siteTables[prog]) return Promise.resolve(true);
+  if(siteLoading[prog]) return siteLoading[prog];
+  if(siteFailedAt[prog] && Date.now() - siteFailedAt[prog] < 60000) return null;
+  siteLoading[prog] = (async () => {
+    try{
+      const doc = await fetchFirst(dataURL('sites/' + prog.toLowerCase() + '.json'));
+      siteTables[prog] = (doc && doc.refs) || {};
+    }catch{ siteFailedAt[prog] = Date.now(); }
+    delete siteLoading[prog];
+    return !!siteTables[prog];
+  })();
+  return siteLoading[prog];
+}
+
+/* The link for one reference as a parsed URL, or null. Checked again here,
+   not only at build time: whatever comes out of this goes straight into an
+   href, so only http and https get through, never javascript: or data:. */
+function siteFor(ref){
+  ref = String(ref || '').toUpperCase();
+  const table = siteTables[refProgram(ref)];
+  const v = table && table[ref];
+  if(typeof v !== 'string' || !v) return null;
+  try{
+    const u = new URL(v);
+    return (u.protocol === 'http:' || u.protocol === 'https:') && u.hostname ? u : null;
+  }catch{ return null; }
+}
+
 /* ---------- loading data ---------- */
 async function fetchFirst(urls){
   let lastErr;

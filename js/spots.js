@@ -383,6 +383,9 @@ const compassName = d => COMPASS[Math.round(d/22.5)%16];
 /* Six-character locator. One implementation for the whole app: maidenhead()
    in radiogeo.js, which the Info tab also uses for eight characters. */
 function locator(lat, lon){ return maidenhead(lat, lon, 3); }
+/* For anything someone typed into Spotline that ends up in innerHTML. */
+const escH = v => String(v).replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmtKm = m => m>=1000 ? `${(m/1000).toFixed(m<10000?1:0)} km` : `${Math.round(m)} m`;
 
 /* QSO count for a spot's or an agenda entry's reference, or, when the WWFF
@@ -447,7 +450,8 @@ function renderAgenda(list, meta){
   const nowUTC = new Date().toISOString().slice(0,19).replace('T',' ');
   list.innerHTML = rows.length ? rows.map(a=>{
     const running = a.utc_start <= nowUTC && nowUTC <= a.utc_end;
-    return `<div class="spot${running?'':' stale'}">
+    const ag = a.id != null && a.id !== '' ? ` data-ag="${escH(a.id)}"` : '';
+    return `<div class="spot${running?'':' stale'}"${ag}>
       <span class="sig" style="${running?'':'background:var(--paper);color:var(--ink-3)'}">${running?'●':'○'}</span>
       <span class="who"><div class="c">${a.activator_call||'?'}${qsoTag(a.reference)}</div>
         <div class="f">${a.reference||''} · ${a.band||'?'} · ${a.mode||'?'}</div></span>
@@ -462,8 +466,13 @@ function renderAgenda(list, meta){
 }
 
 
+/* A tap on a row opens the detail sheet. Live spots and agenda entries come
+   from two different Spotline files, each with its own numbering, so each has
+   its own attribute and its own opener. Agenda rows used to have neither: the
+   row looked the same as a live spot, and a tap on it did nothing at all. */
 $('spotList').addEventListener('click', e=>{
-  const row=e.target.closest('.spot[data-id]'); if(row) openSpot(Number(row.dataset.id));
+  const row=e.target.closest('.spot[data-id]'); if(row) return openSpot(Number(row.dataset.id));
+  const ag=e.target.closest('.spot[data-ag]'); if(ag) openAgenda(ag.dataset.ag);
 });
 $('spotTab').addEventListener('click', e=>{
   const b=e.target.closest('.seg[data-tab]'); if(!b) return;
@@ -596,20 +605,101 @@ function openSpot(id){
   if(s.remarks) facts.push([t('spot.remark'), s.remarks, true]);
   $('spFacts').innerHTML = facts.map(([k,v,wide])=>
     `<div class="fact${wide?' wide':''}"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+  showSpotSheet(s.reference, [s.longitude, s.latitude]);
+}
 
-  if(here){
-    const br = bearing(here.lat,here.lon,s.latitude,s.longitude);
+/* An announced activation, in the same sheet as a live spot. Spotline's
+   agenda file has no coordinates and no area name, so both come from our own
+   data, the way the agenda pins on the map get theirs (refPosition()). Every
+   field in it was typed in by whoever announced it, so all of it is escaped. */
+function openAgenda(id){
+  const a = agenda.find(x => String(x.id) === String(id)); if(!a) return;
+  closeSheet();
+  const start = String(a.utc_start || ''), end = String(a.utc_end || '');
+  const nowUTC = new Date().toISOString().slice(0,19).replace('T',' ');
+  const running = start && end && start <= nowUTC && nowUTC <= end;
+  $('spCall').textContent = a.activator_call || '?';
+  $('spAgo').textContent = running
+    ? `${t('spots.now')} · ${t('spots.until')} ${end.slice(11,16)} UTC`
+    : !start ? ''
+    : !end ? `${start.slice(5,16)} UTC`
+    : (start.slice(0,10) === end.slice(0,10)
+        ? `${start.slice(5,10)} ${start.slice(11,16)}-${end.slice(11,16)} UTC`
+        : `${start.slice(5,16)} - ${end.slice(5,16)} UTC`);
+  $('spRef').textContent = a.reference || '';
+  const pos = refPosition(a.reference);
+  const facts = [
+    [t('spot.bandmode'), `${escH(a.band||'?')} · ${escH(a.mode||'?')}`],
+    [t('spot.area'), escH(refName(a.reference) || a.reference || '-')],
+  ];
+  if(pos) facts.push([t('spot.locthere'), locator(pos[1],pos[0])]);
+  if(here) facts.push([t('spot.locyou'), locator(here.lat,here.lon)]);
+  if(a.remarks) facts.push([t('spot.remark'), escH(a.remarks), true]);
+  $('spFacts').innerHTML = facts.map(([k,v,wide])=>
+    `<div class="fact${wide?' wide':''}"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+  showSpotSheet(a.reference, pos);
+}
+
+/* What both openers share: the bearing line, the website link, and opening
+   the sheet. `pos` is [lon, lat], or null for an agenda entry we cannot place. */
+let sheetRef = null;
+function showSpotSheet(ref, pos){
+  sheetRef = String(ref || '').toUpperCase();
+  addSiteFact(sheetRef);
+  if(here && pos){
+    const br = bearing(here.lat,here.lon,pos[1],pos[0]);
+    const d = haversine(here.lat,here.lon,pos[1],pos[0]);
     $('spBearing').innerHTML =
       `<span class="compass"><span class="n">N</span><span class="needle" style="transform:translate(-50%,-100%) rotate(${br.toFixed(0)}deg)"></span></span>
-       <span><div class="bg">${Math.round(br)}° · ${fmtKm(dist(s))}</div>
-       <div class="bs">${compassName(br)} — ${t('spot.fromyou')}</div></span>`;
-  } else {
+       <span><div class="bg">${Math.round(br)}° · ${fmtKm(d)}</div>
+       <div class="bs">${compassName(br)} · ${t('spot.fromyou')}</div></span>`;
+  } else if(!here){
     $('spBearing').innerHTML = `<span class="bs">${t('spot.nofix')}</span>`;
+  } else {
+    $('spBearing').innerHTML = '';
   }
   $('spotSheet').classList.add('open');
   document.body.classList.add('sheet-open');
+  fitSpotSheet();
+  if(pos) map.easeTo({center:pos, zoom:Math.max(map.getZoom(),9)});
+  // The link file for this programme may not be here yet: the sheet does not
+  // wait for it, the line is added the moment it lands (if the sheet is still
+  // showing the same reference by then).
+  const loading = ensureSites(refProgram(sheetRef));
+  if(loading) loading.then(() => {
+    if(sheetRef === String(ref || '').toUpperCase() && $('spotSheet').classList.contains('open')){
+      addSiteFact(sheetRef); fitSpotSheet();
+    }
+  });
+}
+function fitSpotSheet(){
   requestAnimationFrame(()=>document.body.style.setProperty('--sheet-h',$('spotSheet').offsetHeight+'px'));
-  map.easeTo({center:[s.longitude,s.latitude], zoom:Math.max(map.getZoom(),9)});
+}
+
+/* "More info": the directory's website for this reference. It always opens in
+   a new tab or window (target=_blank), never in Diana's own: the app, the map
+   and a running GPS fix stay exactly where they were, and you come back to
+   them with the back gesture or the app switcher. noopener: the page that
+   opens gets no handle on Diana's window. */
+const SITE_ICON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 3 2.5 15 0 18M12 3c-2.5 3-2.5 15 0 18"/></svg>';
+function addSiteFact(ref){
+  const box = $('spFacts');
+  if(!box || box.querySelector('.fact.site')) return;
+  const u = siteFor(ref); if(!u) return;
+  const host = u.hostname.replace(/^www\./, '');
+  box.insertAdjacentHTML('beforeend',
+    `<div class="fact wide site"><div class="k">${t('spot.site')}</div>
+      <div class="v"><a href="${escH(u.href)}" target="_blank" rel="noopener noreferrer">${SITE_ICON}<span>${escH(host)}</span></a></div>
+      <div class="s">${t('spot.siteopens')}</div></div>`);
+}
+
+/* The name of a reference from our own data: the loaded country's boundaries
+   and points first, then the worldwide layer. */
+function refName(ref){
+  const key = String(ref || '').toUpperCase(); if(!key) return '';
+  const pick = fc => fc && fc.features && fc.features.find(f => (f.properties.ref||'').toUpperCase() === key);
+  const f = pick(zones) || pick(noPoly) || (typeof worldPoints !== 'undefined' && pick(worldPoints));
+  return (f && f.properties.name) || '';
 }
 $('closeSpot').onclick = ()=>{
   $('spotSheet').classList.remove('open');
