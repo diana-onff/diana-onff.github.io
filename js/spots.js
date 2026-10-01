@@ -343,7 +343,7 @@ function createSpotLayers(tries){
 
     if(!paintSpots._bound){
       paintSpots._bound = true;
-      map.on('click','spots-icon', e => openSpot(e.features[0].properties.id));
+      map.on('click','spots-icon', e => openSpotFromMap(e.features[0].properties.id));
       map.on('mouseenter','spots-icon',()=>map.getCanvas().style.cursor='pointer');
       map.on('mouseleave','spots-icon',()=>map.getCanvas().style.cursor='');
     }
@@ -489,34 +489,75 @@ function openFromList(open, id){
     cam: {center: map.getCenter(), zoom: map.getZoom(), bearing: map.getBearing(), pitch: map.getPitch(),
           padding: map.getPadding()},
   };
+  back.tab = spotTab;
   listReturn = null;
   document.querySelector('#nav button[data-view="map"]').click();   // map on, anything open closed
   listReturn = back;
-  document.body.classList.add('spot-view');
   open(id);
-  // The phone's back button closes the spot and returns to the list (nav.js).
-  pushBack(() => $('closeSpot').onclick());
+  // The phone's back button returns to the list (nav.js), also after the
+  // sheet itself was closed and you stayed on the map.
+  pushBack(returnToList);
 }
-/* A GPS position that comes in while such a spot is showing: geo.js would
-   move the map to it, away from the spot. Instead it becomes where the map
-   goes back to when the spot is closed. True when it was taken care of here. */
+
+/* Two ways out of a spot opened from the list (since 1.27.0, after a user
+   asked to keep the map):
+   - the x, swiping the sheet down, Escape: only the sheet closes, you stay on
+     the zoomed-in map around the spot (listReturn stays, marked `stayed`);
+   - "<- Back to Spots/Agenda" in the sheet, or the phone's back button, even
+     with the sheet already closed: back to the list, same tab and scroll
+     position, the map back where it was. */
+/* The way back to the list, shown only when there is one (openFromList);
+   named after the tab you came from. Also redrawn on a language switch. */
+function labelSpBack(){
+  const btn = $('spBack'); if(!btn) return;
+  btn.hidden = !listReturn;
+  if(listReturn) btn.textContent = t('spot.backto')
+    .replace('{list}', listReturn.tab === 'agenda' ? t('spots.tabagenda') : t('nav.spots'));
+}
+function closeSpotSheet(){
+  $('spotSheet').classList.remove('open');
+  document.body.classList.remove('sheet-open');
+  document.body.classList.remove('spot-view');
+  if(listReturn) listReturn.stayed = true;
+}
+function returnToList(){
+  const back = listReturn; if(!back) return;
+  listReturn = null;
+  dropBack();
+  closeSpotSheet();
+  map.stop(); map.jumpTo(back.cam);
+  document.querySelector('#nav button[data-view="viewSpots"]').click();
+  requestAnimationFrame(() => { $('viewSpots').scrollTop = back.scroll; });
+}
+/* A spot icon tapped on the map. After closing a spot from the list to look
+   around, that is a spot from the map, not from the list: the list visit ends
+   here (the map stays where you are), and this sheet has no way back to it. */
+function openSpotFromMap(id){
+  if(listReturn && listReturn.stayed) dropListReturn();
+  openSpot(id);
+}
+/* A GPS position that comes in while such a spot's sheet is showing: geo.js
+   would move the map to it, away from the spot. Instead it becomes where the
+   map goes back to on returning to the list. True when it was taken care of
+   here (the map is not to move). */
 function deferFixMove(lon, lat){
   if(!listReturn) return false;
   listReturn.cam.center = [lon, lat];
   listReturn.cam.zoom = Math.max(listReturn.cam.zoom, 12);
-  return true;
+  // With the sheet closed you are using the map yourself: a position you
+  // asked for (the locate button) moves it, as anywhere else.
+  return !listReturn.stayed;
 }
-/* Leave the spot that was opened from the list without going back to the
-   list: the map goes back to where it was, the sheet closes. Called by the
-   bottom bar before it switches screens. */
+/* Leave a spot that was opened from the list through the bottom bar: no way
+   back to the list any more, the sheet closes. With the sheet still open the
+   map goes back to where it was (Map never shows a spot nobody asked to keep);
+   after you closed the sheet to stay on the map, the map stays. */
 function dropListReturn(){
   const back = listReturn; if(!back) return;
   listReturn = null;
-  document.body.classList.remove('spot-view');
   dropBack();
-  $('spotSheet').classList.remove('open');
-  document.body.classList.remove('sheet-open');
-  map.stop(); map.jumpTo(back.cam);
+  closeSpotSheet();
+  if(!back.stayed){ map.stop(); map.jumpTo(back.cam); }
 }
 $('spotTab').addEventListener('click', e=>{
   const b=e.target.closest('.seg[data-tab]'); if(!b) return;
@@ -689,6 +730,8 @@ function openAgenda(id){
 let sheetRef = null;
 function showSpotSheet(ref, pos){
   sheetRef = String(ref || '').toUpperCase();
+  labelSpBack();
+  if(listReturn){ listReturn.stayed = false; document.body.classList.add('spot-view'); }
   addQsoFact(sheetRef);
   addSiteFact(sheetRef);
   if(here && pos){
@@ -784,14 +827,7 @@ function refName(ref){
   const f = pick(zones) || pick(noPoly) || (typeof worldPoints !== 'undefined' && pick(worldPoints));
   return (f && f.properties.name) || '';
 }
-$('closeSpot').onclick = ()=>{
-  const back = listReturn;
-  dropListReturn();
-  $('spotSheet').classList.remove('open');
-  document.body.classList.remove('sheet-open');
-  if(back){
-    document.querySelector('#nav button[data-view="viewSpots"]').click();
-    requestAnimationFrame(() => { $('viewSpots').scrollTop = back.scroll; });
-  }
-};
+// x, swiping down, Escape: only the sheet closes (see closeSpotSheet above).
+$('closeSpot').onclick = closeSpotSheet;
+$('spBack').onclick = returnToList;
 

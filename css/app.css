@@ -151,6 +151,8 @@
   .fact.site .v svg{flex:none}
   /* ATNO in the spot sheet, the same red as next to the call in the list. */
   .fact.qso .v .atno{color:#b91c1c;font-weight:650}
+  /* "<- Back to Spots" at the top of a spot opened from the list. */
+  .btn.spback{width:auto;font-size:13px;padding:7px 12px;margin:0 44px 10px 0}
 
   /* Nearby > Info (nearinfo.js). Its own grid rather than .facts, which drops
      to one column on a phone: two or three short numbers side by side are

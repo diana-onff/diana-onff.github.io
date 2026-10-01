@@ -49,6 +49,7 @@ function rerender(){
     selfPrefill();
     if($('viewNearby').classList.contains('on')) renderNearby();
     if($('viewReleases') && $('viewReleases').classList.contains('on')) renderReleases();
+    if(typeof labelSpBack === 'function') labelSpBack();
     if(typeof syncLocState === 'function') syncLocState();
     if($('status').classList.contains('show')) $('status').classList.remove('show');
   }catch(err){ console.warn('hertekenen:', err); }
