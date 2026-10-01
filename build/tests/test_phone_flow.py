@@ -10,9 +10,12 @@
 # map, the Spots screen lies over the whole map) and nothing seemed to happen.
 #
 #   [1] a live spot in the list: tap -> the map, zoomed in on the spot, with
-#       its sheet visible; x -> back in the list, same tab, map back where it was
-#   [2] an agenda entry: the same, closed by swiping the sheet down, and the
-#       Agenda tab is still the one showing
+#       its sheet visible; x -> only the sheet closes, you stay on that map
+#       (since 1.27.0, asked by a user); the phone's back button -> back in
+#       the list, same tab, map back where it was
+#   [2] an agenda entry: "<- Terug naar Agenda" returns to the Agenda tab;
+#       swiping the sheet down is like x, and back still finds the list
+#   [3a] stayed on the map on purpose: Map in the bottom bar leaves it there
 #   [3] Map in the bottom bar while such a spot is open: the plain map, back
 #       where it was, not the spot's location; the same via another screen
 #   [4] the area panel on a small phone: scrolled down, a downward swipe
@@ -151,11 +154,19 @@ with sync_playwright() as p:
     sheet_top = pg.evaluate("() => document.getElementById('spotSheet').getBoundingClientRect().top")
     ok(spot_px < sheet_top, f"with the spot above the sheet, not behind it ({spot_px:.0f} < {sheet_top:.0f} px)")
     shot(pg, "1-spot-from-list.png")
+    lbl = pg.evaluate("() => document.getElementById('spBack').textContent")
+    ok(pg.evaluate(VISIBLE, "#spBack") and lbl == "← Terug naar Spots", f"with a visible '← Terug naar Spots' ({lbl!r})")
     pg.tap("#closeSpot")
     pg.wait_for_timeout(400)
     s = pg.evaluate(STATE)
+    ok(s["view"] == [] and not s["sheet"] and km(s["center"], [3.10, 50.95]) < 40 and abs(s["zoom"] - 11) < 0.01,
+       f"x closes only the info window: you stay on the zoomed-in map at the spot ({s['view']}, zoom {s['zoom']:.1f})")
+    ok(pg.evaluate("() => history.state && history.state.diana") == "back", "(the way back to the list is kept)")
+    pg.go_back()
+    pg.wait_for_timeout(500)
+    s = pg.evaluate(STATE)
     ok(s["view"] == ["viewSpots"] and s["nav"] == "viewSpots" and not s["sheet"],
-       f"x brings you back to the Spots screen ({s['view']}, {s['nav']})")
+       f"then the phone's back button brings you back to the Spots screen ({s['view']}, {s['nav']})")
     ok(s["tab"] == "spots", f"on the same tab ({s['tab']})")
     ok(km(s["center"], home["center"]) < 0.5 and abs(s["zoom"] - home["zoom"]) < 0.05,
        f"and the map is back where it was ({km(s['center'], home['center']):.2f} km, zoom {s['zoom']:.1f})")
@@ -170,12 +181,26 @@ with sync_playwright() as p:
        "the agenda entry's sheet is visible on the map")
     pg.wait_for_function("() => document.querySelector('#spotSheet .fact.site a')", timeout=5000)
     shot(pg, "2-agenda-from-list.png")
+    ok(pg.evaluate("() => document.getElementById('spBack').textContent") == "← Terug naar Agenda",
+       "the button names the list you came from: Agenda")
+    pg.tap("#spBack")
+    pg.wait_for_timeout(400)
+    s = pg.evaluate(STATE)
+    ok(s["view"] == ["viewSpots"] and not s["sheet"] and s["tab"] == "agenda",
+       f"the button brings you back to the Agenda tab ({s['view']}, {s['tab']})")
+    ok(km(s["center"], home["center"]) < 0.5, "map back where it was")
+    ok(pg.evaluate("() => history.state") is None, "(and takes the back entry with it)")
+    pg.tap('#spotList .spot[data-ag="71"]')
+    pg.wait_for_function("() => document.getElementById('spotSheet').classList.contains('open')", timeout=5000)
+    settle(pg)
     top = pg.evaluate("() => document.getElementById('spotSheet').getBoundingClientRect().top")
     swipe(pg, cdp, 195, top + 12, top + 330)
     s = pg.evaluate(STATE)
-    ok(s["view"] == ["viewSpots"] and not s["sheet"], f"swiping it down brings you back ({s['view']})")
-    ok(s["tab"] == "agenda", f"to the Agenda tab you came from ({s['tab']})")
-    ok(km(s["center"], home["center"]) < 0.5, "map back where it was")
+    ok(s["view"] == [] and not s["sheet"], f"swiping it down: like x, you stay on the map ({s['view']})")
+    pg.go_back()
+    pg.wait_for_timeout(500)
+    s = pg.evaluate(STATE)
+    ok(s["view"] == ["viewSpots"] and s["tab"] == "agenda", f"and back returns to the Agenda tab ({s['tab']})")
 
     print("\n[3] leaving through the bottom bar instead")
     pg.tap('#spotTab .seg[data-tab="spots"]')
@@ -198,6 +223,42 @@ with sync_playwright() as p:
     s = pg.evaluate(STATE)
     ok(km(s["center"], home["center"]) < 0.5 and not s["sheet"], "via another screen and back to Map: the same")
 
+    print("\n[3a] stayed on the map on purpose, then Map in the bottom bar")
+    pg.tap('#nav button[data-view="viewSpots"]')
+    pg.tap('#spotList .spot[data-id="502"]')
+    pg.wait_for_function("() => document.getElementById('spotSheet').classList.contains('open')", timeout=5000)
+    settle(pg)
+    pg.tap("#closeSpot")
+    pg.wait_for_timeout(300)
+    pg.tap('#nav button[data-view="map"]')
+    pg.wait_for_timeout(400)
+    s = pg.evaluate(STATE)
+    ok(km(s["center"], [11.85, 50.05]) < 40 and s["view"] == [], "the map stays where you chose to stay")
+    ok(pg.evaluate("() => history.state") is None, "and back is no longer tied to the list")
+    # Stayed, then the locate button: the map goes to your position, like anywhere else.
+    pg.tap('#nav button[data-view="viewSpots"]')
+    pg.tap('#spotList .spot[data-id="502"]')
+    pg.wait_for_function("() => document.getElementById('spotSheet').classList.contains('open')", timeout=5000)
+    settle(pg)
+    pg.tap("#closeSpot")
+    pg.wait_for_timeout(300)
+    pg.evaluate("() => fixApply({coords: {latitude: 51.10, longitude: 4.30, accuracy: 8}, timestamp: Date.now()}, true)")
+    pg.wait_for_timeout(900)
+    s = pg.evaluate(STATE)
+    ok(km(s["center"], [4.30, 51.10]) < 1, f"stayed, a GPS fix you asked for moves the map ({km(s['center'], [4.30, 51.10]):.1f} km)")
+    # Stayed, then a spot icon on the map: a spot from the map, no way back to the list.
+    pg.evaluate("() => openSpotFromMap(501)")       # what tapping the icon calls
+    pg.wait_for_timeout(500)
+    ok(pg.evaluate("() => document.getElementById('spotSheet').classList.contains('open')")
+       and pg.evaluate("() => document.getElementById('spBack').hidden")
+       and not pg.evaluate("() => document.body.classList.contains('spot-view')")
+       and pg.evaluate("() => history.state") is None,
+       "stayed, then a spot icon on the map: a sheet from the map, without a way back to the list")
+    pg.tap("#closeSpot")
+    pg.tap('#nav button[data-view="map"]')
+    pg.wait_for_timeout(300)
+    pg.evaluate("() => map.jumpTo({center: [%f, %f], zoom: %f})" % (home["center"][0], home["center"][1], home["zoom"]))
+
     print("\n[3b] a GPS position arriving while a spot from the list is showing")
     pg.tap('#nav button[data-view="viewSpots"]')
     pg.tap('#spotList .spot[data-id="501"]')
@@ -207,10 +268,10 @@ with sync_playwright() as p:
     pg.wait_for_timeout(800)
     s = pg.evaluate(STATE)
     ok(km(s["center"], [3.10, 50.95]) < 40 and s["sheet"], "the map stays on the spot, the sheet open")
-    pg.tap("#closeSpot")
+    pg.tap("#spBack")
     pg.wait_for_timeout(500)
     s = pg.evaluate(STATE)
-    ok(s["view"] == ["viewSpots"], "closing still returns to the list")
+    ok(s["view"] == ["viewSpots"], "back to the list as usual")
     ok(km(s["center"], [4.40, 51.20]) < 1 and s["zoom"] >= 12,
        f"and Map then shows your own position ({km(s['center'], [4.40, 51.20]):.1f} km, zoom {s['zoom']:.1f})")
     here_cam = s
@@ -229,9 +290,9 @@ with sync_playwright() as p:
     top_ = pg.evaluate("() => document.getElementById('spotSheet').getBoundingClientRect().top")
     cnt = pg.evaluate("() => document.getElementById('counts').getBoundingClientRect().bottom")
     ok(cnt < y < top_, f"the spot between the top bar and the sheet ({cnt:.0f} < {y:.0f} < {top_:.0f} px)")
-    pg.tap("#closeSpot")
+    pg.tap("#spBack")
     pg.wait_for_timeout(500)
-    ok(pg.evaluate("() => map.getPadding()") == pad_before, "and the map's padding is what it was")
+    ok(pg.evaluate("() => map.getPadding()") == pad_before, "and back in the list the map's padding is what it was")
 
     print("\n[3d] a small phone")
     pg.set_viewport_size({"width": 360, "height": 640})
@@ -264,7 +325,7 @@ with sync_playwright() as p:
     top_ = pg.evaluate("() => document.getElementById('spotSheet').getBoundingClientRect().top")
     swipe(pg, cdp, 180, top_ + 12, top_ + 300)
     s = pg.evaluate(STATE)
-    ok(not s["sheet"] and s["view"] == ["viewSpots"], "at the top, a swipe down closes it and you are back in the list")
+    ok(not s["sheet"] and s["view"] == [], "at the top, a swipe down closes it, and you stay on the map")
     pg.set_viewport_size({"width": 390, "height": 844})
     pg.wait_for_timeout(300)
 
@@ -342,12 +403,13 @@ with sync_playwright() as p:
     pg.wait_for_timeout(500)
     s = pg.evaluate(STATE)
     ok(s["view"] == ["viewSpots"] and s["tab"] == "agenda" and not s["sheet"], "from an agenda entry: the Agenda tab")
-    # Closed with x, then straight away the next spot: the back entry of the
-    # first is removed (asynchronously) while the second one needs its own.
+    # Back to the list with the button, then straight away the next spot: the
+    # back entry of the first is removed (asynchronously) while the second one
+    # needs its own.
     pg.tap('#spotTab .seg[data-tab="spots"]')
     pg.tap('#spotList .spot[data-id="501"]')
     pg.wait_for_function("() => document.getElementById('spotSheet').classList.contains('open')", timeout=5000)
-    pg.tap("#closeSpot")
+    pg.tap("#spBack")
     pg.tap('#spotList .spot[data-id="502"]')
     pg.wait_for_function("() => document.getElementById('spotSheet').classList.contains('open')", timeout=5000)
     pg.wait_for_timeout(600)

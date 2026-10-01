@@ -15,6 +15,12 @@
  * entry here is the version the app reports.
  */
 const RELEASES = [
+  { v: '1.27.0', date: '2026-10-01',
+    nl: ['Het kruisje bij een spot of aankondiging die je uit de lijst opende, sluit enkel het infovenster: je blijft op de ingezoomde kaart rond de spot.',
+         'Terug naar de lijst gaat met de nieuwe knop "← Terug naar Spots" (of Agenda) bovenaan het infovenster, of met de terugknop van je telefoon, ook als het venster al dicht is.'],
+    en: ['The x on a spot or announcement you opened from the list now only closes the info window: you stay on the zoomed-in map around the spot.',
+         'Back to the list with the new "← Back to Spots" (or Agenda) button at the top of the info window, or with your phone\'s back button, even with the window already closed.'] },
+
   { v: '1.26.0', date: '2026-09-28',
     nl: ['Nieuw: dit overzicht, te openen vanuit Instellingen.',
          'De terugknop van je telefoon brengt je van een spot of aankondiging terug naar de lijst waar je vandaan kwam, en van dit overzicht terug naar Instellingen.',
