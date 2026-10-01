@@ -186,7 +186,7 @@ function fixMoved(a, b){
 
 /* Everything that follows from a new position. `final` separates following
    along on the map (every wave) from committing to an answer (once). */
-function fixApply(pos, final){
+function fixApply(pos, final, keepZoom){
   const {latitude:lat, longitude:lon} = pos.coords;
   const accuracy = fixAcc(pos);
   here = {lat, lon};
@@ -208,8 +208,11 @@ function fixApply(pos, final){
   marker.setLngLat([lon,lat]).addTo(map);
   // Not while a spot opened from the Spots list is showing: then the position
   // is where the map goes once that spot is closed (deferFixMove in spots.js).
-  if(final && !(typeof deferFixMove === 'function' && deferFixMove(lon, lat)))
-    map.easeTo({center:[lon,lat], zoom:Math.max(map.getZoom(),12)});
+  // keepZoom: asked for by the Map button (centerOnMe), which only moves the
+  // middle of the map and leaves the zoom as you had it.
+  if(final && !(typeof deferFixMove === 'function' && deferFixMove(lon, lat, keepZoom)))
+    map.easeTo(keepZoom ? {center:[lon,lat], padding:{top:0, bottom:0, left:0, right:0}}
+                        : {center:[lon,lat], zoom:Math.max(map.getZoom(),12)});
   renderSpots();
   // Nearby was drawn from the centre of your locator square until now, or not
   // at all — a real fix changes every distance on it. A new position is a new
@@ -219,7 +222,9 @@ function fixApply(pos, final){
   // The arc lines were drawn from the locator square too; redraw them, or they
   // stay skewed until you happen to switch tabs.
   if(showSpots) paintSpots();
-  if(final) evaluate(lat, lon, accuracy);
+  // keepZoom: the verdict is said, but no area panel opens and zooms the map
+  // to that area; you asked for the map on you, at your zoom.
+  if(final) evaluate(lat, lon, accuracy, keepZoom);
 }
 
 /* The reported accuracy in metres, or null when the browser did not give a
@@ -320,12 +325,17 @@ function bestFix(onFinal, onProgress, onFail, onEnd){
   return run;
 }
 
-function locate(quiet){
+function locate(quiet, opts){
   // quiet: called at startup instead of by a tap on ◎. No searching message and
   // no error message then — anyone who doesn't share their location ought to
   // simply see a map, not a complaint.
+  // opts.keepZoom: the answer moves the middle of the map only (centerOnMe).
+  const keepZoom = !!(opts && opts.keepZoom);
   if(!navigator.geolocation){ if(!quiet) showStatus('out', t('gps.none'), t('gps.nonesub')); return; }
   if(fixRun){
+    // Whoever asked last decides whether the answer may zoom in: the Map
+    // button keeps the zoom, the ◎ button zooms in as it always did.
+    fixRun.keepZoom = keepZoom;
     // Still looking: a second tap should not open a second watch, only start
     // showing what the first one is doing. But once it has answered, tapping ◎
     // is asking again — and then it has to mean something, so that run is
@@ -337,14 +347,14 @@ function locate(quiet){
 
   // The token is claimed before the watch starts, so a fix that arrives
   // immediately cannot finish before we have something to compare against.
-  const mine = {quiet: !!quiet};
+  const mine = {quiet: !!quiet, keepZoom};
   fixRun = mine;
   const loud = () => fixRun === mine && !mine.quiet;
 
   mine.run = bestFix(
     // Fires once when there is an answer, and again if a later fix overturns
     // it. Both are a full answer: marker, map and verdict.
-    pos => fixApply(pos, true),
+    pos => fixApply(pos, true, mine.keepZoom),
     pos => {
       const say = loud();
       fixApply(pos, false);
@@ -364,7 +374,57 @@ function locate(quiet){
     });
   if(!mine.run && fixRun === mine) fixRun = null;
 }
-function evaluate(lat,lon,accuracy){
+
+/* The Map button in the bottom bar (nav.js), tapped by you: the map back on
+   where you are, whatever it was showing before, a spot included. Only the
+   middle moves; the zoom stays as you had it. Where you are is the GPS
+   position, or else the middle of your locator square from Settings, and then
+   the status line says so (as the Info tab does). When the position in hand is
+   not sharp enough, or too old (you may have moved since), a new measurement
+   starts as well. */
+const HOME_FIX_M = 30;
+const HOME_FIX_AGE_MS = 2 * 60 * 1000;
+function centerOnMe(){
+  const p = myPos();
+  if(p){
+    map.stop();
+    // No padding left over from a spot or area panel: the plain map, as at
+    // startup, with you in the middle of it.
+    map.easeTo({center: p, padding: {top: 0, bottom: 0, left: 0, right: 0}});
+  }
+  if(!here){
+    if(p) showStatus('out', t('map.atloc').replace('{grid}', (cfg.grid || '').toUpperCase()), t('map.atlocsub'));
+    else showStatus('out', t('map.nopos'), t('near.nopos'));
+  }
+  if(!navigator.geolocation) return;
+  // A running recording (session.js) keeps the position current by itself.
+  if(typeof sess !== 'undefined' && sess.on) return;
+  const perm = typeof geoPerm !== 'undefined' ? geoPerm : 'unknown';
+  // Never a permission prompt from this button: only with permission given,
+  // or, in a browser that cannot tell (no Permissions API), when no request
+  // has been refused yet. "Ask every time" reads as 'prompt' and stays quiet.
+  const refused = typeof locDenied !== 'undefined' && locDenied;
+  const mayAsk = perm === 'granted' || (perm === 'unknown' && !refused);
+  if(here){
+    // The margin that came with this position. Only known when geo.js placed it
+    // (ringFix travels with it); a position from elsewhere counts as unknown.
+    const acc = (ringFix && ringFix.lat === here.lat && ringFix.lon === here.lon) ? ringFix.acc : null;
+    // And its age: lastFix carries the time of the last committed answer.
+    const age = (lastFix && lastFix.lat === here.lat && lastFix.lon === here.lon) ? Date.now() - lastFix.at : null;
+    if(acc != null && acc <= HOME_FIX_M && age != null && age <= HOME_FIX_AGE_MS) return;
+    if(!mayAsk) return;
+    // Said straight away, also when a measurement was already under way
+    // (locate() then joins it instead of starting another).
+    showStatus('out', t('gps.searching'), '');
+    locate(false, {keepZoom: true});
+  } else if(perm === 'granted'){
+    // No position yet, but permission is there: look quietly, so the locator
+    // message stays until a real position replaces it. Never a permission
+    // prompt from this button; that is what ◎ and Settings are for.
+    locate(true, {keepZoom: true});
+  }
+}
+function evaluate(lat,lon,accuracy,keepMap){
   // Only real boundaries take part in "am I inside it". A point without a
   // polygon has no inside — you can't ask that question about it.
   const cand = index.filter(z => z.bbox &&
@@ -405,7 +465,7 @@ function evaluate(lat,lon,accuracy){
       showStatus('in', inside.length>1 ? t('gps.inmany').replace('{n}', inside.length) : t('gps.inone'),
         `${names} — ${t('gps.toedge').replace('{d}', Math.round(edge))}${note}`);
     }
-    select(inside[0].properties.ref, inside.map(f=>f.properties.ref));
+    if(!keepMap) select(inside[0].properties.ref, inside.map(f=>f.properties.ref));
   } else {
     // Same edge case as above, mirrored: the GPS point falls just outside a
     // real boundary, but not further outside than the GPS's own reported
@@ -422,7 +482,7 @@ function evaluate(lat,lon,accuracy){
     if(nearEdgeF && acc != null && nearEdgeD < acc){
       showStatus('near', t('gps.nearedge').replace('{ref}', nearEdgeF.properties.ref),
         t('gps.nearedgesub').replace('{d}', Math.round(nearEdgeD)).replace('{a}', acc));
-      select(nearEdgeF.properties.ref);
+      if(!keepMap) select(nearEdgeF.properties.ref);
       return;
     }
     let best=null,bd=Infinity;
