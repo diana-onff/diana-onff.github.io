@@ -480,7 +480,8 @@ $('spotList').addEventListener('click', e=>{
    open; closing the sheet (the x, swiping it down, Escape) brings you back to
    the list you came from, same tab, same scroll position, and puts the map back
    where it was. Going anywhere else from the bottom bar in the meantime also
-   puts the map back, so Map never shows a spot's location nobody asked for. */
+   puts the map back, so Map never shows a spot's location nobody asked for;
+   the Map button itself centres the map on you instead (centerOnMe, geo.js). */
 let listReturn = null;
 function openFromList(open, id){
   const view = $('viewSpots');
@@ -540,10 +541,10 @@ function openSpotFromMap(id){
    would move the map to it, away from the spot. Instead it becomes where the
    map goes back to on returning to the list. True when it was taken care of
    here (the map is not to move). */
-function deferFixMove(lon, lat){
+function deferFixMove(lon, lat, keepZoom){
   if(!listReturn) return false;
   listReturn.cam.center = [lon, lat];
-  listReturn.cam.zoom = Math.max(listReturn.cam.zoom, 12);
+  if(!keepZoom) listReturn.cam.zoom = Math.max(listReturn.cam.zoom, 12);
   // With the sheet closed you are using the map yourself: a position you
   // asked for (the locate button) moves it, as anywhere else.
   return !listReturn.stayed;
@@ -551,13 +552,17 @@ function deferFixMove(lon, lat){
 /* Leave a spot that was opened from the list through the bottom bar: no way
    back to the list any more, the sheet closes. With the sheet still open the
    map goes back to where it was (Map never shows a spot nobody asked to keep);
-   after you closed the sheet to stay on the map, the map stays. */
-function dropListReturn(){
+   after you closed the sheet to stay on the map, the map stays. toMe: it was
+   your tap on Map, which puts the map on you right after (centerOnMe), so the
+   camera from before is simply let go. Only when Diana knows no position at
+   all (no GPS, no locator) does it go back as before, rather than leaving you
+   at a spot with nothing to centre on. */
+function dropListReturn(toMe){
   const back = listReturn; if(!back) return;
   listReturn = null;
   dropBack();
   closeSpotSheet();
-  if(!back.stayed){ map.stop(); map.jumpTo(back.cam); }
+  if(!back.stayed && !(toMe && myPos())){ map.stop(); map.jumpTo(back.cam); }
 }
 $('spotTab').addEventListener('click', e=>{
   const b=e.target.closest('.seg[data-tab]'); if(!b) return;

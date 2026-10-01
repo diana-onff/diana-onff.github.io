@@ -15,6 +15,16 @@
  * entry here is the version the app reports.
  */
 const RELEASES = [
+  { v: '1.28.0', date: '2026-10-01',
+    nl: ['De knop Kaart onderaan zet de kaart altijd op je eigen positie, ook na het bekijken van een spot of aankondiging. De zoom blijft zoals hij was.',
+         'Zonder GPS-positie gaat de kaart naar het midden van je locator uit Instellingen, en de melding zegt dat.',
+         'Is je positie onnauwkeuriger dan 30 m of ouder dan 2 minuten, dan zoekt de knop Kaart ook meteen een nieuwe GPS-positie.',
+         'De tip over een onnauwkeurige positie leest vlotter.'],
+    en: ['The Map button at the bottom always puts the map on your own position, also after looking at a spot or announcement. The zoom stays as it was.',
+         'Without a GPS position the map goes to the middle of your locator from Settings, and the message says so.',
+         'If your position is less accurate than 30 m or older than 2 minutes, the Map button also looks for a new GPS position right away.',
+         'The tip about an inaccurate position reads more smoothly.'] },
+
   { v: '1.27.0', date: '2026-10-01',
     nl: ['Het kruisje bij een spot of aankondiging die je uit de lijst opende, sluit enkel het infovenster: je blijft op de ingezoomde kaart rond de spot.',
          'Terug naar de lijst gaat met de nieuwe knop "← Terug naar Spots" (of Agenda) bovenaan het infovenster, of met de terugknop van je telefoon, ook als het venster al dicht is.'],

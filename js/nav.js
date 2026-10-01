@@ -77,9 +77,14 @@ addEventListener('popstate', () => {
 
 $('nav').addEventListener('click', e=>{
   const b=e.target.closest('button[data-view]'); if(!b) return;
+  // Your own tap on Map (not the code opening the map for a list row, a nearby
+  // reference or a spot): the map comes back centred on you (centerOnMe in
+  // geo.js), whatever it showed before.
+  const toMe = b.dataset.view === 'map' && e.isTrusted;
   // A spot opened from the Spots list: leaving it through the bottom bar puts
-  // the map back where it was instead of returning to the list (spots.js).
-  if(typeof dropListReturn === 'function') dropListReturn();
+  // the map back where it was instead of returning to the list (spots.js);
+  // with toMe the old camera is let go, the map goes to you instead.
+  if(typeof dropListReturn === 'function') dropListReturn(toMe);
   // Whatever screen had a back entry of its own is being left.
   dropBack();
   [...$('nav').children].forEach(c=>c.classList.toggle('on',c===b));
@@ -90,6 +95,7 @@ $('nav').addEventListener('click', e=>{
     closeSheet();
     $('closeSpot').onclick();
     clearSelection();
+    if(toMe && typeof centerOnMe === 'function') centerOnMe();
   }
   if(b.dataset.view==='viewSpots'){
     startSpots(); renderSpots(); redrawOverlays();
