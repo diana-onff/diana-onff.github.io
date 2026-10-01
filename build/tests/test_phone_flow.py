@@ -15,9 +15,11 @@
 #       the list, same tab, map back where it was
 #   [2] an agenda entry: "<- Terug naar Agenda" returns to the Agenda tab;
 #       swiping the sheet down is like x, and back still finds the list
-#   [3a] stayed on the map on purpose: Map in the bottom bar leaves it there
-#   [3] Map in the bottom bar while such a spot is open: the plain map, back
-#       where it was, not the spot's location; the same via another screen
+#   [3a] stayed on the map on purpose: with no position known at all, Map in
+#       the bottom bar has nothing to centre on and leaves it there
+#   [3] Map in the bottom bar while such a spot is open, no position known:
+#       the plain map, back where it was, not the spot's location; the same
+#       via another screen
 #   [4] the area panel on a small phone: scrolled down, a downward swipe
 #       scrolls back up instead of dragging the panel; only at the top does it
 #       close; a new area starts at the top again
@@ -29,6 +31,13 @@
 #   [6] the phone's back button: from a spot or agenda entry back to the list
 #       and tab it came from, never out of the app; closed any other way, no
 #       back entry is left behind
+#   [7] Map in the bottom bar always centres the map on you (1.28.0), on 390
+#       and 360 px: after x and with the sheet still open, zoom unchanged, no
+#       padding left; then Spots and back without a camera jump; without GPS
+#       on the locator from Settings, and the message says so; a position
+#       wider than 30 m or older than 2 minutes starts a new measurement, a
+#       sharp and recent one does not;
+#       with no position at all, the map goes back where it was
 # Screenshots of [1], [2] and [5] go to $DIANA_SHOTS if that is set.
 import json, os, re, sys, time
 from playwright.sync_api import sync_playwright
@@ -233,7 +242,7 @@ with sync_playwright() as p:
     pg.tap('#nav button[data-view="map"]')
     pg.wait_for_timeout(400)
     s = pg.evaluate(STATE)
-    ok(km(s["center"], [11.85, 50.05]) < 40 and s["view"] == [], "the map stays where you chose to stay")
+    ok(km(s["center"], [11.85, 50.05]) < 40 and s["view"] == [], "no position known: the map stays where you chose to stay")
     ok(pg.evaluate("() => history.state") is None, "and back is no longer tied to the list")
     # Stayed, then the locate button: the map goes to your position, like anywhere else.
     pg.tap('#nav button[data-view="viewSpots"]')
@@ -429,6 +438,307 @@ with sync_playwright() as p:
 
     ok(not errs, f"no page errors ({errs[:2]})")
     ctx.close()
+
+    # ------------------------------------------------------------------
+    # [7] Map in the bottom bar always centres the map on you (1.28.0).
+    #     With GPS: on that position. Without GPS: on the middle of the
+    #     locator square from Settings, and the message says so. The zoom
+    #     stays as it was; only the middle moves. A position less sharp than
+    #     30 m starts a new measurement. Both on 390 and on 360 px.
+    # ------------------------------------------------------------------
+    ME = [4.05, 51.05]                 # where the phone "is"
+
+    def new_page(**kw):
+        c = br.new_context(service_workers="block", viewport={"width": 390, "height": 844},
+                           device_scale_factor=2, is_mobile=True, has_touch=True, **kw)
+        routes(c)
+        g = c.new_page()
+        g.on("pageerror", lambda e: errs.append(str(e)))
+        g.goto(BASE, wait_until="load")
+        g.wait_for_function("() => zones && zones.features && zones.features.length > 0", timeout=20000)
+        g.wait_for_timeout(2500)
+        settle(g)
+        return c, g
+
+    def from_list(g, sid):
+        g.tap('#nav button[data-view="viewSpots"]')
+        g.tap('#spotTab .seg[data-tab="spots"]')
+        g.wait_for_function("() => document.querySelectorAll('#spotList .spot[data-id]').length >= 2", timeout=15000)
+        g.tap('#spotList .spot[data-id="%d"]' % sid)
+        g.wait_for_function("() => document.getElementById('spotSheet').classList.contains('open')", timeout=5000)
+        settle(g)
+
+    def zoom_to(g, z):
+        # What a pinch would do: a different zoom than the spot's, to prove
+        # that Map keeps whatever zoom you have.
+        g.evaluate("(z) => map.jumpTo({zoom: z})", z)
+        g.wait_for_timeout(200)
+
+    def tap_map(g):
+        g.tap('#nav button[data-view="map"]')
+        g.wait_for_timeout(250)
+        settle(g)
+
+    def on_me(g, where, z, label):
+        s = g.evaluate(STATE)
+        px = g.evaluate("(p) => { const q = map.project(p), c = map.getContainer(); return [q.x - c.clientWidth / 2, q.y - c.clientHeight / 2]; }", where)
+        pad = g.evaluate("() => map.getPadding()")
+        ok(s["view"] == [] and s["nav"] == "map" and not s["sheet"], f"{label}: the plain map, sheet closed ({s['view']}, sheet {s['sheet']})")
+        ok(km(s["center"], where) < 0.05 and abs(px[0]) < 2 and abs(px[1]) < 2,
+           f"{label}: centred on you ({km(s['center'], where):.2f} km, {px[0]:.0f}/{px[1]:.0f} px off the middle)")
+        ok(abs(s["zoom"] - z) < 0.01, f"{label}: zoom unchanged ({s['zoom']:.2f}, was {z:.2f})")
+        ok(all(abs(pad[k]) < 0.5 for k in ("top", "bottom", "left", "right")), f"{label}: no padding left over ({pad})")
+
+    def with_gps(g, cam_ok, w):
+        print(f"\n[7] Map centres on you, with GPS ({w} px)")
+        # Spot from the list, x (stayed on the map), another zoom, then Map.
+        from_list(g, 502)
+        g.tap("#closeSpot")
+        g.wait_for_timeout(300)
+        zoom_to(g, 8.5)
+        tap_map(g)
+        on_me(g, ME, 8.5, "after x")
+        ok(g.evaluate("() => history.state") is None, "after x: back is no longer tied to the list")
+        # Spot from the list, sheet still open, then Map.
+        from_list(g, 502)
+        zoom_to(g, 9.25)
+        tap_map(g)
+        on_me(g, ME, 9.25, "sheet still open")
+        g.wait_for_timeout(1200)
+        s = g.evaluate(STATE)
+        ok(km(s["center"], ME) < 0.05, "and nothing pulls it away afterwards (no old camera coming back)")
+        # Then Spots and back again, with the button and with the phone's back button.
+        cam = g.evaluate(STATE)
+        from_list(g, 501)
+        g.tap("#spBack")
+        g.wait_for_timeout(500)
+        s = g.evaluate(STATE)
+        ok(s["view"] == ["viewSpots"] and km(s["center"], cam["center"]) < 0.05 and abs(s["zoom"] - cam["zoom"]) < 0.01,
+           f"then Spots, a spot, '← Terug': the map as Map left it ({km(s['center'], cam['center']):.2f} km, zoom {s['zoom']:.2f})")
+        g.tap('#spotList .spot[data-id="502"]')
+        g.wait_for_function("() => document.getElementById('spotSheet').classList.contains('open')", timeout=5000)
+        settle(g)
+        g.go_back()
+        g.wait_for_timeout(600)
+        s = g.evaluate(STATE)
+        ok(s["view"] == ["viewSpots"] and km(s["center"], cam["center"]) < 0.05 and abs(s["zoom"] - cam["zoom"]) < 0.01,
+           f"and with the phone's back button: the same, no camera jump ({km(s['center'], cam['center']):.2f} km)")
+        cam_ok.append(True)
+
+    def watch_closed(g):
+        # Polled with evaluate: the running watch ends on a timer (FIX_WAIT_MS).
+        for _ in range(100):
+            if g.evaluate("() => fixRun === null"):
+                return True
+            g.wait_for_timeout(250)
+        return False
+
+    def gps_margin(g, c):
+        print("\n[7] the 30 m rule: a wide position asks for a new one, a sharp one does not")
+        ok(watch_closed(g), "(the startup measurement has finished)")
+        # Every status message, in order: the emulated GPS answers so quickly
+        # that "searching" is gone again before anyone could read it.
+        g.evaluate("() => { window.__said = []; const show = showStatus; window.showStatus = (k, a, b, top) => { __said.push(a); show(k, a, b, top); }; }")
+        P1, P2, P3 = [4.20, 51.15], [4.25, 51.18], [4.60, 51.30]
+        # A position with a 80 m margin, then the phone finds a sharp one elsewhere.
+        g.evaluate("(p) => fixApply({coords: {latitude: p[1], longitude: p[0], accuracy: 80}, timestamp: Date.now()}, true)", P1)
+        g.wait_for_timeout(300)
+        c.set_geolocation({"latitude": P2[1], "longitude": P2[0], "accuracy": 3})
+        g.evaluate("() => { map.jumpTo({center: [5.5, 50.6], zoom: 9}); __said.length = 0; }")
+        g.tap('#nav button[data-view="map"]')
+        g.wait_for_timeout(150)
+        said = g.evaluate("() => __said")
+        ok(said[:1] == ["Locatie zoeken…"], f"wider than 30 m: Map starts a new measurement, and says so ({said})")
+        moved = False
+        for _ in range(40):
+            g.wait_for_timeout(250)
+            if km(g.evaluate("() => map.getCenter().toArray()"), P2) < 0.05 and not g.evaluate("() => map.isMoving() || map.isEasing()"):
+                moved = True
+                break
+        z = g.evaluate("() => map.getZoom()")
+        ok(moved, "and the map follows to the new, sharper position")
+        ok(abs(z - 9) < 0.01, f"still at the zoom you had ({z:.2f})")
+        ok(watch_closed(g), "(that measurement has finished)")
+        # Now sharp (3 m): Map only centres, no new measurement.
+        c.set_geolocation({"latitude": P3[1], "longitude": P3[0], "accuracy": 3})
+        g.evaluate("() => map.jumpTo({center: [5.5, 50.6], zoom: 9})")
+        g.evaluate("() => { hideStatus(); __said.length = 0; }")
+        tap_map(g)
+        g.wait_for_timeout(1500)
+        s = g.evaluate(STATE)
+        said = g.evaluate("() => __said")
+        ok(km(s["center"], P2) < 0.05 and g.evaluate("() => fixRun") is None and said == [],
+           f"30 m or better: no new measurement, the map on the position in hand ({km(s['center'], P2):.2f} km, {said})")
+        # Just as sharp, but older than 2 minutes: you may have moved, so Map measures again.
+        g.evaluate("() => { lastFix.at -= 3 * 60 * 1000; fixLog = []; map.jumpTo({center: [5.5, 50.6], zoom: 9}); hideStatus(); __said.length = 0; }")
+        g.tap('#nav button[data-view="map"]')
+        g.wait_for_timeout(150)
+        said = g.evaluate("() => __said")
+        moved = measured_to(g, P3)
+        z = g.evaluate("() => map.getZoom()")
+        ok(said[:1] == ["Locatie zoeken…"] and moved and abs(z - 9) < 0.01,
+           f"sharp but older than 2 minutes: a new measurement, the map follows, zoom kept ({said[:2]}, zoom {z:.2f})")
+        ok(watch_closed(g), "(that measurement has finished)")
+
+    def measured_to(g, where):
+        # Polls until the map has come to rest on `where` (a measurement the
+        # Map button started has answered), or gives up after ten seconds.
+        for _ in range(40):
+            g.wait_for_timeout(250)
+            if km(g.evaluate("() => map.getCenter().toArray()"), where) < 0.05 and not g.evaluate("() => map.isMoving() || map.isEasing()"):
+                return True
+        return False
+
+    def fresh(g, c, where, acc, start, z):
+        # The phone's next answer, a clean slate of readings (earlier test
+        # positions would otherwise be weighed together with it), the map
+        # somewhere else at zoom z, no message showing.
+        watch_closed(g)
+        c.set_geolocation({"latitude": where[1], "longitude": where[0], "accuracy": acc})
+        g.evaluate("([s, z]) => { fixLog = []; map.jumpTo({center: s, zoom: z}); hideStatus(); __said.length = 0; }", [start, z])
+
+    def gps_more(g, c):
+        print("\n[7] inside an area, programmatic clicks, no GPS yet, a recording, and ◎")
+        # A position inside an area: the measurement that Map starts says so,
+        # but opens no area panel and keeps your zoom.
+        IN = g.evaluate("""() => {
+          for (const z of index) {
+            if (!z.bbox) continue;
+            const f = zones.features.find(x => x.properties.ref === z.ref);
+            if (!f || !f.geometry) continue;
+            for (let i = 1; i < 6; i++) for (let j = 1; j < 6; j++) {
+              const lon = z.bbox[0] + (z.bbox[2] - z.bbox[0]) * i / 6, lat = z.bbox[1] + (z.bbox[3] - z.bbox[1]) * j / 6;
+              if (pointInGeom(lon, lat, f.geometry)) return [lon, lat, z.ref];
+            }
+          }
+          return null; }""")
+        ok(IN is not None, f"(a point inside {IN and IN[2]})")
+        g.evaluate("(p) => fixApply({coords: {latitude: p[1] + 0.05, longitude: p[0] + 0.05, accuracy: 80}, timestamp: Date.now()}, true)", IN)
+        g.evaluate("() => closeSheet()")
+        fresh(g, c, IN[:2], 3, [5.9, 50.3], 9)
+        g.tap('#nav button[data-view="map"]')
+        arrived = measured_to(g, IN[:2])
+        g.wait_for_timeout(600)
+        z = g.evaluate("() => map.getZoom()")
+        said = g.evaluate("() => __said")
+        area = g.evaluate("() => document.getElementById('sheet').classList.contains('open')")
+        ok(arrived and abs(z - 9) < 0.01 and not area,
+           f"inside an area: on you at your zoom, no area panel taking over (zoom {z:.2f}, panel {area})")
+        ok(any(x.startswith("Je staat in") for x in said), f"and the message still says where you are ({said})")
+        watch_closed(g)
+
+        # The code opening the map (a list row, a Nearby reference) is not your tap on Map.
+        g.evaluate("() => { map.jumpTo({center: [5.9, 50.3], zoom: 9}); __said.length = 0; }")
+        g.evaluate("() => document.querySelector('#nav button[data-view=\"map\"]').click()")
+        g.wait_for_timeout(800)
+        s = g.evaluate(STATE)
+        ok(km(s["center"], [5.9, 50.3]) < 0.05 and g.evaluate("() => fixRun") is None and g.evaluate("() => __said") == [],
+           "a programmatic click on Map does not centre, measure or say anything")
+
+        # No GPS position yet, permission given: the locator first, then quietly the real position.
+        Q = [4.45, 51.22]
+        g.evaluate("() => { here = null; ringFix = null; cfg.grid = 'JO20SX'; }")
+        fresh(g, c, Q, 3, [5.9, 50.3], 9)
+        g.tap('#nav button[data-view="map"]')
+        g.wait_for_timeout(150)
+        said = g.evaluate("() => __said")
+        ok(said[:1] == ["Kaart op je locator JO20SX"] and "Locatie zoeken…" not in said,
+           f"no GPS yet: the locator, said so, and the measurement starts quietly ({said})")
+        arrived = measured_to(g, Q)
+        z = g.evaluate("() => map.getZoom()")
+        ok(arrived and abs(z - 9) < 0.01, f"then the map follows to the real position, at your zoom ({z:.2f})")
+        g.evaluate("() => { cfg.grid = ''; }")
+        watch_closed(g)
+
+        # A recording keeps the position current itself: Map only centres.
+        g.evaluate("() => fixApply({coords: {latitude: 51.0, longitude: 4.1, accuracy: 80}, timestamp: Date.now()}, true)")
+        g.evaluate("() => { closeSheet(); sess.on = true; }")
+        fresh(g, c, [4.7, 51.3], 3, [5.9, 50.3], 9)
+        tap_map(g)
+        g.wait_for_timeout(1200)
+        s = g.evaluate(STATE)
+        ok(km(s["center"], [4.1, 51.0]) < 0.05 and g.evaluate("() => fixRun") is None and g.evaluate("() => __said") == [],
+           "during a recording: Map centres, no extra measurement")
+        g.evaluate("() => { sess.on = false; }")
+
+        # The ◎ button is unchanged: it still zooms in to at least 12.
+        fresh(g, c, [4.7, 51.3], 3, [5.9, 50.3], 9)
+        if g.evaluate(VISIBLE, "#accHint"):
+            g.tap("#accHintClose")        # the 80 m positions above raised the accuracy tip
+        g.tap('button[title="Waar sta ik?"]')
+        arrived = measured_to(g, [4.7, 51.3])
+        z = g.evaluate("() => map.getZoom()")
+        ok(arrived and z >= 12 - 0.01, f"◎ still zooms in as before (zoom {z:.2f})")
+        watch_closed(g)
+
+    gps_ctx, g = new_page(permissions=["geolocation"],
+                          geolocation={"latitude": ME[1], "longitude": ME[0], "accuracy": 10})
+    ok(g.evaluate("() => !!here") and km(g.evaluate("() => [here.lon, here.lat]"), ME) < 0.05, "(the phone has a GPS position)")
+    done = []
+    with_gps(g, done, 390)
+    g.set_viewport_size({"width": 360, "height": 640})
+    g.wait_for_timeout(400)
+    with_gps(g, done, 360)
+    g.set_viewport_size({"width": 390, "height": 844})
+    gps_margin(g, gps_ctx)
+    gps_more(g, gps_ctx)
+    gps_ctx.close()
+
+    # Without GPS (no permission), with a locator in Settings.
+    loc_ctx = br.new_context(service_workers="block", viewport={"width": 390, "height": 844},
+                             device_scale_factor=2, is_mobile=True, has_touch=True)
+    loc_ctx.add_init_script("try { localStorage.setItem('diana.grid', 'JO20SX'); } catch (e) {}")
+    routes(loc_ctx)
+    g = loc_ctx.new_page()
+    g.on("pageerror", lambda e: errs.append(str(e)))
+    g.goto(BASE, wait_until="load")
+    g.wait_for_function("() => zones && zones.features && zones.features.length > 0", timeout=20000)
+    g.wait_for_timeout(2500)
+    settle(g)
+    LOC = g.evaluate("() => gridToLatLon('JO20SX')")
+    ok(g.evaluate("() => here") is None and LOC is not None, f"(no GPS position, locator JO20SX = {LOC})")
+    for w, h in ((390, 844), (360, 640)):
+        print(f"\n[7] Map without GPS: the locator from Settings ({w} px)")
+        g.set_viewport_size({"width": w, "height": h})
+        g.wait_for_timeout(300)
+        from_list(g, 502)
+        g.tap("#closeSpot")
+        g.wait_for_timeout(300)
+        zoom_to(g, 8.5)
+        g.evaluate("() => hideStatus()")
+        tap_map(g)
+        on_me(g, LOC, 8.5, "after x")
+        st = g.evaluate("() => ({cls: document.getElementById('status').className, t1: document.getElementById('stT1').textContent, t2: document.getElementById('stT2').textContent})")
+        ok("show" in st["cls"] and "JO20SX" in st["t1"] and "GPS" in st["t2"] and g.evaluate(VISIBLE, "#stT1"),
+           f"and the message says so: {st['t1']!r} / {st['t2']!r}")
+        from_list(g, 502)
+        zoom_to(g, 9.25)
+        tap_map(g)
+        on_me(g, LOC, 9.25, "sheet still open")
+        cam = g.evaluate(STATE)
+        from_list(g, 501)
+        g.go_back()
+        g.wait_for_timeout(600)
+        s = g.evaluate(STATE)
+        ok(s["view"] == ["viewSpots"] and km(s["center"], cam["center"]) < 0.05,
+           f"then a spot and the phone's back button: the map as Map left it ({km(s['center'], cam['center']):.2f} km)")
+
+    print("\n[7] no GPS and no locator either")
+    g.set_viewport_size({"width": 390, "height": 844})
+    g.evaluate("() => { cfg.grid = ''; }")
+    g.evaluate("() => map.jumpTo({center: [4.4, 50.8], zoom: 8})")
+    before = g.evaluate(STATE)
+    from_list(g, 502)
+    g.evaluate("() => hideStatus()")
+    tap_map(g)
+    s = g.evaluate(STATE)
+    st = g.evaluate("() => document.getElementById('stT1').textContent")
+    ok(km(s["center"], before["center"]) < 0.5 and not s["sheet"],
+       f"with the sheet open, Map puts the map back where it was, not at the spot ({km(s['center'], before['center']):.1f} km)")
+    ok(st == "Geen positie bekend", f"and says it knows no position ({st!r})")
+    loc_ctx.close()
+
+    ok(not errs, f"no page errors in [7] ({errs[:2]})")
     br.close()
 
 print("\n" + ("ALL OK" if not fails else f"{len(fails)} PROBLEMS: " + " | ".join(fails)))
