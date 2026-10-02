@@ -581,3 +581,31 @@
     .pop + .pop{right:12px;top:64px}
     .facts{grid-template-columns:1fr}
   }
+
+  /* ---------- Veldinfo > Condities (conditions.js) ---------- */
+  .kpgauge{display:block;width:100%;max-width:240px;margin:2px auto 0}
+  .condkpval{text-align:center;margin-top:-2px}
+  .condkpval b{font-size:28px;color:var(--ink)}
+  .condword{font-weight:600;margin-left:8px}
+  .condnums,.condsun{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;text-align:center}
+  .condsun{grid-template-columns:1fr 1fr;margin-top:0}
+  .condnums .k,.condsun .k{font-size:12px;color:var(--ink-3)}
+  .condnums .v,.condsun .v{font-size:18px;font-weight:600;color:var(--ink)}
+  .condutc{display:block;color:var(--ink-3);font-size:12px;font-weight:400}
+  .condstrip{display:flex;flex-direction:column;gap:9px;margin-top:4px}
+  .condrow{display:flex;flex-direction:column;gap:3px}
+  .condtop{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  .condband{font-size:13px;font-weight:700;color:var(--ink)}
+  .condband small{font-size:11px;font-weight:500;color:var(--ink-3);margin-left:4px}
+  .condnowword{font-size:12px;color:var(--ink-3);white-space:nowrap}
+  .condnowword b{font-weight:700}
+  .condlabels{display:flex}
+  .condlabels span{flex:1;text-align:center;font-size:11px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .condlabels span.now{color:var(--green);font-weight:700}
+  .condbar{position:relative;display:flex;height:20px;border-radius:11px;overflow:hidden}
+  .condseg{flex:1;border:0;margin:0;padding:0;background:transparent;cursor:pointer}
+  .condseg:focus-visible{outline:2px solid var(--green);outline-offset:-2px}
+  .condnow{position:absolute;top:0;bottom:0;width:3px;margin-left:-1.5px;background:var(--ink);border-radius:2px;box-shadow:0 0 0 1.5px var(--card);pointer-events:none}
+  .condlegend{display:flex;gap:14px;margin:10px 0 0;font-size:12px;color:var(--ink-2)}
+  .condlegend i{display:inline-block;width:12px;height:12px;border-radius:4px;margin-right:5px;vertical-align:-2px}
+  .hint.condold{color:var(--amber)}

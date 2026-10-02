@@ -1,8 +1,8 @@
 {
   "id": "/diana/",
-  "name": "Diana — ONFF Zones & Spots",
+  "name": "Diana Fauna & Flora",
   "short_name": "Diana",
-  "description": "Map of the Belgian ONFF nature reserves with live WWFF spots, usable offline.",
+  "description": "WWFF map for radio amateurs: nature reserves, live spots and field info, usable offline.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
