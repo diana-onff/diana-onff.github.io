@@ -38,7 +38,15 @@ import conditions as C  # noqa: E402
 import datetime as _dt  # noqa: E402
 RUN = _dt.datetime(2026, 10, 2, 3, 30, tzinfo=_dt.timezone.utc)   # half an hour after the fixtures
 out, probs = C.build(FIX, now=RUN)
-ok(out["kp"] == {"value": 1.0, "time": "2026-10-02T02:04:00Z"}, f"Kp right now from the minute values ({out['kp']})")
+ok(out["kp"] == {"value": 1.33, "time": "2026-10-02T06:00:00Z"}, f"Kp: the official 3-hourly value, its time the end of its three hours ({out['kp']})")
+ok(out["kp_now"] == {"value": 1.0, "time": "2026-10-02T02:04:00Z"}, f"and the minute estimate beside it ({out['kp_now']})")
+objs = json.dumps([{"time_tag": "2026-10-02T00:00:00", "Kp": 2.67}, {"time_tag": "2026-10-02T03:00:00", "Kp": 3.0}])
+ok(C.parse_kp3h(objs, RUN) == {"value": 3.0, "time": "2026-10-02T06:00:00Z"}, "the 3-hourly file also read as a list of objects")
+try:
+    C.parse_kp3h(objs, RUN + _dt.timedelta(hours=20))
+    ok(False, "a 3-hourly file stuck for half a day is not trusted")
+except ValueError:
+    ok(True, "a 3-hourly file stuck for half a day is not trusted")
 ok(out["a"] == {"value": 4, "date": "2026-10-01"}, f"A of the last complete day, not today's partial row ({out['a']})")
 ok(out["sfi"] == {"value": 92, "date": "2026-10-01"} and out["ssn"] == {"value": 38, "date": "2026-10-01"},
    f"SFI and sunspots of the newest day ({out['sfi']}, {out['ssn']})")
@@ -50,12 +58,14 @@ with tempfile.TemporaryDirectory() as tmp:
             b.write(a.read())
     with open(os.path.join(tmp, "planetary_k_index_1m.json"), "w") as b:
         b.write("<html>changed format</html>")
+    with open(os.path.join(tmp, "noaa-planetary-k-index.json"), "w") as b:
+        b.write("[]")
     out2, probs2 = C.build(tmp, now=RUN)
-    ok(out2["kp"] == {"value": 1.33, "time": "2026-10-02T03:00:00Z"} and any("kp1m" in p for p in probs2),
-       f"minute Kp broken: the newest 3-hourly Kp instead, also from a row whose missing values run together ({out2['kp']})")
+    ok(out2["kp"] == {"value": 1.33, "time": "2026-10-02T06:00:00Z"} and "kp_now" not in out2 and any("kp1m" in p for p in probs2),
+       f"3-hourly and minute files both broken: the 3-hourly Kp from the daily file, also from a row whose missing values run together ({out2['kp']})")
     stuck, probs_s = C.build(FIX, now=RUN + _dt.timedelta(hours=8))
-    ok(stuck["kp"]["time"] == "2026-10-02T03:00:00Z" and any("kp1m" in p for p in probs_s),
-       f"minute file stuck for hours: not trusted, the 3-hourly Kp instead ({stuck['kp']})")
+    ok(stuck["kp"]["value"] == 1.33 and "kp_now" not in stuck and any("kp1m" in p for p in probs_s),
+       f"minute file stuck for hours: no estimate shown, the 3-hourly Kp stays ({stuck['kp']})")
     for f in os.listdir(tmp):
         with open(os.path.join(tmp, f), "w") as b:
             b.write("garbage")
@@ -116,7 +126,9 @@ with sync_playwright() as p:
         nowcells: document.querySelectorAll('.condbar .condnow').length,
         visible: (() => { const r = nearCond.getBoundingClientRect(); return r.height > 200 && r.top < innerHeight; })()})""")
     ok(g["visible"] and g["gauge"] and g["segs"] == 9, f"the Kp dial with 9 steps and a needle, on screen ({g['segs']})")
-    ok(g["kp"] == "1" and g["word"] == "rustig", f"Kp 1, rustig ({g['kp']}, {g['word']})")
+    ok(g["kp"] == "1.33" and g["word"] == "rustig", f"Kp 1.33 (3-hourly), rustig ({g['kp']}, {g['word']})")
+    now_txt = pg.text_content("#condKpNow")
+    ok("per 3 uur" in now_txt and now_txt.endswith(": 1."), f"with the minute estimate small underneath ({now_txt!r})")
     ok((g["sfi"], g["a"], g["ssn"]) == ("92", "4", "38"), f"SFI 92, A 4, sunspots 38 ({g['sfi']}, {g['a']}, {g['ssn']})")
     ok("UTC" in g["rise"] and g["nowcols"] == 1 and g["nowcells"] == 5,
        f"sunrise in local time and UTC, the part of the day for now marked, a 'now' line on every bar ({g['rise']!r}, {g['nowcols']}, {g['nowcells']})")
@@ -191,6 +203,15 @@ with sync_playwright() as p:
     storm = dict(DATA, kp={"value": 6.33, "time": "2026-10-02T12:00:00Z"})
     pg.evaluate("(d) => { condData = d; renderCond(); }", storm)
     ok(pg.text_content("#condKpWord") == "storm G2", f"Kp 6.33 reads as storm G2 ({pg.text_content('#condKpWord')})")
+    pg.evaluate("(d) => { condData = d; renderCond(); }", dict(DATA, kp={"value": 0.0, "time": "2026-10-02T15:00:00Z"}))
+    dial = pg.evaluate("""() => { const s = document.querySelector('svg.kpgauge');
+        const paths = [...s.querySelectorAll('path')].map(p => +p.getAttribute('opacity'));
+        const l = s.querySelector('line'), len = Math.hypot(l.getAttribute('x2') - l.getAttribute('x1'), l.getAttribute('y2') - l.getAttribute('y1'));
+        const zero = [...s.querySelectorAll('text')].find(t => t.textContent === '0');
+        const dz = Math.hypot(zero.getAttribute('x') - l.getAttribute('x1'), zero.getAttribute('y') - 4 - l.getAttribute('y1'));
+        return {first: paths[0], rest: Math.max(...paths.slice(1)), len, dz}; }""")
+    ok(dial["first"] == 1 and dial["rest"] < 1, f"at Kp 0 the first green step lights up, the rest stays pale ({dial['first']}, {dial['rest']})")
+    ok(dial["len"] < dial["dz"] - 6, f"and the needle stops short of the numbers ({dial['len']:.0f} < {dial['dz']:.0f})")
     thirds = pg.evaluate("() => [3.67, 4.67, 5.67].map(k => [kpClass(k).key, kpClass(k).g || 0, bandOutlook(160, k)['40'][4]])")
     ok(thirds == [["cond.kp.active", 0, 2], ["cond.kp.storm", 1, 1], ["cond.kp.storm", 2, 1]],
        f"Kp in thirds: 4- is active, 5- already G1 and costs a step, 6- is G2 ({thirds})")

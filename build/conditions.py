@@ -8,9 +8,12 @@ so the app itself is not republished every hour. The app reads it from there.
 Source: the NOAA Space Weather Prediction Center (services.swpc.noaa.gov), a
 service of the US government; its data is public. Nothing else is asked.
 
-    planetary_k_index_1m.json     Kp right now (estimated, minute values)
+    noaa-planetary-k-index.json   the official planetary Kp per 3 hours: the
+                                  number shown, as radio amateurs quote it
+    planetary_k_index_1m.json     NOAA's running estimate per minute, shown
+                                  small as "now (estimate)"
     daily-geomagnetic-indices.txt planetary A of the last full day, and the
-                                  3-hourly Kp as a fallback for the above
+                                  3-hourly Kp again, as a fallback
     daily-solar-indices.txt       10.7 cm solar flux (SFI) and sunspot number
 
 Each value is read on its own. A source that is down or changed its format
@@ -25,6 +28,7 @@ import argparse, datetime as dt, json, os, re, sys, urllib.request
 
 BASE = "https://services.swpc.noaa.gov/"
 SOURCES = {
+    "kp3h": BASE + "products/noaa-planetary-k-index.json",
     "kp1m": BASE + "json/planetary_k_index_1m.json",
     "dgd":  BASE + "text/daily-geomagnetic-indices.txt",
     "dsd":  BASE + "text/daily-solar-indices.txt",
@@ -74,6 +78,44 @@ def day_of(parts):
 
 
 KP1M_MAX_AGE = dt.timedelta(hours=6)     # older than this, the minute file is stuck
+KP3H_MAX_AGE = dt.timedelta(hours=12)    # and the 3-hourly one
+
+
+def when_of(tag):
+    """An SWPC time tag ('2026-10-02 12:00:00.000' or '2026-10-02T12:00:00') as UTC."""
+    t = str(tag).strip().replace(" ", "T").rstrip("Z")
+    return dt.datetime.fromisoformat(t[:19]).replace(tzinfo=dt.timezone.utc)
+
+
+def parse_kp3h(text, now=None):
+    """The newest official 3-hourly planetary Kp: {'value', 'time'}, where time
+    is the END of its three hours. The file has been a list of lists with a
+    header row ([["time_tag","Kp",...], ["2026-10-02 12:00:00.000","1.33",...]])
+    and SWPC has been moving products to lists of objects; both are read."""
+    rows = json.loads(text)
+    recs = []
+    if rows and isinstance(rows[0], list):
+        head = [str(h).lower() for h in rows[0]]
+        it, ik = head.index("time_tag"), head.index("kp")
+        recs = [(r[it], r[ik]) for r in rows[1:] if isinstance(r, list) and len(r) > max(it, ik)]
+    else:
+        for r in rows:
+            if isinstance(r, dict):
+                k = r.get("Kp", r.get("kp", r.get("kp_index")))
+                recs.append((r.get("time_tag"), k))
+    best = None
+    for tag, k in recs:
+        v = num(k)
+        if tag and v is not None and v <= 9:
+            w = when_of(tag)
+            if best is None or w > best[0]:
+                best = (w, v)
+    if not best:
+        return None
+    end = best[0] + dt.timedelta(hours=3)
+    if now and now - end > KP3H_MAX_AGE:
+        raise ValueError(f"newest 3-hourly value ends {utc_iso(end)}")
+    return {"value": round(best[1], 2), "time": utc_iso(end)}
 
 
 def parse_kp1m(text, now=None):
@@ -111,7 +153,8 @@ def parse_dgd(text):
             a = {"value": int(round(pa)), "date": day_of(p)}
         for i, k in enumerate(kps):
             if k is not None and k <= 9:
-                kp = {"value": round(k, 2), "time": f"{day_of(p)}T{i * 3:02d}:00:00Z"}
+                end = when_of(day_of(p) + "T00:00:00") + dt.timedelta(hours=3 * (i + 1))
+                kp = {"value": round(k, 2), "time": utc_iso(end)}       # the end of its three hours
     return a, kp
 
 
@@ -141,12 +184,16 @@ def build(fixtures=None, previous=None, now=None):
             problems.append(f"{name}: {e}")
             return None
 
+    kp3h = attempt("kp3h", lambda text: parse_kp3h(text, now))
     kp_now = attempt("kp1m", lambda text: parse_kp1m(text, now))
     dgd = attempt("dgd", parse_dgd) or (None, None)
     dsd = attempt("dsd", parse_dsd) or (None, None)
-    got["kp"] = kp_now or dgd[1]
+    # The official 3-hourly Kp first; the same from the daily file; the minute
+    # estimate only when neither is there.
+    got["kp"] = kp3h or dgd[1] or kp_now
+    got["kp_now"] = kp_now
     got["a"], got["sfi"], got["ssn"] = dgd[0], dsd[0], dsd[1]
-    for k in ("kp", "a", "sfi", "ssn"):
+    for k in ("kp", "kp_now", "a", "sfi", "ssn"):
         v = got[k] or prev.get(k)
         if v:
             out[k] = v
