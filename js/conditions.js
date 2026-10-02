@@ -205,7 +205,7 @@ function kpGaugeSvg(kp){
   for(let i = 0; i < 9; i++){
     const a0 = 180 - i * 20, a1 = 180 - (i + 1) * 20 + 0.6;
     const [x0, y0] = pt(a0, r), [x1, y1] = pt(a1, r);
-    segs += `<path d="M${x0.toFixed(1)} ${y0.toFixed(1)} A${r} ${r} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)}" stroke="${kpClass(i).col}" stroke-width="${w}" fill="none" opacity="${i + 1 > (kp ?? -1) ? 0.25 : 1}"/>`;
+    segs += `<path d="M${x0.toFixed(1)} ${y0.toFixed(1)} A${r} ${r} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)}" stroke="${kpClass(i).col}" stroke-width="${w}" fill="none" opacity="${typeof kp === 'number' && i <= kp ? 1 : 0.25}"/>`;
   }
   let ticks = '';
   for(const v of [0, 3, 5, 7, 9]){
@@ -214,7 +214,8 @@ function kpGaugeSvg(kp){
   }
   let needle = '';
   if(typeof kp === 'number'){
-    const [x, y] = pt(180 - Math.max(0, Math.min(9, kp)) * 20, r - 4);
+    // Shorter than the ring of numbers, so it never runs over one (at Kp 0 it lay across the 0).
+    const [x, y] = pt(180 - Math.max(0, Math.min(9, kp)) * 20, r - w - 18);
     needle = `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/>
       <circle cx="${cx}" cy="${cy}" r="5" fill="var(--ink)"/>`;
   }
@@ -255,7 +256,7 @@ function renderCond(){
   const pos = typeof infoPosition === 'function' ? infoPosition() : null;
   const part = pos ? periodAt(now, pos.lat, pos.lon) : null;
   const val = k => d && d[k] && typeof d[k].value === 'number' ? d[k].value : null;
-  const kp = val('kp'), sfi = val('sfi');
+  const kp = val('kp'), sfi = val('sfi'), kpNow = val('kp_now');
 
   let html = '';
   if(!d){
@@ -268,6 +269,7 @@ function renderCond(){
         ${kpGaugeSvg(kp)}
         <div class="condkpval"><b id="condKp">${kp == null ? '?' : String(Math.round(kp * 100) / 100)}</b>
           <span class="condword" id="condKpWord" style="color:${kc ? kc.ink : 'var(--ink-3)'}">${escHtml(word)}</span></div>
+        ${kpNow == null ? '' : `<p class="hint condkpnow" id="condKpNow">${t('cond.kpnow').replace('{v}', String(Math.round(kpNow * 100) / 100))}</p>`}
         <div class="condnums">
           <div><div class="k">SFI</div><div class="v" id="condSfi">${sfi ?? '?'}</div></div>
           <div><div class="k">A</div><div class="v" id="condA">${val('a') ?? '?'}</div></div>

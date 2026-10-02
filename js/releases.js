@@ -15,6 +15,12 @@
  * entry here is the version the app reports.
  */
 const RELEASES = [
+  { v: '1.29.1', date: '2026-10-02',
+    nl: ['Condities toont nu de officiële Kp per 3 uur, zoals radioamateurs hem gewoonlijk noemen. De schatting per minuut staat er klein onder.',
+         'De Kp-wijzer licht ook bij Kp 0 op, en de naald loopt niet meer over de cijfers.'],
+    en: ['Conditions now shows the official Kp per 3 hours, as radio amateurs usually quote it. The estimate per minute is shown small underneath.',
+         'The Kp dial also lights up at Kp 0, and the needle no longer runs over the numbers.'] },
+
   { v: '1.29.0', date: '2026-10-02',
     nl: ['"In de buurt" heet nu "Veldinfo", met drie tabbladen: Gebieden, Locatie (het vroegere Info) en het nieuwe Condities.',
          'Condities toont het ruimteweer van NOAA (Kp met een wijzer, SFI, A en zonnevlekken), per band een kleurenbalk van ochtend tot nacht in de kleuren van de Kp-wijzer, met wat "goed" betekent (NVIS, EU of DX) en wat nu geldt, als ruwe indicatie volgens SFI, Kp, seizoen en dagdeel, en zonsopgang en zonsondergang op jouw positie.',
