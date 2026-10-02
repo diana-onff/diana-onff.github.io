@@ -16,21 +16,23 @@
 const RADIO_ZONES_URL = 'geo/radio-zones.json';
 const INFO_MOVE_M = 100;          // recompute zones and nearest only past this
 
-/* 'areas' is the list that was always there; 'info' is this tab. */
-let nearTab = recall('near.tab') === 'info' ? 'info' : 'areas';
+/* 'areas' is the list that was always there; 'info' is this tab (Locatie);
+   'cond' is Condities (conditions.js). */
+let nearTab = ['info', 'cond'].includes(recall('near.tab')) ? recall('near.tab') : 'areas';
 function nearInfoActive(){ return nearTab === 'info'; }
 
 function syncNearTab(){
   [...$('nearTab').children].forEach(c => c.classList.toggle('on', c.dataset.neartab === nearTab));
   $('nearAreas').hidden = nearTab !== 'areas';
   $('nearInfoWrap').hidden = nearTab !== 'info';
+  $('nearCondWrap').hidden = nearTab !== 'cond';
 }
 $('nearTab').addEventListener('click', e => {
   const b = e.target.closest('.seg[data-neartab]'); if(!b) return;
   nearTab = b.dataset.neartab;
   remember('near.tab', nearTab);
   syncNearTab();
-  renderNearby();                 // nearby.js hands over to renderNearInfo() on this tab
+  renderNearby();                 // nearby.js hands over to renderNearInfo() / showCond()
 });
 syncNearTab();
 

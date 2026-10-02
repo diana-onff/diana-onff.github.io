@@ -15,6 +15,14 @@
  * entry here is the version the app reports.
  */
 const RELEASES = [
+  { v: '1.29.0', date: '2026-10-02',
+    nl: ['"In de buurt" heet nu "Veldinfo", met drie tabbladen: Gebieden, Locatie (het vroegere Info) en het nieuwe Condities.',
+         'Condities toont het ruimteweer van NOAA (Kp met een wijzer, SFI, A en zonnevlekken), per band een kleurenbalk van ochtend tot nacht in de kleuren van de Kp-wijzer, met wat "goed" betekent (NVIS, EU of DX) en wat nu geldt, als ruwe indicatie volgens SFI, Kp, seizoen en dagdeel, en zonsopgang en zonsondergang op jouw positie.',
+         'De privacypagina spreekt over WWFF in het algemeen, niet enkel over ONFF, en de app heet voortaan "Diana Fauna & Flora".'],
+    en: ['"Nearby" is now "Field info", with three tabs: Areas, Location (the former Info) and the new Conditions.',
+         'Conditions shows the space weather from NOAA (Kp on a dial, SFI, A and sunspots), per band a colour bar from morning to night in the colours of the Kp dial, with what "good" means (NVIS, EU or DX) and what applies now, as a rough indication from SFI, Kp, season and part of the day, and sunrise and sunset at your position.',
+         'The privacy page speaks of WWFF in general, not only ONFF, and the app is now called "Diana Fauna & Flora".'] },
+
   { v: '1.28.0', date: '2026-10-01',
     nl: ['De knop Kaart onderaan zet de kaart altijd op je eigen positie, ook na het bekijken van een spot of aankondiging. De zoom blijft zoals hij was.',
          'Zonder GPS-positie gaat de kaart naar het midden van je locator uit Instellingen, en de melding zegt dat.',

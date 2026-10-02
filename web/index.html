@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Diana — ONFF Zones</title>
+<title>Diana Fauna &amp; Flora</title>
 <meta name="theme-color" content="#1b4332">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png" type="image/png">
@@ -245,8 +245,8 @@
 
   <div class="card">
     <h4 style="margin:0 0 10px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
-        data-i18n="set.neartitle">In de buurt</h4>
-    <p class="hint" style="margin:0 0 10px" data-i18n="set.nearlead">Hoe ver rond je positie het scherm "In de buurt" kijkt.</p>
+        data-i18n="set.neartitle">Veldinfo</h4>
+    <p class="hint" style="margin:0 0 10px" data-i18n="set.nearlead">Hoe ver rond je positie het tabblad Gebieden onder Veldinfo kijkt.</p>
     <div class="segs" id="setNearKm">
       <button class="seg" data-km="10">10 km</button>
       <button class="seg on" data-km="25">25 km</button>
@@ -441,10 +441,11 @@
 </section>
 
 <section class="view" id="viewNearby">
-  <h1 data-i18n="near.title">In de buurt</h1>
+  <h1 data-i18n="near.title">Veldinfo</h1>
   <div class="segs" id="nearTab">
     <button class="seg on" data-neartab="areas" data-i18n="near.tabareas">Gebieden</button>
-    <button class="seg" data-neartab="info" data-i18n="near.tabinfo">Info</button>
+    <button class="seg" data-neartab="info" data-i18n="near.tabinfo">Locatie</button>
+    <button class="seg" data-neartab="cond" data-i18n="near.tabcond">Condities</button>
   </div>
   <div id="nearAreas">
     <p class="sub" data-i18n="near.sub">De dichtstbijzijnde referenties vanaf waar je staat</p>
@@ -462,6 +463,11 @@
   <div id="nearInfoWrap" hidden>
     <p class="sub" data-i18n="info.sub">Waar je staat, in radiotermen</p>
     <div id="nearInfo"></div>
+  </div>
+  <!-- Veldinfo > Condities: drawn by js/conditions.js. -->
+  <div id="nearCondWrap" hidden>
+    <p class="sub" data-i18n="cond.sub">Ruimteweer en wat het betekent voor de banden</p>
+    <div id="nearCond"></div>
   </div>
 </section>
 
@@ -485,7 +491,7 @@
   <div class="card">
     <h4 style="margin:0 0 8px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
         data-i18n="privacy.abouth">About Diana</h4>
-    <p data-i18n="privacy.aboutbody">Diana is a volunteer project, built as a hobby, to support WWFF-ONFF activity for radio amateurs. It is not an official WWFF service; it simply uses their public services. Diana is not a commercial product and may not be used for commercial purposes.</p>
+    <p data-i18n="privacy.aboutbody">Diana is a volunteer project, built as a hobby, to support WWFF (World Wide Flora &amp; Fauna) activity for radio amateurs. It is not an official WWFF service; it simply uses their public services. Diana is not a commercial product and may not be used for commercial purposes.</p>
   </div>
 
   <div class="card">
@@ -523,6 +529,7 @@
       <li data-i18n="privacy.svc.tiles">OpenFreeMap (tiles.openfreemap.org): supplies the map tiles, built from OpenStreetMap data. An ordinary request for map images; Diana sets no cookies for this.</li>
       <li data-i18n="privacy.svc.relay">The Diana Spotline relay (a Cloudflare Worker): passes your spot or agenda entry through to Spotline. It counts requests per hashed IP address to prevent abuse, and never logs your callsign, position or remark.</li>
       <li data-i18n="privacy.svc.umami">Umami (cloud.umami.is): counts an anonymous visit, only with your permission. No cookies, no cross-site tracking, no personal data.</li>
+      <li data-i18n="privacy.svc.cond">GitHub (raw.githubusercontent.com): supplies the space weather numbers for the Conditions tab, fetched from NOAA SWPC by Diana's own GitHub workflow. An ordinary request for a file; nothing about you is sent.</li>
       <li data-i18n="privacy.svc.github">GitHub (api.github.com): only reached if you use the Beheer/Admin screen with your own access token, to publish new source files. Ordinary use of Diana never touches this.</li>
     </ul>
   </div>
@@ -610,7 +617,7 @@
   <button data-view="viewSelf"><span class="ic">✚</span><span data-i18n="nav.self">Meld</span></button>
   <button data-view="viewAgendaNew"><span class="ic">▤</span><span data-i18n="spots.tabagenda">Agenda</span></button>
   <button data-view="viewSession"><span class="ic">◉</span><span data-i18n="nav.session">Sessie</span></button>
-  <button data-view="viewNearby"><span class="ic">◎</span><span data-i18n="nav.nearby">In de buurt</span></button>
+  <button data-view="viewNearby"><span class="ic">◎</span><span data-i18n="nav.nearby">Veldinfo</span></button>
   <button data-view="viewRules"><span class="ic">☰</span><span data-i18n="nav.rules">Regels</span></button>
   <button data-view="viewAdmin"><span class="ic">⛭</span><span data-i18n="nav.admin">Beheer</span></button>
   <button data-view="viewSet"><span class="ic">⚙</span><span data-i18n="nav.settings">Instellingen</span></button>
@@ -691,6 +698,7 @@
 <script src="js/rules.js" defer></script>
 <script src="js/nearby.js" defer></script>
 <script src="js/nearinfo.js" defer></script>
+<script src="js/conditions.js" defer></script>
 <script src="js/offline.js" defer></script>
 <script src="js/geo.js" defer></script>
 </body>

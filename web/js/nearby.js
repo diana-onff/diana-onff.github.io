@@ -94,6 +94,7 @@ function renderNearby(){
   // already redraws Nearby (opening it, a new position, a language change)
   // redraws whichever tab is showing.
   if(typeof nearInfoActive === 'function' && nearInfoActive()){ renderNearInfo(); return; }
+  if(typeof nearCondActive === 'function' && nearCondActive()){ showCond(); return; }
   const box = $('nearBox'), list = $('nearList');
   if(!box || !list) return;
   const rows = nearbyRows();

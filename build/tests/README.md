@@ -15,6 +15,7 @@ python3 build/tests/test_new.py      # etc.
 | `test_more.py` | language choice (English by default, "follow the browser", staying saved) and the install flow per platform |
 | `test_swipe.py` | swiping down to close panels, and whether all our own layers survive six style switches |
 | `test_final.py` | that the install bar gives way to an open panel |
+| `test_conditions.py` | Veldinfo > Condities (since 1.29.0): `build/conditions.py` on NOAA SWPC fixtures in `conditions/` (each value read, a broken source falls back to the 3-hourly Kp or the previous file, nothing at all fails the run); the bottom bar says Veldinfo with three tabs; the Kp dial, the numbers, the band strip and sunrise/sunset drawn with real taps on 390 px; the band rules and Kp words for fixed values; sunrise and sunset within 2 minutes of an independent almanac (astral, if installed); offline the last good copy with its age, and a clear message when there never was one |
 | `test_splash.py` | splash screen, version number, the 16 dots, and whether the bottom bar is aligned |
 | `test_nearby.py` | the Nearby screen: what it does without a position, distances from a locator and from a GPS fix, the three orderings, tapping through to the map — and above all that its QSO counts are the WWFF directory's real ones, with nothing asked of Google Sheets |
 | `test_worldpoints.py` | worldwide WWFF areas: on by default, clustering, that the points follow the one country setting rather than a second dropdown of their own, layer off/on, and that an embed leaves it off unless `?world=1` |
