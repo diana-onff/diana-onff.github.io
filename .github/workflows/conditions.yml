@@ -1,0 +1,66 @@
+name: Space weather
+
+# Fetches the space weather numbers for the "Condities" tab (Veldinfo) from
+# NOAA SWPC, the only source, and puts them in conditions.json on a branch of
+# its own, "conditions". The app reads that file directly from there:
+#   https://raw.githubusercontent.com/<owner>/<repo>/conditions/conditions.json
+#
+# Why a branch of its own and not main: every commit on main publishes the site
+# again and gives the app a new version. Once an hour would mean an "update"
+# for everybody 24 times a day. This branch is not published and always holds
+# exactly one commit (force-pushed), so its history never grows.
+#
+#   every hour at :23    → fetch, write, replace the branch
+#   manually             → the same (Actions → Space weather → Run workflow)
+#
+# A source that is down keeps its previous value (with its own time, so the
+# app can say how old it is). Only when there is nothing at all does the run
+# turn red.
+#
+# Needs the same setting as the other workflows:
+#   Settings → Actions → General → Workflow permissions → "Read and write permissions"
+
+on:
+  schedule:
+    - cron: '23 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: conditions
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          sparse-checkout: build/conditions.py
+          sparse-checkout-cone-mode: false
+
+      - name: Previous file, if there is one
+        run: |
+          git fetch -q --depth 1 origin conditions || echo "no conditions branch yet"
+          git show FETCH_HEAD:conditions.json > previous.json 2>/dev/null || rm -f previous.json
+
+      - name: Fetch from NOAA SWPC
+        run: python3 build/conditions.py --out conditions.json --previous previous.json
+
+      - name: Replace the conditions branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir pub && cp conditions.json pub/
+          printf 'Space weather for Diana, written every hour by .github/workflows/conditions.yml on main.\nSource: NOAA SWPC. Do not edit by hand; the next run replaces this branch.\n' > pub/README.md
+          cd pub
+          git init -q -b conditions
+          git config user.name  "diana-bot"
+          git config user.email "diana-bot@users.noreply.github.com"
+          git add conditions.json README.md
+          git commit -q -m "Space weather $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:refs/heads/conditions
