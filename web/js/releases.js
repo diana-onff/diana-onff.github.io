@@ -15,6 +15,10 @@
  * entry here is the version the app reports.
  */
 const RELEASES = [
+  { v: '1.29.2', date: '2026-10-02',
+    nl: ['Bij een aankondiging blijven de velden Begin en Einde binnen het kader: naast elkaar als ze allebei passen, anders onder elkaar.'],
+    en: ['When announcing an activation, the Start and End fields stay inside the card: side by side when both fit, otherwise one under the other.'] },
+
   { v: '1.29.1', date: '2026-10-02',
     nl: ['Condities toont nu de officiële Kp per 3 uur, zoals radioamateurs hem gewoonlijk noemen. De schatting per minuut staat er klein onder.',
          'De Kp-wijzer licht ook bij Kp 0 op, en de naald loopt niet meer over de cijfers.'],

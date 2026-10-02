@@ -305,11 +305,19 @@
   body.admin .nav button[data-view="viewAdmin"]{display:flex}
 
   /* self-spotting */
-  .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  /* minmax(0, 1fr): a field never makes its column wider than half the row
+     (a plain 1fr lets a field with a wide minimum, such as a date, push the
+     second column out of the card). */
+  .fgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+  /* Date and time fields: side by side when both fit at their full width
+     (about 212 px in Chrome), otherwise one under the other. The browser
+     decides on the real width, so a phone held upright stacks them and a
+     wider screen keeps them next to each other. */
+  .fgrid.fdates{grid-template-columns:repeat(auto-fit,minmax(min(100%,216px),1fr))}
   .fld{display:block;margin-bottom:10px}
   .fld > span{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);font-weight:650;margin-bottom:4px}
   .fld input, .fld select{
-    width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;
+    width:100%;min-width:0;max-width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;
     font:inherit;color:inherit;background:var(--paper);
   }
   .fld input:focus, .fld select:focus{outline:2px solid var(--leaf);outline-offset:1px;background:#fff}
