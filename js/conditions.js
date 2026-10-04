@@ -139,8 +139,10 @@ function periodAt(now, lat, lon){
      anomaly"), so the high bands open at a lower flux by day, while the long
      nights close 20 m sooner; in summer it is the other way round, and 20 m
      and 15 m stay open late into the short nights.
-   - A raised Kp (geomagnetic unrest) costs the most on the higher bands and
-     on polar paths; a storm costs every band. */
+   - A raised Kp (geomagnetic unrest) costs the higher bands and polar paths:
+     Kp 4 to 6 one step on 20, 15 and 10 m; Kp 7 and up two steps there and
+     one step on 80 and 40 m (since 1.30.1; before, Kp 5 already cost every
+     band a step, too harsh for NVIS and Europe at mid latitudes). */
 const COND_SEASON_SHIFT = {           // added to the flux thresholds: morning, midday+afternoon, evening, night
   winter:  [-10, -15, 20, 20],
   summer:  [10, 10, -20, -20],
@@ -169,7 +171,11 @@ function bandOutlook(sfi, kp, season){
   };
   const k = typeof kp === 'number' ? kpStep(kp) : 0;
   for(const b of COND_BANDS){
-    const cut = k >= 7 ? 2 : k >= 5 ? 1 : (k >= 4 && ['20', '15', '10'].includes(b)) ? 1 : 0;
+    // Kp is a worldwide value; at the latitude of Belgium a minor storm (G1, G2)
+    // costs the high bands and polar paths, while NVIS and Europe on 80 and
+    // 40 m hardly notice it. Only a strong storm (Kp 7 and up) costs those too.
+    const high = ['20', '15', '10'].includes(b);
+    const cut = k >= 7 ? (high ? 2 : 1) : (k >= 4 && high) ? 1 : 0;
     base[b] = base[b].map(v => v == null ? null : Math.max(0, v - cut));
   }
   return base;
@@ -278,6 +284,7 @@ function renderCond(){
         <div class="condkpval"><b id="condKp">${kp == null ? '?' : String(Math.round(kp * 100) / 100)}</b>
           <span class="condword" id="condKpWord" style="color:${kc ? kc.ink : 'var(--ink-3)'}">${escHtml(word)}</span></div>
         ${kpNow == null ? '' : `<p class="hint condkpnow" id="condKpNow">${t('cond.kpnow').replace('{v}', String(Math.round(kpNow * 100) / 100))}</p>`}
+        <p class="hint condkpnow" id="condKpGlobal">${t('cond.kpglobal')}</p>
         <div class="condnums">
           <div><div class="k">SFI</div><div class="v" id="condSfi">${sfi ?? '?'}</div></div>
           <div><div class="k">A</div><div class="v" id="condA">${val('a') ?? '?'}</div></div>
