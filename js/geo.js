@@ -397,8 +397,6 @@ function centerOnMe(){
     else showStatus('out', t('map.nopos'), t('near.nopos'));
   }
   if(!navigator.geolocation) return;
-  // A running recording (session.js) keeps the position current by itself.
-  if(typeof sess !== 'undefined' && sess.on) return;
   const perm = typeof geoPerm !== 'undefined' ? geoPerm : 'unknown';
   // Never a permission prompt from this button: only with permission given,
   // or, in a browser that cannot tell (no Permissions API), when no request

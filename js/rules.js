@@ -1,5 +1,5 @@
 /* ================================================================== *
- * Screen 6 — rules and band plan
+ * Screen 6: rules and band plan
  * Frequencies from the WWFF Global Rules §14.7 (not 7130/14262!).
  * ================================================================== */
 /* IARU Region 1 HF band plan, per mode. Not the whole band as one block: where
@@ -26,11 +26,22 @@ const BANDS = [
 const SEG_COLOR = {CW:'#1b4332', Digi:'#2d6a4f', SSB:'#52b788', FM:'#a7d7bd'};
 const mhz = k => (k/1000).toFixed(3);
 
-const RULES = ['qso','dur','bound','call','proof','log'];
+/* Regels has two tabs: the rules (rules-text.js, opened first) and this band
+   plan. */
+let rulesTab = 'rules';
+function setRulesTab(tab){
+  rulesTab = tab;
+  [...$('rulesTab').children].forEach(c => c.classList.toggle('on', c.dataset.rtab === tab));
+  $('rulesText').hidden = tab !== 'rules';
+  $('bandWrap').hidden = tab !== 'band';
+}
+$('rulesTab').addEventListener('click', e => {
+  const b = e.target.closest('.seg[data-rtab]'); if(!b) return;
+  setRulesTab(b.dataset.rtab);
+});
+
 function renderRules(){
-  $('rulesBody').innerHTML =
-    `<tr><td></td><td><b>WWFF</b> · <b>ONFF</b></td></tr>` +
-    RULES.map(k=>`<tr><td>${t('rules.'+k)}</td><td>${t('rules.w.'+k)} · <b>${t('rules.o.'+k)}</b></td></tr>`).join('');
+  if(typeof renderRulesText === 'function') renderRulesText();
   $('bandBox').innerHTML = BANDS.map(b => {
     const span = b.hi - b.lo;
     const bar = b.seg.map(([m,lo,hi]) =>

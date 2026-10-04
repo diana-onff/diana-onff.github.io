@@ -15,6 +15,18 @@
  * entry here is the version the app reports.
  */
 const RELEASES = [
+  { v: '1.30.0', date: '2026-10-04',
+    nl: ['Het tabblad Sessie is weg.',
+         'Regels heeft twee tabbladen: Regels en Bandplan. Regels toont een selectie uit de officiële WWFF-regels, ook geldig voor ONFF, in alle talen, met een voorbeeld van de juiste naam voor je logbestand.',
+         'Veldinfo opent altijd op Gebieden en Regels altijd op Regels.',
+         'Condities toont wanneer de cijfers echt opgehaald zijn (bijvoorbeeld "Bijgewerkt om 10:33 (2 u geleden)"). GitHub haalt ze om de paar uur op; de waarschuwing komt pas na 8 uur.',
+         'Onderhoud: de GitHub-taken gebruiken de nieuwe versies van hun bouwstenen, zodat ze blijven werken, en de nachtelijke gegevensupdate start op een rustiger moment (02:17 UTC).'],
+    en: ['The Session tab has been removed.',
+         'Rules has two tabs: Rules and Band plan. Rules shows a selection from the official WWFF rules, also valid for ONFF, in every language, with an example of the right name for your log file.',
+         'Field info always opens on Areas, and Rules always on Rules.',
+         'Conditions shows when the numbers were really fetched (for example "Updated at 10:33 (2 h ago)"). GitHub fetches them every few hours; the warning only comes after 8 hours.',
+         'Maintenance: the GitHub jobs use the new versions of their building blocks, so they keep working, and the nightly data update starts at a quieter moment (02:17 UTC).'] },
+
   { v: '1.29.2', date: '2026-10-02',
     nl: ['Bij een aankondiging blijven de velden Begin en Einde binnen het kader: naast elkaar als ze allebei passen, anders onder elkaar.'],
     en: ['When announcing an activation, the Start and End fields stay inside the card: side by side when both fit, otherwise one under the other.'] },

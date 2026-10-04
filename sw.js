@@ -25,7 +25,7 @@
  * are the ones you chose to download. The first worker with these names moves
  * whatever the old, versioned caches held into them before those are deleted.
  */
-const VERSION   = 'diana-0047cca';
+const VERSION   = 'diana-f114f53';
 const SHELL     = `${VERSION}-shell`;
 const TILES     = 'diana-tiles';      // never renamed: see above
 const DATA      = 'diana-data';       // never renamed: see above
@@ -46,7 +46,7 @@ const SHELL_FILES = [
   './js/core.js', './js/radiogeo.js', './js/i18n-strings.js', './js/i18n.js', './js/map-data.js',
   './js/map.js', './js/spots.js', './js/install.js', './js/gestures.js',
   './js/nav.js', './js/settings.js', './js/privacy.js', './js/admin.js', './js/self-spot.js',
-  './js/agenda.js', './js/session.js', './js/rules.js', './js/nearby.js', './js/nearinfo.js', './js/conditions.js',
+  './js/agenda.js', './js/rules.js', './js/rules-text.js', './js/nearby.js', './js/nearinfo.js', './js/conditions.js',
   './js/offline.js', './js/geo.js', './js/releases.js',
   './icon-192.png', './icon-512.png', './apple-touch-icon.png', './start.jpg', './logo.png',
   './vendor/maplibre-gl.js', './vendor/maplibre-gl.css',

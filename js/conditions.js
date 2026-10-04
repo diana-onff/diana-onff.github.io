@@ -18,7 +18,8 @@
  * ================================================================== */
 const COND_URL = 'https://raw.githubusercontent.com/diana-onff/diana-onff.github.io/conditions/conditions.json';
 const COND_REFRESH_MS = 10 * 60 * 1000;    // never ask again within ten minutes
-const COND_OLD_MS = 6 * 3600 * 1000;       // older than this: said out loud
+const COND_OLD_MS = 8 * 3600 * 1000;       // older than this: said out loud (GitHub runs the job every few hours)
+const COND_KP_OLD_MS = 12 * 3600 * 1000;   // a Kp block that ended longer ago than this: said separately
 const COND_BANDS = ['80', '40', '20', '15', '10'];
 
 function nearCondActive(){ return typeof nearTab !== 'undefined' && nearTab === 'cond'; }
@@ -229,6 +230,13 @@ function condAgo(ms){
   return t('cond.hourago').replace('{n}', Math.round(min / 60));
 }
 
+/* A clock time in local time, with the date in front when it is not today. */
+function condClock(d, now){
+  const time = d.toLocaleTimeString(locale(), {hour: '2-digit', minute: '2-digit'});
+  if(d.toDateString() === now.toDateString()) return time;
+  return d.toLocaleDateString(locale(), {day: 'numeric', month: 'short'}) + ' ' + time;
+}
+
 function condTime(d){
   const p = n => String(n).padStart(2, '0');
   const local = d.toLocaleTimeString(locale(), {hour: '2-digit', minute: '2-digit'});
@@ -283,18 +291,24 @@ function renderCond(){
   html += `<div class="card"><h4 class="ch">${t('cond.sun')}</h4>${condSunHtml(pos, now)}</div>`;
 
   if(d){
-    // How old the numbers really are: a value kept from an earlier run (its
-    // source was down) carries its own time, so the oldest of those counts,
-    // not the moment the file was written.
-    const times = [Date.parse(d.updated || ''), d.kp ? Date.parse(d.kp.time || '') : NaN].filter(isFinite);
-    const age = times.length ? now - Math.min(...times) : null;
+    // How old the numbers are: when Diana's GitHub job last fetched them
+    // (GitHub starts that job every few hours rather than every hour, see
+    // conditions.yml). Said as a clock time and as an age.
+    const upd = Date.parse(d.updated || '');
+    const age = isFinite(upd) ? now - upd : null;
     const days = ['sfi', 'a', 'ssn'].map(k => d[k] && d[k].date).filter(Boolean).sort();
     if(days.length){
       const shown = new Date(days[0] + 'T12:00:00Z').toLocaleDateString(locale(), {day: 'numeric', month: 'short'});
       html += `<p class="hint" id="condDaily">${t('cond.daily').replace('{date}', escHtml(shown))}</p>`;
     }
+    // A Kp kept from an earlier run (its source was down then) carries its own
+    // time; when that is well behind, say so separately.
+    const kpEnd = d.kp ? Date.parse(d.kp.time || '') : NaN;
+    if(isFinite(kpEnd) && now - kpEnd > COND_KP_OLD_MS)
+      html += `<p class="hint condold" id="condKpOld">${t('cond.kpold').replace('{time}', escHtml(condClock(new Date(kpEnd), now)))}</p>`;
     html += `<p class="hint${age != null && age > COND_OLD_MS ? ' condold' : ''}" id="condAge">${
-      age == null ? '' : (age > COND_OLD_MS ? t('cond.old') : t('cond.updated')).replace('{ago}', condAgo(age))
+      age == null ? '' : (age > COND_OLD_MS ? t('cond.old') : t('cond.updated'))
+        .replace('{time}', escHtml(condClock(new Date(upd), now))).replace('{ago}', condAgo(age))
     } ${t('cond.src')}</p>`;
   }
   box.innerHTML = html;
