@@ -70,8 +70,6 @@
   }
   .opt:hover{background:var(--paper)}
   .opt.on{background:#e8f3ec; color:var(--green); font-weight:600}
-  .opt.disabled{color:var(--ink-3); cursor:default}
-  .opt.disabled:hover{background:none}
   .sw{
     width:36px;height:21px;border-radius:999px;background:#d8d4c8;position:relative;
     flex:0 0 auto; transition:background .15s;

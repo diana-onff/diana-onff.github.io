@@ -1,4 +1,4 @@
-/* ---------- offline: service worker + downloading an area ---------- */
+/* ---------- offline: service worker + update notice ---------- */
 let swReg = null;
 
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
@@ -20,13 +20,6 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       });
     });
   }).catch(()=>{});
-
-  navigator.serviceWorker.addEventListener('message', e=>{
-    if(e.data?.type==='PREFETCH_PROGRESS')
-      showStatus('out', t('off.downloading'), `${e.data.done} / ${e.data.total} ${t('off.tiles')}`);
-    if(e.data?.type==='PREFETCH_DONE')
-      showStatus('in', t('off.saved'), `${e.data.done} ${t('off.tilesoffline')}`);
-  });
 
   // Reload once as soon as the new service worker takes over, never twice — a
   // reload loop is worse than a stale page. And not on the very first
@@ -75,26 +68,3 @@ $('btnRefresh').onclick = async () => {
     btn.disabled = false;
   }
 };
-
-/* Works out the tiles of the current map viewport at zoom 8 through 14 and lets
-   the service worker fetch them. This is the button you press before you set off. */
-function prefetchArea(){
-  if(!navigator.serviceWorker?.controller){
-    showStatus('out', t('off.cannot'), t('off.cannotsub'));
-    return;
-  }
-  const b = map.getBounds(), urls = [];
-  const lon2x = (lon,z)=>Math.floor((lon+180)/360*2**z);
-  const lat2y = (lat,z)=>Math.floor((1-Math.log(Math.tan(lat*Math.PI/180)+1/Math.cos(lat*Math.PI/180))/Math.PI)/2*2**z);
-  for(let z=8; z<=14; z++){
-    const x1=lon2x(b.getWest(),z), x2=lon2x(b.getEast(),z);
-    const y1=lat2y(b.getNorth(),z), y2=lat2y(b.getSouth(),z);
-    if((x2-x1+1)*(y2-y1+1) > 900) continue;         // viewport too large for this zoom level
-    for(let x=x1;x<=x2;x++) for(let y=y1;y<=y2;y++)
-      urls.push(`https://tiles.openfreemap.org/planet/${z}/${x}/${y}.pbf`);
-  }
-  if(!urls.length){ showStatus('out', t('off.zoomin'), t('off.zoominsub')); return; }
-  showStatus('out', t('off.downloading'), `0 / ${urls.length} ${t('off.tiles')}`);
-  navigator.serviceWorker.controller.postMessage({type:'PREFETCH_TILES', urls});
-}
-

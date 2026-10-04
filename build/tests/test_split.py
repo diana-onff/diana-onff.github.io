@@ -86,15 +86,15 @@ with sync_playwright() as p:
     for name, home in [("$", "core.js"), ("remember", "core.js"), ("t", "i18n.js"),
                        ("STR", "i18n-strings.js"), ("map", "map.js"), ("toggle", "map.js"),
                        ("syncSwitch", "map.js"), ("refLookup", "self-spot.js"),
-                       ("agendaOpen", "agenda.js"), ("prefetchArea", "offline.js"),
+                       ("agendaOpen", "agenda.js"), ("meldNieuweVersie", "offline.js"),
                        ("haversine", "radiogeo.js"), ("maidenhead", "radiogeo.js"),
                        ("showStatus", "geo.js"), ("renderNearInfo", "nearinfo.js")]:
         ok(pg.evaluate(f"() => typeof {name} !== 'undefined'"), f"{name} (from {home}) is reachable")
     ok(pg.evaluate("() => Object.keys(STR).length === 8"), "all eight languages survived the cut")
 
-    print("\n[6] the one line the split had to change is still wired up")
-    ok(pg.evaluate("() => typeof document.getElementById('btnOffline').onclick === 'function'"),
-       "btnOffline has a handler — prefetchArea lives in a later file")
+    print("\n[6] a button wired up in a later file still has its handler")
+    ok(pg.evaluate("() => typeof document.getElementById('btnRefresh').onclick === 'function'"),
+       "btnRefresh has a handler, set in offline.js")
 
     print("\n[7] every screen still opens, with nothing thrown")
     for view in ["viewSpots", "viewSelf", "viewAgendaNew",

@@ -15,6 +15,16 @@
  * entry here is the version the app reports.
  */
 const RELEASES = [
+  { v: '2.0.0', date: '2026-10-04',
+    nl: ['Diana 2.0: een opgeruimde versie, met minder knoppen die je niet nodig hebt.',
+         'De knop "Dit gebied offline bewaren" is weg. Kaartstukken die je al bekeken hebt, blijven wel nog een tijd bewaard op je toestel.',
+         'De instelling om jezelf altijd op de oude manier te spotten is weg: je meldt jezelf via Meld. Lukt het versturen daar niet, dan biedt Diana zelf nog altijd de oude manier aan als uitweg.',
+         'De grijze schakelaar "BCA, BLHA…" in het lagenmenu is weg.'],
+    en: ['Diana 2.0: a tidied-up version, with fewer buttons you do not need.',
+         'The "Save this area offline" button has been removed. Map tiles you have already viewed are still kept on your device for a while.',
+         'The setting to always spot yourself the old way has been removed: you spot yourself through Spot. If sending fails there, Diana still offers the old way as a way out.',
+         'The grey "BCA, BLHA…" switch in the layers menu has been removed.'] },
+
   { v: '1.30.1', date: '2026-10-04',
     nl: ['Condities: een lichte geomagnetische storm (Kp 5 en 6) maakt nu enkel 20, 15 en 10 m slechter. Voor NVIS en Europa op 80 en 40 m telt pas een zware storm (Kp 7 of meer).',
          'Onder de Kp-wijzer staat dat Kp een wereldwijde waarde is, geen meting op jouw positie.'],
