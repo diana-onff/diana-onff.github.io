@@ -780,14 +780,6 @@ function toggle(what, force){
 $('btnSearch').onclick = ()=>toggle('search');
 $('btnStyle').onclick  = ()=>toggle('style');
 $('btnLayers').onclick = ()=>toggle('layers');
-/* Wrapped in an arrow rather than handed over directly, and that is the single
- * line the split into js/ actually changed. prefetchArea() lives in js/offline.js,
- * which loads after this file; as one big app.js the function declaration was
- * hoisted to the top and a bare reference worked. Across files it would be
- * undefined at this moment and the button would quietly do nothing. The arrow
- * looks the name up when the button is pressed, by which time every file has
- * run — the same idiom as the buttons above it. */
-$('btnOffline').onclick = () => prefetchArea();
 $('btnFit').onclick = () => { toggle(null); if(!showSpots){ showSpots = true;
   remember('spots','1'); syncSwitch('spots', true); startSpots(); applyVisibility(); }
   fitSpots(); };

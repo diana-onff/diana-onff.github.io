@@ -30,7 +30,6 @@ const CALL_RE     = /^[A-Z0-9/]{3,}$/;
  * that function reads it and runs during start-up. */
 let gecontroleerd = false;
 
-const klassiek = () => recall('self.classic') === '1';
 
 
 function validCall(v){ return CALL_RE.test(v) && /[0-9]/.test(v); }
@@ -148,11 +147,9 @@ function validateSelf(){
   if(!m.value) ok = false;
 
   /* Two buttons now, and they do not open at the same time. Check needs a form
-   * that holds together; Send needs a check that came back good. The one
-   * exception is classic mode, where there is nothing to check against
-   * because the spot goes straight to Spotline. */
-  $('spCheck').disabled = !ok || klassiek();
-  $('spSend').disabled  = !ok || (!gecontroleerd && !klassiek());
+   * that holds together; Send needs a check that came back good. */
+  $('spCheck').disabled = !ok;
+  $('spSend').disabled  = !ok || !gecontroleerd;
   return ok;
 }
 
@@ -280,7 +277,6 @@ $('spFallback').onclick = verstuurKlassiek;
 
 $('spSend').onclick = async () => {
   if(!validateSelf()) return;
-  if(klassiek()) return verstuurKlassiek();
   if(!gecontroleerd) return;
 
   $('spSend').disabled = true;
@@ -309,29 +305,12 @@ $('spSend').onclick = async () => {
   }
 };
 
-/* Classic mode: no checking, straight to Spotline. The screen has to say so,
- * otherwise the two buttons and the hint underneath describe a flow that is
- * not the one you are in. */
-function pasKlassiekToe(){
-  const aan = klassiek();
-  $('spCheck').hidden = aan;
-  $('spFallback').hidden = true;
-  $('spHint').textContent = aan ? t('self.classichint') : t('self.checkhint');
-  if(aan){ $('fbSend').textContent = ''; $('fbSend').className = 'fb'; }
-  validateSelf();
-}
-
-$('setClassic').addEventListener('change', e => {
-  remember('self.classic', e.target.checked ? '1' : '');
-  gecontroleerd = false;
-  pasKlassiekToe();
-});
-
-/* The setting survives a restart, so the screen has to come up in the state it
- * was left in — otherwise someone who switched to classic mode last week finds
- * a Check button that does something they deliberately turned off. */
-$('setClassic').checked = klassiek();
-pasKlassiekToe();
+/* Until v2.0 Settings had a switch to always send the old way, without a
+ * check. That switch is gone; the form post only remains as the way out the
+ * Send flow offers when the relay fails. Whatever an earlier version stored
+ * for it is cleared here, once, so it does not linger on the device. */
+try{ localStorage.removeItem('diana.self.classic'); }catch{}
+validateSelf();
 
 ['spActivator','spSpotter','spReference'].forEach(id => {
   $(id).addEventListener('input', e => {

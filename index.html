@@ -46,10 +46,8 @@
   <div class="opt on" data-layer="spots"><span data-i18n="lay.spots">Spots op de kaart</span> <span class="sw on"></span></div>
   <div class="opt on" data-layer="arcs"><span data-i18n="lay.arcs">Lijnen naar de spots</span> <span class="sw on"></span></div>
   <div class="opt on" data-layer="world" id="optWorld" hidden><span data-i18n="lay.world">Andere WWFF-gebieden</span> <span class="sw on"></span></div>
-  <div class="opt disabled"><span data-i18n="lay.other">BCA, BLHA…</span> <span class="sw"></span></div>
   <p class="hint" data-i18n="lay.spothint">Spots komen live van WWFF Spotline en verversen elke 30 s.</p>
   <button class="btn ghost" id="btnFit" style="margin-top:6px;font-size:13.5px;padding:10px" data-i18n="lay.fit">⤢ Alle spots in beeld</button>
-  <button class="btn ghost" id="btnOffline" style="margin-top:6px;font-size:13.5px;padding:10px" data-i18n="lay.offline">⤓ Dit gebied offline bewaren</button>
   <h4 style="margin-top:12px" data-i18n="lay.lang">Taal</h4>
   <div class="langs" id="langPick">
     <button class="seg" data-lang="en">EN</button>
@@ -219,13 +217,6 @@
       <button class="seg" data-home data-filter="ONFF">ONFF</button>
       <button class="seg on" data-filter="all" data-i18n="spots.world">Wereldwijd</button>
     </div>
-  </div>
-
-  <div class="card">
-    <h4 style="margin:0 0 10px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)"
-        data-i18n="self.settitle">Zelf spotten</h4>
-    <label class="chk"><input type="checkbox" id="setClassic"> <span data-i18n="self.classic">Altijd op de oude manier versturen</span></label>
-    <p class="hint" style="margin:6px 0 0" data-i18n="self.classichint">Stuurt de spot rechtstreeks naar Spotline in een nieuw tabblad, zonder controle vooraf en zonder bevestiging in de app. Bedoeld als terugval wanneer er iets mis is met de gewone weg.</p>
   </div>
 
   <div class="card">

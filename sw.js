@@ -10,22 +10,22 @@
  * the cache happened to expire. Offline still works, because the cache is still
  * the fallback — it is just no longer the first choice.
  *
- * Map tiles get a cache of their own with a rough LRU limit, so a downloaded area
- * stays put but storage does not grow without bound.
+ * Map tiles get a cache of their own with a rough LRU limit, so tiles you have
+ * viewed stay put but storage does not grow without bound.
  *
  * Three caches, and only one of them belongs to a release. build/site.sh gives
  * VERSION a new value on every build, and every nightly data refresh is a build,
  * so a new service worker arrives nearly every night. On activation it deletes
  * the caches of the previous one. That is right for the app itself (SHELL), but
  * the map tiles and the data used to be in caches named after the version too,
- * so they went with it: download an area at home, let the app update itself
+ * so they went with it: view an area at home, let the app update itself
  * overnight, start it without signal in the field, and there was no basemap and
  * no boundaries. Tiles (TILES) and data (DATA) now live in caches whose names
  * never change; the data in them is kept fresh by dataVers() below, the tiles
- * are the ones you chose to download. The first worker with these names moves
+ * are the ones you have viewed. The first worker with these names moves
  * whatever the old, versioned caches held into them before those are deleted.
  */
-const VERSION   = 'diana-c6c7326';
+const VERSION   = 'diana-ed05e33';
 const SHELL     = `${VERSION}-shell`;
 const TILES     = 'diana-tiles';      // never renamed: see above
 const DATA      = 'diana-data';       // never renamed: see above
@@ -308,20 +308,7 @@ async function trim(cache){
   for (const k of keys.slice(0, keys.length - TILE_MAX)) await cache.delete(k);
 }
 
-/* "Download this area for offline use": the page passes in a list of tile URLs. */
+/* The page asks a waiting new version to take over right away. */
 self.addEventListener('message', event => {
-  if (event.data?.type === 'SKIP_WAITING') { self.skipWaiting(); return; }
-  if (event.data?.type !== 'PREFETCH_TILES') return;
-  event.waitUntil(caches.open(TILES).then(async cache => {
-    let done = 0;
-    for (const u of event.data.urls) {
-      try { const r = await fetch(u); if (r.ok) await cache.put(u, r); } catch {}
-      done++;
-      if (done % 25 === 0) broadcast({type:'PREFETCH_PROGRESS', done, total:event.data.urls.length});
-    }
-    broadcast({type:'PREFETCH_DONE', done});
-  }));
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
-async function broadcast(msg){
-  (await self.clients.matchAll()).forEach(c => c.postMessage(msg));
-}
