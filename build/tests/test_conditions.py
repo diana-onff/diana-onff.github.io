@@ -129,6 +129,8 @@ with sync_playwright() as p:
     ok(g["kp"] == "1.33" and g["word"] == "rustig", f"Kp 1.33 (3-hourly), rustig ({g['kp']}, {g['word']})")
     now_txt = pg.text_content("#condKpNow")
     ok("per 3 uur" in now_txt and now_txt.endswith(": 1."), f"with the minute estimate small underneath ({now_txt!r})")
+    ok(pg.text_content("#condKpGlobal") == "Kp is een wereldwijde waarde, geen meting op jouw positie.",
+       "and that Kp is a worldwide value, not a measurement at your position")
     ok((g["sfi"], g["a"], g["ssn"]) == ("92", "4", "38"), f"SFI 92, A 4, sunspots 38 ({g['sfi']}, {g['a']}, {g['ssn']})")
     ok("UTC" in g["rise"] and g["nowcols"] == 1 and g["nowcells"] == 5,
        f"sunrise in local time and UTC, the part of the day for now marked, a 'now' line on every bar ({g['rise']!r}, {g['nowcols']}, {g['nowcells']})")
@@ -174,8 +176,10 @@ with sync_playwright() as p:
       w: [0, 2.67, 3, 4, 5, 6.33, 9].map(k => [kpClass(k).key, kpClass(k).g || 0]) })""")
     ok(lv["high"]["10"][1] == 2 and lv["high"]["15"][4] == 1 and lv["high"]["20"][4] == 1 and lv["mid"]["10"][1] == 2 and lv["mid"]["10"][0] == 1,
        "SFI 160, quiet: 10 m good at midday, 15 m and 20 m fair at night; at SFI 135 10 m opens later (fair in the morning)")
-    ok(lv["storm"]["10"][1] == 1 and lv["storm"]["80"][4] == 1 and lv["severe"]["40"][1] == 0,
-       "a storm costs every band a step, a severe one two")
+    ok(lv["storm"]["10"][1] == 1 and lv["storm"]["80"][4] == 2 and lv["storm"]["40"][1] == 2,
+       "a minor storm (Kp 5) costs the high bands a step, NVIS and Europe on 80 and 40 m nothing")
+    ok(lv["severe"]["40"][1] == 1 and lv["severe"]["10"][1] == 0 and lv["severe"]["80"][4] == 1,
+       "a strong storm (Kp 7) costs 80 and 40 m a step, the high bands two")
     ok(lv["season"] == [2, 1, 1, 0, 1], f"season: at SFI 120, 10 m at midday good in winter only; at SFI 110, 20 m at night shut in winter, fair in summer ({lv['season']})")
     ok(lv["seasons"] == ["winter", "summer", "summer", "equinox", "equinox"], f"seasons by month and hemisphere, none in the tropics ({lv['seasons']})")
     ok(lv["k4"]["20"][1] == 1 and lv["k4"]["40"][1] == 2, "Kp 4 costs only the higher bands")
@@ -213,8 +217,8 @@ with sync_playwright() as p:
     ok(dial["first"] == 1 and dial["rest"] < 1, f"at Kp 0 the first green step lights up, the rest stays pale ({dial['first']}, {dial['rest']})")
     ok(dial["len"] < dial["dz"] - 6, f"and the needle stops short of the numbers ({dial['len']:.0f} < {dial['dz']:.0f})")
     thirds = pg.evaluate("() => [3.67, 4.67, 5.67].map(k => [kpClass(k).key, kpClass(k).g || 0, bandOutlook(160, k)['40'][4]])")
-    ok(thirds == [["cond.kp.active", 0, 2], ["cond.kp.storm", 1, 1], ["cond.kp.storm", 2, 1]],
-       f"Kp in thirds: 4- is active, 5- already G1 and costs a step, 6- is G2 ({thirds})")
+    ok(thirds == [["cond.kp.active", 0, 2], ["cond.kp.storm", 1, 2], ["cond.kp.storm", 2, 2]],
+       f"Kp in thirds: 4- is active, 5- already G1, 6- is G2; 40 m at night stays good ({thirds})")
     kept = dict(DATA, updated="2026-10-02T12:23:00Z", kp={"value": 2.0, "time": "2026-09-28T09:00:00Z"})
     pg.evaluate("(d) => { condData = d; renderCond(); }", kept)
     ok(pg.query_selector("#condKpOld") is not None and "28 sep" in pg.text_content("#condKpOld"),

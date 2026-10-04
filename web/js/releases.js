@@ -15,6 +15,12 @@
  * entry here is the version the app reports.
  */
 const RELEASES = [
+  { v: '1.30.1', date: '2026-10-04',
+    nl: ['Condities: een lichte geomagnetische storm (Kp 5 en 6) maakt nu enkel 20, 15 en 10 m slechter. Voor NVIS en Europa op 80 en 40 m telt pas een zware storm (Kp 7 of meer).',
+         'Onder de Kp-wijzer staat dat Kp een wereldwijde waarde is, geen meting op jouw positie.'],
+    en: ['Conditions: a minor geomagnetic storm (Kp 5 and 6) now only lowers 20, 15 and 10 m. For NVIS and Europe on 80 and 40 m, only a strong storm (Kp 7 or more) counts.',
+         'Under the Kp dial it now says that Kp is a worldwide value, not a measurement at your position.'] },
+
   { v: '1.30.0', date: '2026-10-04',
     nl: ['Het tabblad Sessie is weg.',
          'Regels heeft twee tabbladen: Regels en Bandplan. Regels toont een selectie uit de officiële WWFF-regels, ook geldig voor ONFF, in alle talen, met een voorbeeld van de juiste naam voor je logbestand.',
