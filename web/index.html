@@ -420,26 +420,6 @@
   <button class="btn ghost" id="agBack" style="margin-top:12px" data-i18n="ag.back">← Terug naar Spots &amp; agenda</button>
 </section>
 
-<section class="view" id="viewSession">
-  <h1 data-i18n="sess.title">Activatiesessie</h1>
-  <p class="sub" id="sessRef" data-i18n="sess.sub">Nog geen gebied gekozen</p>
-  <div class="banner out" id="sessBanner">
-    <span class="dot" style="width:11px;height:11px;border-radius:50%;background:currentColor"></span>
-    <span><div class="b1" id="sessB1" data-i18n="sess.unknown">Positie onbekend</div>
-          <div class="b2" id="sessB2" data-i18n="sess.press">Druk op start; Diana volgt je positie.</div></span>
-  </div>
-  <div class="card">
-    <div class="srow"><span class="rec" id="sessRec" hidden><span class="d"></span><span data-i18n="sess.rec">Opname actief</span></span>
-      <span class="r" id="sessPts">—</span></div>
-    <div class="clock" id="sessClock">00:00:00</div>
-    <div class="r" id="sessPct" data-i18n="sess.notstarted">Nog niet gestart</div>
-  </div>
-  <button class="btn" id="sessStart" data-i18n="sess.start">Start activatie</button>
-  <button class="btn amber" id="sessStop" hidden data-i18n="sess.stop">Stop &amp; genereer bewijs</button>
-  <button class="btn ghost" id="sessGpx" hidden data-i18n="sess.gpx">Download GPX + samenvatting</button>
-  <p class="privacy">🔒 <span data-i18n="sess.privacy">Je track blijft op dit toestel. Er gaat niets naar een server tot je zelf exporteert.</span></p>
-</section>
-
 <section class="view" id="viewNearby">
   <h1 data-i18n="near.title">Veldinfo</h1>
   <div class="segs" id="nearTab">
@@ -472,13 +452,20 @@
 </section>
 
 <section class="view" id="viewRules">
-  <h1 data-i18n="rules.title">Regels &amp; bandplan</h1>
-  <p class="sub" data-i18n="rules.sub">WWFF wereldwijd en wat ONFF daaraan toevoegt</p>
-  <div class="card"><table class="rules"><tbody id="rulesBody"></tbody></table></div>
-  <div id="bandBox"></div>
-  <p class="hint"><span style="color:var(--amber)">▌</span> <span data-i18n="rules.mkwwff">WWFF-voorkeursfrequentie</span>
-     &nbsp; <span style="color:#7c3aed">▌</span> FT8</p>
-  <p class="hint" data-i18n="rules.src">Bron: IARU Regio 1-bandplan en WWFF Global Rules §14.7. Je vergunningsklasse kan verder beperken.</p>
+  <h1 data-i18n="nav.rules">Regels</h1>
+  <div class="segs" id="rulesTab">
+    <button class="seg on" data-rtab="rules" data-i18n="rules.tabrules">Regels</button>
+    <button class="seg" data-rtab="band" data-i18n="rules.tabband">Bandplan</button>
+  </div>
+  <!-- Regels > Regels: drawn by js/rules-text.js. -->
+  <div id="rulesText"></div>
+  <!-- Regels > Bandplan: drawn by js/rules.js. -->
+  <div id="bandWrap" hidden>
+    <div id="bandBox"></div>
+    <p class="hint"><span style="color:var(--amber)">▌</span> <span data-i18n="rules.mkwwff">WWFF-voorkeursfrequentie</span>
+       &nbsp; <span style="color:#7c3aed">▌</span> FT8</p>
+    <p class="hint" data-i18n="rules.src">Bron: IARU Regio 1-bandplan en WWFF Global Rules §14.7. Je vergunningsklasse kan verder beperken.</p>
+  </div>
 </section>
 
 <!-- Not reachable from the bottom bar: it opens over whatever screen you were
@@ -616,7 +603,6 @@
   <button data-view="viewSpots"><span class="ic">((·))</span><span data-i18n="nav.spots">Spots</span></button>
   <button data-view="viewSelf"><span class="ic">✚</span><span data-i18n="nav.self">Meld</span></button>
   <button data-view="viewAgendaNew"><span class="ic">▤</span><span data-i18n="spots.tabagenda">Agenda</span></button>
-  <button data-view="viewSession"><span class="ic">◉</span><span data-i18n="nav.session">Sessie</span></button>
   <button data-view="viewNearby"><span class="ic">◎</span><span data-i18n="nav.nearby">Veldinfo</span></button>
   <button data-view="viewRules"><span class="ic">☰</span><span data-i18n="nav.rules">Regels</span></button>
   <button data-view="viewAdmin"><span class="ic">⛭</span><span data-i18n="nav.admin">Beheer</span></button>
@@ -694,8 +680,8 @@
 <script src="js/admin.js" defer></script>
 <script src="js/self-spot.js" defer></script>
 <script src="js/agenda.js" defer></script>
-<script src="js/session.js" defer></script>
 <script src="js/rules.js" defer></script>
+<script src="js/rules-text.js" defer></script>
 <script src="js/nearby.js" defer></script>
 <script src="js/nearinfo.js" defer></script>
 <script src="js/conditions.js" defer></script>

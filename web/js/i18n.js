@@ -45,7 +45,6 @@ function rerender(){
     if(selected) select(selected);
     renderSpots();
     renderRules();
-    renderSession();
     selfPrefill();
     if($('viewNearby').classList.contains('on')) renderNearby();
     if($('viewReleases') && $('viewReleases').classList.contains('on')) renderReleases();

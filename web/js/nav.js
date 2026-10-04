@@ -100,9 +100,9 @@ $('nav').addEventListener('click', e=>{
   if(b.dataset.view==='viewSpots'){
     startSpots(); renderSpots(); redrawOverlays();
   }
-  if(b.dataset.view==='viewNearby') renderNearby();
-  if(b.dataset.view==='viewRules') renderRules();
-  if(b.dataset.view==='viewSession') renderSession();
+  // Veldinfo and Regels always open on their first tab (Gebieden, Regels).
+  if(b.dataset.view==='viewNearby'){ if(typeof setNearTab === 'function') setNearTab('areas'); renderNearby(); }
+  if(b.dataset.view==='viewRules'){ setRulesTab('rules'); renderRules(); }
   if(b.dataset.view==='viewSelf') selfPrefill();
   if(b.dataset.view==='viewAgendaNew'){ agOrigin = 'viewSpots'; agendaOpen(); }
   if(b.dataset.view==='viewSet') loadSettingsUI();

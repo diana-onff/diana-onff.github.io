@@ -598,7 +598,7 @@ with sync_playwright() as p:
         g.evaluate("([s, z]) => { fixLog = []; map.jumpTo({center: s, zoom: z}); hideStatus(); __said.length = 0; }", [start, z])
 
     def gps_more(g, c):
-        print("\n[7] inside an area, programmatic clicks, no GPS yet, a recording, and ◎")
+        print("\n[7] inside an area, programmatic clicks, no GPS yet, and ◎")
         # A position inside an area: the measurement that Map starts says so,
         # but opens no area panel and keeps your zoom.
         IN = g.evaluate("""() => {
@@ -650,16 +650,6 @@ with sync_playwright() as p:
         g.evaluate("() => { cfg.grid = ''; }")
         watch_closed(g)
 
-        # A recording keeps the position current itself: Map only centres.
-        g.evaluate("() => fixApply({coords: {latitude: 51.0, longitude: 4.1, accuracy: 80}, timestamp: Date.now()}, true)")
-        g.evaluate("() => { closeSheet(); sess.on = true; }")
-        fresh(g, c, [4.7, 51.3], 3, [5.9, 50.3], 9)
-        tap_map(g)
-        g.wait_for_timeout(1200)
-        s = g.evaluate(STATE)
-        ok(km(s["center"], [4.1, 51.0]) < 0.05 and g.evaluate("() => fixRun") is None and g.evaluate("() => __said") == [],
-           "during a recording: Map centres, no extra measurement")
-        g.evaluate("() => { sess.on = false; }")
 
         # The ◎ button is unchanged: it still zooms in to at least 12.
         fresh(g, c, [4.7, 51.3], 3, [5.9, 50.3], 9)

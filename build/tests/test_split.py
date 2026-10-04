@@ -97,7 +97,7 @@ with sync_playwright() as p:
        "btnOffline has a handler — prefetchArea lives in a later file")
 
     print("\n[7] every screen still opens, with nothing thrown")
-    for view in ["viewSpots", "viewSelf", "viewAgendaNew", "viewSession",
+    for view in ["viewSpots", "viewSelf", "viewAgendaNew",
                  "viewSet", "viewNearby", "viewRules"]:
         b = pg.query_selector(f'[data-view="{view}"]')
         if not b:

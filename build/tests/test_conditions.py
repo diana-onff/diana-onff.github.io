@@ -217,6 +217,14 @@ with sync_playwright() as p:
        f"Kp in thirds: 4- is active, 5- already G1 and costs a step, 6- is G2 ({thirds})")
     kept = dict(DATA, updated="2026-10-02T12:23:00Z", kp={"value": 2.0, "time": "2026-09-28T09:00:00Z"})
     pg.evaluate("(d) => { condData = d; renderCond(); }", kept)
+    ok(pg.query_selector("#condKpOld") is not None and "28 sep" in pg.text_content("#condKpOld"),
+       f"a Kp kept from an earlier run says how old it is ({pg.text_content('#condKpOld') if pg.query_selector('#condKpOld') else None!r})")
+    fresh_upd = pg.evaluate("() => new Date(Date.now() - 2 * 3600e3).toISOString()")
+    pg.evaluate("(d) => { condData = d; renderCond(); }", dict(DATA, updated=fresh_upd, kp={"value": 2.0, "time": fresh_upd}))
+    age_txt = pg.text_content("#condAge")
+    ok(age_txt.startswith("Bijgewerkt om ") and "(2 u geleden)" in age_txt and "condold" not in (pg.get_attribute("#condAge", "class") or ""),
+       f"fetched 2 hours ago: the clock time and the age, no warning ({age_txt!r})")
+    pg.evaluate("(d) => { condData = d; renderCond(); }", kept)
     ok("Let op" in pg.text_content("#condAge") and "1 okt" in pg.text_content("#condDaily"),
        f"a value kept from an earlier run shows its own age, daily values their date ({pg.text_content('#condAge')!r}, {pg.text_content('#condDaily')!r})")
     ok(not errs, f"no page errors ({errs[:2]})")
@@ -225,7 +233,7 @@ with sync_playwright() as p:
     print("\n[4] offline")
     ctx = br.new_context(service_workers="block", viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True)
     OLD = dict(DATA, updated="2026-10-01T06:00:00Z")     # well over six hours before any run of this test
-    ctx.add_init_script("try { localStorage.setItem('diana.near.tab', 'cond'); localStorage.setItem('diana.cond.last', JSON.stringify({data: %s})); } catch (e) {}" % json.dumps(OLD))
+    ctx.add_init_script("try { localStorage.setItem('diana.cond.last', JSON.stringify({data: %s})); } catch (e) {}" % json.dumps(OLD))
     routes(ctx, None)
     pg = ctx.new_page()
     pg.on("pageerror", lambda e: errs.append(str(e)))
@@ -233,9 +241,11 @@ with sync_playwright() as p:
     pg.wait_for_function("() => typeof renderCond === 'function'", timeout=20000)
     pg.wait_for_timeout(1000)
     pg.tap('#nav button[data-view="viewNearby"]')
+    ok(pg.evaluate("() => nearTab") == "areas", "Veldinfo opens on Gebieden")
+    pg.tap("#nearTab .seg[data-neartab='cond']")
     pg.wait_for_selector("#condKp", timeout=5000)
     pg.wait_for_timeout(800)
-    ok(pg.text_content("#condSfi") == "92", "no connection: the last good copy is shown, on the tab you left it on")
+    ok(pg.text_content("#condSfi") == "92", "no connection: the last good copy is shown")
     age = pg.text_content("#condAge")
     ok("Let op" in age and "condold" in (pg.get_attribute("#condAge", "class") or ""), f"with its age said out loud ({age!r})")
     pg.evaluate("() => { localStorage.removeItem('diana.cond.last'); condData = null; renderCond(); }")

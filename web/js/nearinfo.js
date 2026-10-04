@@ -17,8 +17,10 @@ const RADIO_ZONES_URL = 'geo/radio-zones.json';
 const INFO_MOVE_M = 100;          // recompute zones and nearest only past this
 
 /* 'areas' is the list that was always there; 'info' is this tab (Locatie);
-   'cond' is Condities (conditions.js). */
-let nearTab = ['info', 'cond'].includes(recall('near.tab')) ? recall('near.tab') : 'areas';
+   'cond' is Condities (conditions.js). Not remembered: a tap on Veldinfo in
+   the bottom bar always opens on Gebieden (since 1.30.0). */
+let nearTab = 'areas';
+function setNearTab(tab){ nearTab = tab; syncNearTab(); }
 function nearInfoActive(){ return nearTab === 'info'; }
 
 function syncNearTab(){
@@ -30,7 +32,6 @@ function syncNearTab(){
 $('nearTab').addEventListener('click', e => {
   const b = e.target.closest('.seg[data-neartab]'); if(!b) return;
   nearTab = b.dataset.neartab;
-  remember('near.tab', nearTab);
   syncNearTab();
   renderNearby();                 // nearby.js hands over to renderNearInfo() / showCond()
 });
