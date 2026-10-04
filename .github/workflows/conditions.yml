@@ -10,7 +10,14 @@ name: Space weather
 # for everybody 24 times a day. This branch is not published and always holds
 # exactly one commit (force-pushed), so its history never grows.
 #
-#   every hour at :23    → fetch, write, replace the branch
+#   twice an hour, at :07 and :37 → fetch, write, replace the branch
+#
+# GitHub runs scheduled workflows on a best-effort basis: in practice this
+# one started only every 4 to 6 hours in its first days (all runs green, the
+# others simply never started), and the nightly data build starts hours late
+# too. Asking twice an hour, away from the busy top of the hour, costs nothing
+# and catches whatever GitHub does start. The app says when the numbers were
+# fetched, and warns only after 8 hours.
 #   manually             → the same (Actions → Space weather → Run workflow)
 #
 # A source that is down keeps its previous value (with its own time, so the
@@ -22,7 +29,7 @@ name: Space weather
 
 on:
   schedule:
-    - cron: '23 * * * *'
+    - cron: '7,37 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -37,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: main
           sparse-checkout: build/conditions.py
@@ -56,7 +63,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mkdir pub && cp conditions.json pub/
-          printf 'Space weather for Diana, written every hour by .github/workflows/conditions.yml on main.\nSource: NOAA SWPC. Do not edit by hand; the next run replaces this branch.\n' > pub/README.md
+          printf 'Space weather for Diana, written by .github/workflows/conditions.yml on main (GitHub decides how often it really runs).\nSource: NOAA SWPC. Do not edit by hand; the next run replaces this branch.\n' > pub/README.md
           cd pub
           git init -q -b conditions
           git config user.name  "diana-bot"

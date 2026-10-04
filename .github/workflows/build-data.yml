@@ -9,7 +9,7 @@ name: Build map data
 #   pull request on a KMZ, overrides.json or build/  → convert, commit the result to
 #                                                      the PR branch, and paste the
 #                                                      diff report underneath it
-#   every night at 01:00 UTC                         → the same conversion against the KMZ
+#   every night at 02:17 UTC                         → the same conversion against the KMZ
 #                                                      that is already there, with --strict,
 #                                                      and on a good outcome straight to main
 #   manually (Run workflow)                          → the same as the nightly run
@@ -30,7 +30,10 @@ on:
       - 'overrides.json'
       - 'build/**'
   schedule:
-    - cron: '0 1 * * *'
+    # 02:17 rather than on a full hour: on the full hour GitHub is busiest and starts
+    # scheduled runs hours late (this one started around 06:30 when it was
+    # set to 01:00).
+    - cron: '17 2 * * *'
   workflow_dispatch:
     inputs:
       branch:
@@ -68,12 +71,12 @@ jobs:
       # On a pull request we work on the PR branch itself, because that is where
       # the result has to go. fetch-depth 0 because the push to main may need to
       # be able to rebase if main has moved in the meantime.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
           fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
           cache: pip
@@ -96,7 +99,7 @@ jobs:
         id: bron
         if: vars.SOURCE_REPO != ''
         continue-on-error: true
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: ${{ vars.SOURCE_REPO }}
           token: ${{ secrets.SOURCE_TOKEN }}

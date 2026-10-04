@@ -54,7 +54,7 @@ jobs:
     steps:
       # On workflow_run we have to take the branch that build ran on, otherwise
       # we publish the code from before its commit.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref }}
 
