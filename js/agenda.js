@@ -224,6 +224,8 @@ function agendaVerwijder(i){
   remember('agendas', JSON.stringify(lijst));
   renderAgendaSaved();
 }
+/* The remove button sizes to its cross: .btn is full width everywhere else, and
+ * in this flex row that pushed the reference and the date out of sight. */
 function renderAgendaSaved(){
   const lijst = agendaLijst();
   $('agSavedCard').hidden = !lijst.length;
@@ -231,7 +233,8 @@ function renderAgendaSaved(){
     <div class="spot" style="cursor:default">
       <span class="who"><div class="c">${it.reference}</div>
         <div class="f">${(it.utc_start || '').slice(0,16).replace('T',' ')} UTC · pin ${it.pin}</div></span>
-      <button class="btn ghost" data-del="${i}" style="padding:4px 10px">✕</button>
+      <button class="btn ghost" data-del="${i}" aria-label="${t('adm.cleanupdiscard')}"
+        style="width:auto;flex:0 0 auto;padding:4px 10px">✕</button>
     </div>`).join('');
 }
 $('agSavedList').addEventListener('click', e => {
