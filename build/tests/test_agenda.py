@@ -162,6 +162,13 @@ with sync_playwright() as p:
     ok(len(saved) == 1 and saved[0]["reference"] == "ONFF-0002" and saved[0]["pin"] == "q1w2e3",
        f"the reference and pin are kept locally ({saved[:1]})")
     ok(not pg.is_hidden("#agSavedCard"), "and the saved list becomes visible")
+    pg.evaluate("() => document.getElementById('agSavedCard').scrollIntoView()")
+    lay = pg.evaluate("""() => { const r = document.querySelector('#agSavedList .spot');
+      const who = r.querySelector('.who'), del = r.querySelector('button[data-del]'), c = who.querySelector('.c');
+      return { who: who.getBoundingClientRect().width, del: del.getBoundingClientRect().width,
+               fits: c.scrollWidth <= c.clientWidth + 1 }; }""")
+    ok(lay["del"] < 60 and lay["who"] > 150 and lay["fits"],
+       f"the remove cross stays small and the reference is fully visible ({lay})")
 
     print("\n[8] a duplicate is reassuring, not an error")
     fill(pg, ref="ONFF-0003")
