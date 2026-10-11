@@ -25,7 +25,7 @@
  * are the ones you have viewed. The first worker with these names moves
  * whatever the old, versioned caches held into them before those are deleted.
  */
-const VERSION   = 'diana-8aa0169';
+const VERSION   = 'diana-4087d12';
 const SHELL     = `${VERSION}-shell`;
 const TILES     = 'diana-tiles';      // never renamed: see above
 const DATA      = 'diana-data';       // never renamed: see above
