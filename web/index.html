@@ -301,6 +301,7 @@
   <p class="hint" style="text-align:center;margin:2px 0 0"><span data-i18n="set.data">Gegevens</span> <span id="setData">…</span></p>
   <p style="text-align:center;margin:8px 0 0"><button class="btn ghost" id="btnRefresh" style="font-size:12.5px;padding:8px 14px" data-i18n="set.refresh">Op updates controleren</button></p>
   <p style="text-align:center;margin:8px 0 0"><button class="btn ghost" id="relOpenBtn" style="font-size:12.5px;padding:8px 14px" data-i18n="set.releases">Wat is er nieuw</button></p>
+  <p style="text-align:center;margin:8px 0 0"><button class="btn ghost" id="wzRerun" style="font-size:12.5px;padding:8px 14px" data-i18n="wz.rerun">Opstartwizard opnieuw doorlopen</button></p>
 </section>
 
 <!-- What's new: the release overview. Like the privacy page, not a screen of
@@ -634,6 +635,36 @@
   </div>
 </div>
 
+<!-- First launch only, right after the welcome screen above: the setup wizard
+     (basic settings, written straight into Settings) and then a tour of the
+     screens. Can be run again from Settings. See js/wizard.js. -->
+<div class="wizard" id="wizard" hidden>
+  <div class="wcard" role="dialog" aria-modal="true" aria-labelledby="wzTitle">
+    <div class="whead">
+      <div class="cbrand"><img class="mark" src="logo.png" alt="" width="34" height="23"> Diana</div>
+      <span class="wstep" id="wzStep"></span>
+      <!-- Only when run again from Settings: a first run has no way around it. -->
+      <button class="wx" id="wzClose" type="button" aria-label="×" hidden>×</button>
+    </div>
+    <div id="wzBody"></div>
+    <div class="wnav">
+      <button class="btn ghost" id="wzBack" type="button"></button>
+      <button class="btn" id="wzNext" type="button"></button>
+    </div>
+    <p class="privacy" id="wzFoot"></p>
+  </div>
+</div>
+<div class="wtour" id="wzTour" hidden>
+  <div class="tcard" role="dialog" aria-live="polite" aria-labelledby="wzTTitle">
+    <div class="thead"><b id="wzTTitle"></b><span class="wstep" id="wzTStep"></span></div>
+    <ul id="wzTList"></ul>
+    <div class="tnav">
+      <button class="btn ghost" id="wzTSkip" type="button"></button>
+      <button class="btn" id="wzTNext" type="button"></button>
+    </div>
+  </div>
+</div>
+
 <button class="ver" id="verBadge" type="button" title="Diana"></button>
 
 <div class="status" id="status">
@@ -678,5 +709,6 @@
 <script src="js/conditions.js" defer></script>
 <script src="js/offline.js" defer></script>
 <script src="js/geo.js" defer></script>
+<script src="js/wizard.js" defer></script>
 </body>
 </html>

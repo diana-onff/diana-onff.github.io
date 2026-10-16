@@ -155,6 +155,8 @@ function closeConsent(){
   consentPending = false;
   consentEl.hidden = true;
   releaseLocate();
+  // A new device: the setup wizard follows straight on (js/wizard.js).
+  if(typeof startFirstWizard === 'function') startFirstWizard();
 }
 $('consentYes').onclick = () => { setStatsConsent(true);  closeConsent(); };
 $('consentNo').onclick  = () => { setStatsConsent(false); closeConsent(); };

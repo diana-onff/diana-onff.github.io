@@ -38,6 +38,9 @@ function applyLang(){
 /* Redraw everything that was drawn with JavaScript — otherwise half the screen
    stays sitting there in the old language. */
 function rerender(){
+  // First and on its own, so that nothing failing further down can leave the
+  // wizard behind in the previous language.
+  try{ if(typeof wizardRerender === 'function') wizardRerender(); }catch(err){ console.warn('wizard:', err); }
   try{
     if(zones) $('counts').innerHTML = `<b>${zones.features.length}</b> ${t('map.areas')}`
       + (noPoly.features.length ? ` · ${noPoly.features.length} ${t('map.nopolycount')}` : '');

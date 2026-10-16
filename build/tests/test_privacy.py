@@ -61,6 +61,9 @@ DENIED = """
 """
 
 
+NO_WIZARD = "try { localStorage.setItem('diana.wizard.done', '1'); } catch (e) {}"
+
+
 def fresh(br, granted=True, acc=8, extra=None, locale="en-US"):
     kw = dict(service_workers="block", locale=locale, viewport={"width": 420, "height": 860})
     if granted:
@@ -68,6 +71,9 @@ def fresh(br, granted=True, acc=8, extra=None, locale="en-US"):
     ctx = br.new_context(**kw)
     routes(ctx)
     ctx.add_init_script(SPY)
+    # The setup wizard that follows the welcome screen (since 2.1.0) has a
+    # test of its own, test_wizard.py; here it would only cover the map.
+    ctx.add_init_script(NO_WIZARD)
     if extra:
         ctx.add_init_script(extra)
     pg = ctx.new_page()
