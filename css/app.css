@@ -627,3 +627,55 @@
   .rxp small{font-size:10.5px;color:var(--ink-3);margin-top:2px;white-space:nowrap}
   .rsrc{margin-top:14px}
   .rsrc a{color:var(--green-2);font-weight:600}
+
+  /* ---------- setup wizard and tour (js/wizard.js) ----------
+     The wizard sits where the welcome screen sat (z-index 65) and just above
+     it, so it is what remains once that one is answered. The tour is a card
+     above the bottom bar with a clear layer over the rest: the real screen
+     stays fully visible as the preview, but cannot be tapped by accident. */
+  .wizard{
+    position:fixed; inset:0; z-index:66;
+    background:rgba(10,22,15,.7);
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .wizard .wcard{
+    background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:20px; max-width:440px; width:100%; max-height:90vh; overflow:auto;
+  }
+  .wizard .whead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+  .wizard .cbrand{display:flex;align-items:center;gap:9px;font-size:19px;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
+  .wizard .cbrand .mark{width:34px;height:auto}
+  .wstep{font-size:12px;color:var(--ink-3);white-space:nowrap}
+  .wizard .wstep{margin-left:auto}
+  .wizard .wx{border:0;background:none;font-size:24px;line-height:1;color:var(--ink-3);cursor:pointer;padding:0 2px 2px 6px}
+  .wizard h2{margin:0 0 8px;font-size:18px;letter-spacing:-.01em}
+  .wizard p{margin:6px 0 12px}
+  .wizard .why{font-size:13px;color:var(--ink-2);background:var(--paper);border-radius:10px;padding:9px 11px;margin:4px 0 12px}
+  .wizard .langs{margin:4px 0 6px}
+  .wizard select{width:100%}
+  .wizard .wnav{display:flex;gap:8px;margin-top:14px}
+  .wizard .wnav .btn{flex:1;margin:0}
+  .wizard .wnav .btn[hidden]{display:none}
+  .wizard .wnav .btn + .btn{margin-top:0}
+  .wizard .wgps{font-size:13.5px;padding:10px}
+  .wizard .chipsbtn{font-size:13.5px;padding:10px;margin-top:4px}
+  .wizard .wstack .btn + .btn{margin-top:8px}
+  .wizard .privacy{margin-top:12px}
+
+  .wtour{position:fixed; inset:0; z-index:66; background:transparent}
+  .wtour .tcard{
+    position:absolute; left:10px; right:10px;
+    bottom:calc(74px + env(safe-area-inset-bottom));
+    max-width:480px; margin:0 auto; max-height:52vh; overflow:auto;
+    background:var(--card); border-radius:var(--radius);
+    box-shadow:0 6px 30px rgba(18,41,29,.28); border:1px solid var(--line);
+    padding:14px 16px;
+  }
+  .wtour .thead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:6px}
+  .wtour .thead b{font-size:16px}
+  .wtour ul{margin:0 0 10px;padding-left:18px;font-size:13.5px;line-height:1.45;color:var(--ink-2)}
+  .wtour li + li{margin-top:5px}
+  .wtour .tnav{display:flex;gap:8px}
+  .wtour .tnav .btn{flex:1;margin:0;padding:11px}
+  .wtour .tnav .btn + .btn{margin-top:0}
+  .nav button.wzhl{outline:2px solid var(--amber); outline-offset:-2px; background:var(--amber-soft)}

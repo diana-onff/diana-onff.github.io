@@ -15,6 +15,14 @@
  * entry here is the version the app reports.
  */
 const RELEASES = [
+  { v: '2.1.0', date: '2026-10-16',
+    nl: ['Nieuw: een opstartwizard. Bij de allereerste start stelt Diana na het welkomstscherm een paar korte vragen: taal, je roepnamen en locator, je land, je snelknoppen en de bandenlijst. Alles wordt meteen bewaard in Instellingen.',
+         'Daarna volgt, als je wil, een korte rondleiding langs de schermen, met uitleg over wat je ziet.',
+         'Al langer gebruiker? Je kan de wizard zelf starten via Instellingen, "Opstartwizard opnieuw doorlopen". Hij begint dan van je huidige instellingen.'],
+    en: ['New: a setup wizard. On the very first start, right after the welcome screen, Diana asks a few short questions: language, your callsigns and locator, your country, your quick buttons and the band list. Everything is saved straight into Settings.',
+         'After that, if you like, a short tour of the screens explains what you are looking at.',
+         'Been using Diana for a while? Start the wizard yourself from Settings, "Run the setup wizard again". It starts from your current settings.'] },
+
   { v: '2.0.0', date: '2026-10-04',
     nl: ['Diana 2.0: een opgeruimde versie, met minder knoppen die je niet nodig hebt.',
          'De knop "Dit gebied offline bewaren" is weg. Kaartstukken die je al bekeken hebt, blijven wel nog een tijd bewaard op je toestel.',
