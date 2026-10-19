@@ -13,7 +13,7 @@ const APP_VERSION = '2.1.0';
    of that build. If the placeholder is still there, you are running a copy that
    never went through the build step — locally, or straight out of the repo.
    That is exactly what you want to know when someone reports a problem. */
-const BUILD = '1f1c15e · 18/10/2026';
+const BUILD = '476937c · 19/10/2026';
 const BUILD_TXT = BUILD.startsWith('__') ? 'dev' : BUILD;
 
 /* ---------- splash screen ----------
