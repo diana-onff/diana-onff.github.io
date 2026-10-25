@@ -82,12 +82,18 @@ halfway through sending twenty megabytes.
 Settings → Developer settings → Personal access tokens → Fine-grained
 tokens → Generate new token, and scope it as narrowly as possible:
 
-- **Resource owner:** the organisation, not your personal account
+- **Resource owner:** the organisation, not your personal account. If the
+  organisation does not appear in that list, you are not (yet) a *member*
+  of it; see the troubleshooting note below.
 - **Repository access:** "Only select repositories", and select **both** —
   the public app repo and the private source repo. Never "All repositories".
-- **Permissions:** Contents — Read and write, Pull requests — Read and
-  write, Actions — Read and write. Actions is what lets the panel start the
-  conversion; without it the upload succeeds and then nothing happens.
+- **Permissions:** click **Add permissions**, choose **Repository**, and set
+  Contents — Read and write, Pull requests — Read and write, Actions — Read
+  and write. Actions is what lets the panel start the conversion; without it
+  the upload succeeds and then nothing happens. (GitHub has moved this
+  behind the "Add permissions" button; older screenshots that show the
+  three permissions directly on the page are the same setting, just on an
+  earlier version of this screen.)
 - **Expiration:** as short as you're willing to renew — a token that
   expires in 90 days is safer than one that doesn't expire at all.
 
@@ -97,6 +103,25 @@ well. That is acceptable for the administrator's own token — you own both
 repositories anyway — but it is the reason this token is not the one stored
 as a secret in the repository. That one (`SOURCE_TOKEN`, used by the build)
 is read-only, and stays read-only.
+
+**"This token cannot write to this repository"**, even though it looks set
+up exactly as above: a token can never do more than the person who made
+it, so check these in order:
+
+1. **Your own access on both repos.** On github.com, open each repository →
+   **Settings → Collaborators and teams**, and check your role there. Being
+   a *member* of the organisation is not enough by itself: by default that
+   only grants **Read**. You need **Write**, added explicitly on each repo:
+   see [MAINTENANCE.md §4](MAINTENANCE.md#4-adding-a-new-content-administrator).
+2. **A token waiting for approval.** Some organisations require an owner to
+   approve new fine-grained tokens before they can write anything. Check
+   **organisation Settings → Personal access tokens → Pending requests**:
+   if the token is sitting there, it behaves as read-only until someone
+   with Owner rights approves it.
+3. **Resource owner and repository selection on the token itself.** Open
+   the token on GitHub and confirm it says the organisation (not your
+   personal account) and lists both repositories, see the two bullets
+   above.
 
 ### Uploading a file
 

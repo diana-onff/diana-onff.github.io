@@ -133,11 +133,25 @@ opens a browser tab to approve the connection. This is per-machine, per-person
 
 ## 4. Adding a new content administrator
 
-1. **Give them repository access.** On both `diana-onff/diana-onff.github.io`
-   and `diana-onff/diana-source`: Settings → Collaborators and teams → **Add
-   people** → their GitHub username → role **Write**. Write is enough to
-   upload, open pull requests, and merge; it is not enough to change
-   repository settings or read secrets.
+1. **Give them repository access, on each repository, explicitly.** If you
+   also invite them to the organisation itself (not required, but common if
+   they will be a regular contributor), that invite by itself only grants
+   **Read** on every repository, through "organisation membership": it is
+   not the same thing as the step below, and does not replace it.
+
+   On both `diana-onff/diana-onff.github.io` and `diana-onff/diana-source`,
+   one repository at a time:
+   - Open the repository on github.com.
+   - **Settings → Collaborators and teams.**
+   - Click **Add people**, type their GitHub username, pick them from the
+     list.
+   - Role: **Write**. Write is enough to upload, open pull requests, and
+     merge; it is not enough to change repository settings or read secrets.
+
+   Afterwards, that same Collaborators and teams page should show **Write**
+   next to their name. If it still shows **Read** with "Granted by
+   organisation membership" and nothing under Write, this step was missed;
+   add them again as above.
 2. **Have them create their own token**, following
    [ADMIN.md's instructions](ADMIN.md#connecting-to-a-repository) exactly —
    fine-grained, scoped to both repositories, Contents + Pull requests +
@@ -151,13 +165,18 @@ opens a browser tab to approve the connection. This is per-machine, per-person
    shared or public computer. See [ADMIN.md's token warning](ADMIN.md#a-plain-warning-about-the-token)
    for why.
 
-If their token mysteriously fails to authenticate even though it looks right,
-check the one organisation-wide setting this all depends on: **organisation
-Settings → Personal access tokens → Settings → allow access via fine-grained
-personal access tokens.** This is normally set once, for the whole
-organisation, and never touched again — but it's exactly the kind of setting
-that produces a confusing error for the one person who joins after everyone
-forgot it exists.
+If their token mysteriously fails to *authenticate* at all, check the one
+organisation-wide setting this depends on: **organisation Settings →
+Personal access tokens → Settings → allow access via fine-grained personal
+access tokens.** This is normally set once, for the whole organisation, and
+never touched again — but it's exactly the kind of setting that produces a
+confusing error for the one person who joins after everyone forgot it
+exists.
+
+If it authenticates fine but Diana's "Test the connection" (or an upload)
+says it **cannot write**, that is almost always step 1 above being
+incomplete. See [ADMIN.md's troubleshooting note](ADMIN.md#connecting-to-a-repository)
+for the full checklist.
 
 **Removing a content administrator:** remove them as a collaborator on both
 repositories. Their token stops being useful the moment they lose repository
