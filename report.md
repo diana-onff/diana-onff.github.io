@@ -2,16 +2,7 @@
 
 ## Diana — new dataset from `PAFF_20261025.kmz`
 
-**281 areas** (was 277, +4) · **4 new** · **0 gone** · **0 boundary changed**
-
-<details><summary>4 new areas</summary>
-
-- `PAFF-0081` De Clinge bossen — province unknown, 142.0 ha
-- `PAFF-0082` Magaretha polder — province unknown, 129.6 ha
-- `PAFF-0083` Braakman Noorderbossen — province unknown, 328.4 ha
-- `PAFF-0177` De grote putting — province unknown, 179.3 ha
-
-</details>
+**281 areas** (was 281, 0) · **0 new** · **0 gone** · **0 boundary changed**
 
 
 ### Cross-check against the WWFF directory
