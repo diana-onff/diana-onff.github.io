@@ -1,0 +1,65 @@
+{
+  "generated": "2026-10-26T13:01:13Z",
+  "countries": [
+    {
+      "program": "DLFF",
+      "country": "Federal Republic Of Germany",
+      "refs": 1326,
+      "points": 1,
+      "release": "2026-10-25",
+      "source_file": "DLFF_20261025.kmz",
+      "generated": "2026-10-26T07:48:04Z",
+      "bytes": 13057690,
+      "files": {
+        "zones": "zones/dlff.geojson",
+        "points": "zones/dlff-points.geojson",
+        "activity": "zones/dlff-activity.json"
+      }
+    },
+    {
+      "program": "ONFF",
+      "country": "Belgium",
+      "refs": 947,
+      "points": 1,
+      "release": "2026-08-02",
+      "source_file": "ONFF 20260802.kmz",
+      "generated": "2026-10-26T07:48:31Z",
+      "bytes": 3851961,
+      "files": {
+        "zones": "zones/onff.geojson",
+        "points": "zones/onff-points.geojson",
+        "activity": "zones/onff-activity.json"
+      }
+    },
+    {
+      "program": "OZFF",
+      "country": "Denmark",
+      "refs": 331,
+      "points": 0,
+      "release": "2026-10-24",
+      "source_file": "OZFF_20261024.kmz",
+      "generated": "2026-10-26T07:48:11Z",
+      "bytes": 1358858,
+      "files": {
+        "zones": "zones/ozff.geojson",
+        "points": "zones/ozff-points.geojson",
+        "activity": "zones/ozff-activity.json"
+      }
+    },
+    {
+      "program": "PAFF",
+      "country": "Netherlands",
+      "refs": 281,
+      "points": 7,
+      "release": "2026-10-25",
+      "source_file": "PAFF_20261025.kmz",
+      "generated": "2026-10-26T13:01:13Z",
+      "bytes": 2102471,
+      "files": {
+        "zones": "zones/paff.geojson",
+        "points": "zones/paff-points.geojson",
+        "activity": "zones/paff-activity.json"
+      }
+    }
+  ]
+}

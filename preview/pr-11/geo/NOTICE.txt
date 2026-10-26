@@ -1,0 +1,38 @@
+radio-zones.json, and where it comes from
+=========================================
+
+This file is built by build/radiozones.py. It is published alongside the app,
+so the notices its sources ask for travel with it.
+
+CQ zones and ITU zones
+----------------------
+Simplified from HB9HIL/hamradio-zones-geojson
+(https://github.com/HB9HIL/hamradio-zones-geojson), under the MIT licence:
+
+MIT License
+
+Copyright (c) 2024 HB9HIL
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+ITU regions
+-----------
+Built from the definitions of lines A, B and C and the country exceptions in
+the ITU Radio Regulations, Article 5. Country borders for those exceptions:
+Made with Natural Earth (naturalearthdata.com), public domain.
