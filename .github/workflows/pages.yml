@@ -54,11 +54,19 @@ jobs:
     steps:
       # On workflow_run we have to take the branch that build ran on, otherwise
       # we publish the code from before its commit.
+      #
+      # Skipped when a pull request is closed: github.ref then still points at
+      # refs/pull/<n>/merge, but GitHub throws that ref away once the pull request
+      # is merged or closed, so the checkout fails and the whole job stops before
+      # the preview is cleaned up. Cleaning up only needs the gh-pages clone
+      # below, not this repository. (Seen with PR #12, October 2026.)
       - uses: actions/checkout@v5
+        if: github.event.action != 'closed'
         with:
           ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref }}
 
       - name: Install the Python dependencies
+        if: github.event.action != 'closed'
         run: pip install -r build/requirements.txt
 
       - name: Assemble the site (without source/)
