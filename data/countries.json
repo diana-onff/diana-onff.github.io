@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-26T13:02:14Z",
+  "generated": "2026-10-26T13:09:31Z",
   "countries": [
     {
       "program": "DLFF",
@@ -53,7 +53,7 @@
       "points": 7,
       "release": "2026-10-25",
       "source_file": "PAFF_20261025.kmz",
-      "generated": "2026-10-26T13:02:14Z",
+      "generated": "2026-10-26T13:09:31Z",
       "bytes": 2102471,
       "files": {
         "zones": "zones/paff.geojson",
