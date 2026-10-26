@@ -1,0 +1,21 @@
+{
+  "source_file": "PAFF_20261025.kmz",
+  "release": "2026-10-25",
+  "generated": "2026-10-26T13:09:31Z",
+  "zones": 281,
+  "directory_failed": null,
+  "directory_listed": 288,
+  "directory_deleted": 0,
+  "directory_rows": 69151,
+  "directory_nonwwff": 0,
+  "points_no_polygon": 7,
+  "points_unplaced": 0,
+  "activity_refs": 284,
+  "world_points": 66060,
+  "world_activity_refs": 67741,
+  "world_site_refs": 44679,
+  "source_polygons": 2579,
+  "tolerance_deg": 5e-05,
+  "decimals": 5,
+  "script_version": "1.1.0"
+}
