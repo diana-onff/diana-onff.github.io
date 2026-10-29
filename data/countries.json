@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-28T08:31:49Z",
+  "generated": "2026-10-29T08:29:14Z",
   "countries": [
     {
       "program": "DLFF",
@@ -8,7 +8,7 @@
       "points": 1,
       "release": "2026-10-25",
       "source_file": "DLFF_20261025.kmz",
-      "generated": "2026-10-28T08:31:13Z",
+      "generated": "2026-10-29T08:28:45Z",
       "bytes": 13057690,
       "files": {
         "zones": "zones/dlff.geojson",
@@ -23,7 +23,7 @@
       "points": 1,
       "release": "2026-08-02",
       "source_file": "ONFF 20260802.kmz",
-      "generated": "2026-10-28T08:31:49Z",
+      "generated": "2026-10-29T08:29:14Z",
       "bytes": 3851961,
       "files": {
         "zones": "zones/onff.geojson",
@@ -38,7 +38,7 @@
       "points": 0,
       "release": "2026-10-24",
       "source_file": "OZFF_20261024.kmz",
-      "generated": "2026-10-28T08:31:22Z",
+      "generated": "2026-10-29T08:28:52Z",
       "bytes": 1358858,
       "files": {
         "zones": "zones/ozff.geojson",
@@ -53,7 +53,7 @@
       "points": 7,
       "release": "2026-10-25",
       "source_file": "PAFF_20261025.kmz",
-      "generated": "2026-10-28T08:31:33Z",
+      "generated": "2026-10-29T08:29:00Z",
       "bytes": 2102471,
       "files": {
         "zones": "zones/paff.geojson",
