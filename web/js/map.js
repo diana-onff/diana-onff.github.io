@@ -335,13 +335,10 @@ function paintWorld(tries){
         map.easeTo({center: f.geometry.coordinates, zoom});
       });
     });
-    map.on('click','world-point', e => {
-      const f = e.features[0];
-      new maplibregl.Popup({closeButton:true, maxWidth:'240px'})
-        .setLngLat(f.geometry.coordinates)
-        .setHTML(`<b>${escH(f.properties.ref)}</b><br>${escH(f.properties.name||'')}`)
-        .addTo(map);
-    });
+    // A blue dot opens the same panel as any other reference (selectWorld()
+    // below), not a bare popup: the worldwide files already carry its QSO
+    // count and website, and its position gives the locator and zones.
+    map.on('click','world-point', e => selectWorld(e.features[0]));
     map.on('mouseenter','world-clusters',()=>map.getCanvas().style.cursor='pointer');
     map.on('mouseleave','world-clusters',()=>map.getCanvas().style.cursor='');
     map.on('mouseenter','world-point',()=>map.getCanvas().style.cursor='pointer');
@@ -634,8 +631,9 @@ function selectPoint(f){
     ? `<div class="fact"><div class="k">${t('zone.place')}</div><div class="v">${p.place}</div></div>` : '')
     + radioFactsHtml(selectedPos[0], selectedPos[1])
     + activityFacts(p.ref);
-  $('zoneNote').textContent = t('zone.nopolynote');
+  $('zoneNote').textContent = t('zone.nopolynote').split('{prog}').join(refProgram(p.ref) || 'WWFF');
   addAreaSite(p.ref);
+  sheetButtons(null);
 
   openSheet();
   map.easeTo({center:f.geometry.coordinates, zoom:Math.max(map.getZoom(),12),
@@ -658,6 +656,93 @@ const FIELDS = [
   ['registration','zone.reg', v=>v],
   ['status_year','zone.since', v=>v],
 ];
+
+/* A reference from the worldwide layer: a blue dot, a country Diana has no
+   boundaries in memory for. The same panel as selectPoint(), filled with what
+   is known about it anywhere in Diana and nothing else, so no empty boxes:
+   the locator and zones from its position, the QSO count (or ATNO) from the
+   worldwide activity file, distance and bearing from you, and the website
+   once that programme's link file is in. When Diana does have this country's
+   boundaries, just not loaded, the panel says so and offers to load them. */
+function selectWorld(f){
+  const p = f.properties || {};
+  const ref = String(p.ref || '').toUpperCase();
+  if(!ref || !f.geometry) return;
+  selected = ref;
+  clearOutline();
+  selectedPos = f.geometry.coordinates;
+  const prog = refProgram(ref);
+  const country = programCountry(prog);
+  const has = !!countryEntry(prog);
+
+  $('badges').innerHTML =
+    `<span class="pill">${escH(ref)}</span>` +
+    (country ? `<span class="pill grey">${escH(country)}</span>` : '') +
+    (has ? '' : `<span class="pill amber">${t('zone.nopoly')}</span>`);
+  $('zoneName').textContent = p.name || ref;
+  $('facts').innerHTML = radioFactsHtml(selectedPos[0], selectedPos[1]) + fromYouFact(selectedPos);
+  addWorldQso(ref);
+  $('zoneNote').textContent = has
+    ? t('zone.worldhas').split('{country}').join(country || prog)
+    : t('zone.worldnote');
+  addAreaSite(ref);
+  sheetButtons(has ? prog : null);
+
+  openSheet();
+  map.easeTo({center:f.geometry.coordinates, zoom:Math.max(map.getZoom(),9),
+              padding:{top:90,bottom:260,left:40,right:40}});
+}
+
+/* The country name for a programme, from wwff-programs.json, or ''. */
+function programCountry(prog){
+  const e = (wwffPrograms || []).find(x => x.program === prog);
+  return e ? e.country : '';
+}
+
+/* Distance and bearing from where you are (GPS, or else your locator), as one
+   box. Nothing at all when Diana has neither. */
+function fromYouFact(pos){
+  const me = typeof myPos === 'function' ? myPos() : null;
+  if(!me || !pos) return '';
+  const br = bearing(me[1], me[0], pos[1], pos[0]);
+  const d = haversine(me[1], me[0], pos[1], pos[0]);
+  return `<div class="fact fromyou"><div class="k">${t('zone.fromyou')}</div>`
+       + `<div class="v">${Math.round(br)}° · ${fmtKm(d)}</div></div>`;
+}
+
+/* QSOs, or ATNO, from the worldwide file. That file is lazy (it runs to a
+   megabyte), so the box is added the moment it lands, if the panel still
+   shows the same reference. No box when there is nothing to go on. */
+function addWorldQso(ref){
+  const put = () => {
+    const box = $('facts');
+    if(selected !== ref || !box || box.querySelector('.fact.qso')) return true;
+    const n = qsoCountAnywhere(ref);
+    if(n == null) return false;
+    const v = n === 0 ? `<span class="atno">${t('spots.atno')}</span>` : n.toLocaleString(locale());
+    const html = `<div class="fact qso"><div class="k">${t('zone.qso')}</div><div class="v">${v}</div></div>`;
+    const site = box.querySelector('.fact.site');
+    if(site) site.insertAdjacentHTML('beforebegin', html); else box.insertAdjacentHTML('beforeend', html);
+    if($('sheet').classList.contains('open'))
+      requestAnimationFrame(()=>document.body.style.setProperty('--sheet-h', $('sheet').offsetHeight+'px'));
+    return true;
+  };
+  if(put()) return;
+  const loading = ensureWorldActivity();
+  if(loading) loading.then(put);
+}
+
+/* The buttons under every panel: spot yourself, announce an activation, and,
+   only for a country whose boundaries Diana has but has not loaded, a button
+   to show that country in detail. */
+let sheetCountry = null;
+function sheetButtons(prog){
+  sheetCountry = prog || null;
+  const b = $('zoneCountry');
+  if(!b) return;
+  b.hidden = !sheetCountry;
+  if(sheetCountry) b.textContent = t('zone.showcountry').split('{country}').join(programCountry(sheetCountry) || sheetCountry);
+}
 
 function select(ref, alsoIn){
   const f = zones.features.find(x=>x.properties.ref===ref);
@@ -691,6 +776,7 @@ function select(ref, alsoIn){
   if(overlap.length) notes.push(t('zone.overlap').replace('{refs}', overlap.join(', ')));
   $('zoneNote').textContent = notes.join(' ');
   addAreaSite(ref);
+  sheetButtons(null);
 
   markSelected(ref);
   openSheet();
@@ -735,6 +821,19 @@ $('closeSheet').onclick = closeSheet;
 $('zoneSpot').onclick = () => {
   closeSheet();
   document.querySelector('#nav button[data-view="viewSelf"]').click();
+};
+$('zoneAgenda').onclick = () => {
+  closeSheet();
+  document.querySelector('#nav button[data-view="viewAgendaNew"]').click();
+};
+/* Show the country of a blue dot in detail: the same as picking it in
+   Settings (setHomeCountry), after which the reference you tapped opens again,
+   now with its own boundary when the file has one. */
+$('zoneCountry').onclick = async () => {
+  const prog = sheetCountry, ref = selected;
+  if(!prog) return;
+  await setHomeCountry(prog);
+  if(ref && typeof select === 'function') select(ref);
 };
 map.on('click', e => {                       // a click beside an area closes the panel
   if(!map.queryRenderedFeatures(e.point,{layers:map.getLayer('onff-fill')?['onff-fill']:[]}).length) closeSheet();

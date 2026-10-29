@@ -330,9 +330,8 @@ function gaNaarView(id, extra){
 function agendaOpen(){
   fillBandOptions();
   fillModeOptions();
-  const ref = selected;
-  const z = ref && zones && zones.features.find(f => f.properties.ref === ref);
-  if(z){ $('agReference').value = z.properties.ref; checkAgReference(); }
+  const z = selectedRefInfo();
+  if(z){ $('agReference').value = z.ref; checkAgReference(); }
   if(!$('agActivator').value) $('agActivator').value = recall('activator') || cfg.callp || cfg.call;
   if(!$('agPoster').value)    $('agPoster').value    = recall('spotter')   || cfg.call || (cfg.callp||'').split('/')[0];
   agendaGrenzen();

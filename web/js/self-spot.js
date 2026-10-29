@@ -51,11 +51,10 @@ function bandCheck(khz, mode){
 }
 
 function selfPrefill(){
-  const ref = selected;
-  const z = ref && zones && zones.features.find(f => f.properties.ref === ref);
+  const z = selectedRefInfo();
   if(z){
-    $('spReference').value = z.properties.ref;
-    $('selfCtx1').textContent = `${z.properties.ref} · ${z.properties.name}`;
+    $('spReference').value = z.ref;
+    $('selfCtx1').textContent = z.name ? `${z.ref} · ${z.name}` : z.ref;
     $('selfCtx').hidden = false;
     checkReference();
   } else {

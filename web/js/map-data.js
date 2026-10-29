@@ -41,6 +41,20 @@ function activityOf(ref){
   return {qso: a.q || 0, date};
 }
 
+/* The reference the panel last showed, with its name, wherever it came from:
+   a boundary of the loaded country, a point of that country without one, or a
+   blue dot from the worldwide layer. Spot and Agenda fill in their reference
+   field from this. They used to look in the boundaries only, so a reference
+   without a polygon left both forms empty. */
+function selectedRefInfo(){
+  if(!selected) return null;
+  const key = String(selected).toUpperCase();
+  const pick = fc => fc && fc.features && fc.features.find(f => (f.properties.ref || '').toUpperCase() === key);
+  const f = pick(zones) || noPolyByRef.get(key)
+         || (typeof worldPoints !== 'undefined' && worldPoints ? pick(worldPoints) : null);
+  return f ? {ref: key, name: f.properties.name || ''} : null;
+}
+
 /* The two activity boxes, shared by the area panel and the panel for a
    reference without a boundary. */
 function activityFacts(ref){
