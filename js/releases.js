@@ -15,6 +15,14 @@
  * entry here is the version the app reports.
  */
 const RELEASES = [
+  { v: '2.2.0', date: '2026-10-29',
+    nl: ['Elke referentie op de kaart is nu aantikbaar. Een blauw bolletje uit een ander land opent hetzelfde paneel als een gebied: locator, CQ- en ITU-zone, QSO\'s of ATNO, afstand en richting vanaf jou, en de website als die gekend is. Alleen wat Diana echt weet, dus geen lege vakjes.',
+         'Onder elk paneel staan nu twee knoppen: "Meld jezelf actief" en nieuw "Activatie aankondigen". Beide vullen de referentie al voor je in, ook bij een referentie zonder grens.',
+         'Heeft Diana de grenzen van dat land, dan kan je het met één tik in detail tonen. Dat is hetzelfde als het land kiezen in Instellingen.'],
+    en: ['Every reference on the map can now be tapped. A blue dot from another country opens the same panel as an area: locator, CQ and ITU zone, QSOs or ATNO, distance and bearing from you, and the website when it is known. Only what Diana really knows, so no empty boxes.',
+         'Every panel now has two buttons: "Spot yourself here" and the new "Announce an activation". Both fill in the reference for you, also for a reference without a boundary.',
+         'When Diana has the boundaries for that country, one tap shows it in detail. That is the same as picking the country in Settings.'] },
+
   { v: '2.1.0', date: '2026-10-16',
     nl: ['Nieuw: een opstartwizard. Bij de allereerste start stelt Diana na het welkomstscherm een paar korte vragen: taal, je roepnamen en locator, je land, je snelknoppen en de bandenlijst. Alles wordt meteen bewaard in Instellingen.',
          'Daarna volgt, als je wil, een korte rondleiding langs de schermen, met uitleg over wat je ziet.',
