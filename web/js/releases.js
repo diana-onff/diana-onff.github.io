@@ -15,6 +15,10 @@
  * entry here is the version the app reports.
  */
 const RELEASES = [
+  { v: '2.2.1', date: '2026-11-01',
+    nl: ['Beveiliging aangescherpt vóór de brede release. Namen en gegevens uit de gebiedsbestanden worden altijd als gewone tekst getoond, nooit als code. Voor jou verandert er niets zichtbaars.'],
+    en: ['Security tightened ahead of the wider release. Names and details from the area files are always shown as plain text, never as code. Nothing changes in what you see.'] },
+
   { v: '2.2.0', date: '2026-10-29',
     nl: ['Elke referentie op de kaart is nu aantikbaar. Een blauw bolletje uit een ander land opent hetzelfde paneel als een gebied: locator, CQ- en ITU-zone, QSO\'s of ATNO, afstand en richting vanaf jou, en de website als die gekend is. Alleen wat Diana echt weet, dus geen lege vakjes.',
          'Onder elk paneel staan nu twee knoppen: "Meld jezelf actief" en nieuw "Activatie aankondigen". Beide vullen de referentie al voor je in, ook bij een referentie zonder grens.',

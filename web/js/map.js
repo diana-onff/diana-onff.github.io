@@ -623,12 +623,12 @@ function selectPoint(f){
   selectedPos = f.geometry.coordinates;
 
   $('badges').innerHTML =
-    `<span class="pill">${p.ref}</span>` +
-    (p.prov ? `<span class="pill grey">${p.prov}</span>` : '') +
+    `<span class="pill">${escH(p.ref)}</span>` +
+    (p.prov ? `<span class="pill grey">${escH(p.prov)}</span>` : '') +
     `<span class="pill amber">${t('zone.nopoly')}</span>`;
   $('zoneName').textContent = p.name || p.ref;
   $('facts').innerHTML = (p.place
-    ? `<div class="fact"><div class="k">${t('zone.place')}</div><div class="v">${p.place}</div></div>` : '')
+    ? `<div class="fact"><div class="k">${t('zone.place')}</div><div class="v">${escH(p.place)}</div></div>` : '')
     + radioFactsHtml(selectedPos[0], selectedPos[1])
     + activityFacts(p.ref);
   $('zoneNote').textContent = t('zone.nopolynote').split('{prog}').join(refProgram(p.ref) || 'WWFF');
@@ -753,9 +753,9 @@ function select(ref, alsoIn){
   selectedPos = [(b[0]+b[2])/2, (b[1]+b[3])/2];
 
   $('badges').innerHTML =
-    `<span class="pill">${p.ref}</span>` +
-    (p.prov ? `<span class="pill grey">${p.prov}</span>` : '') +
-    (p.layer ? `<span class="pill grey">${p.layer}</span>` : '');
+    `<span class="pill">${escH(p.ref)}</span>` +
+    (p.prov ? `<span class="pill grey">${escH(p.prov)}</span>` : '') +
+    (p.layer ? `<span class="pill grey">${escH(p.layer)}</span>` : '');
   $('zoneName').textContent = p.name;
 
   // Only show what is actually there. For nearly half the areas that is not
@@ -763,7 +763,8 @@ function select(ref, alsoIn){
   const nParts = f.geometry.coordinates.length;
   $('facts').innerHTML = FIELDS
     .filter(([k])=>p[k]!==undefined && p[k]!==null && p[k]!=='')
-    .map(([k,label,fmt])=>`<div class="fact"><div class="k">${t(label)}</div><div class="v">${fmt(p[k])}</div></div>`)
+    // Whatever came out of the KMZ is shown as text, never read as HTML.
+    .map(([k,label,fmt])=>`<div class="fact"><div class="k">${t(label)}</div><div class="v">${escH(fmt(p[k]))}</div></div>`)
     .join('')
     + (nParts>1 ? `<div class="fact"><div class="k">${t('zone.parts')}</div><div class="v">${nParts}</div></div>` : '')
     + radioFactsHtml(selectedPos[0], selectedPos[1])
