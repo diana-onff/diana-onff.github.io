@@ -231,8 +231,8 @@ function renderAgendaSaved(){
   $('agSavedCard').hidden = !lijst.length;
   $('agSavedList').innerHTML = lijst.map((it, i) => `
     <div class="spot" style="cursor:default">
-      <span class="who"><div class="c">${it.reference}</div>
-        <div class="f">${(it.utc_start || '').slice(0,16).replace('T',' ')} UTC · pin ${it.pin}</div></span>
+      <span class="who"><div class="c">${escH(it.reference)}</div>
+        <div class="f">${escH(String(it.utc_start || '').slice(0,16).replace('T',' '))} UTC · pin ${escH(it.pin)}</div></span>
       <button class="btn ghost" data-del="${i}" aria-label="${t('adm.cleanupdiscard')}"
         style="width:auto;flex:0 0 auto;padding:4px 10px">✕</button>
     </div>`).join('');

@@ -115,7 +115,7 @@ $('admTest').onclick = async () => {
       const ref  = await gh(`/repos/${naam}/git/ref/heads/${adm.branch}`);
       const can  = repo.permissions && (repo.permissions.push || repo.permissions.admin);
       if(!can) alles = false;
-      uit.push(`${can ? '✓' : '⚠'} ${repo.full_name} · ${adm.branch} @ ${ref.object.sha.slice(0,7)}`);
+      uit.push(`${can ? '✓' : '⚠'} ${escH(repo.full_name)} · ${escH(adm.branch)} @ ${escH(String(ref.object.sha).slice(0,7))}`);
     }
     fb.innerHTML = uit.join('<br>') + (alles ? '' : `<br>⚠ ${t('adm.noperm')}`);
     fb.className = 'fb ' + (alles ? 'good' : 'bad');
@@ -141,7 +141,7 @@ function vulProgrammas(){
   const have = new Set((countries || []).map(c => c.program));
   const mine = (wwffPrograms || []).filter(p => have.has(p.program));
   const rest = (wwffPrograms || []).filter(p => !have.has(p.program));
-  const opt = p => `<option value="${p.program}">${p.program} — ${p.country}</option>`;
+  const opt = p => `<option value="${escH(p.program)}">${escH(p.program)} — ${escH(p.country)}</option>`;
   sel.innerHTML = `<option value="">${t('adm.countrypick')}</option>`
     + (mine.length ? `<optgroup label="${t('adm.countryhas')}">${mine.map(opt).join('')}</optgroup>` : '')
     + (rest.length ? `<optgroup label="${t('adm.countrynew')}">${rest.map(opt).join('')}</optgroup>` : '');
@@ -334,9 +334,9 @@ function drawSteps(at, err, toelichting){
   $('admSteps').innerHTML = STEPS.map((k,i) => {
     const cls = err && i===at ? 'err' : i < at ? 'done' : i === at ? 'now' : '';
     const mk  = err && i===at ? '✗' : i < at ? '✓' : i === at ? '…' : '·';
-    const bij = (!err && i === at && toelichting) ? ` <span class="hint">— ${toelichting}</span>` : '';
+    const bij = (!err && i === at && toelichting) ? ` <span class="hint">— ${escH(toelichting)}</span>` : '';
     return `<div class="step ${cls}"><span class="mk">${mk}</span><span>${t(k)}${bij}</span></div>`;
-  }).join('') + (err ? `<div class="step err"><span class="mk">!</span><span>${err}</span></div>` : '');
+  }).join('') + (err ? `<div class="step err"><span class="mk">!</span><span>${escH(err)}</span></div>` : '');
 }
 
 /* The upload in short:
@@ -448,7 +448,7 @@ $('admSend').onclick = async () => {
     drawSteps(STEPS.length);
     bewaarBezig(null);
     $('admSteps').innerHTML += `<div class="step done"><span class="mk">→</span>
-      <a href="${pr.html_url}" target="_blank" rel="noopener">${t('adm.openpr')} #${pr.number}</a></div>`;
+      <a href="${escH(pr.html_url)}" target="_blank" rel="noopener">${t('adm.openpr')} #${escH(pr.number)}</a></div>`;
     showStatus('in', t('adm.done'), `#${pr.number} · ${file.name}`);
     bewaarPr(pr, file.name, prog);
     toonPr().catch(()=>{});
@@ -625,7 +625,7 @@ async function toonPr(){
   const klaar    = lijst.length > 0 && !bezig && !mislukt;
 
   $('admPrHead').innerHTML =
-    `#${pr.number} · <a href="${pr.html_url}" target="_blank" rel="noopener">${pr.title}</a>`;
+    `#${escH(pr.number)} · <a href="${escH(pr.html_url)}" target="_blank" rel="noopener">${escH(pr.title)}</a>`;
   $('admPrHead').className = 'fb';
 
   $('admPrChecks').innerHTML = lijst.length
@@ -634,13 +634,13 @@ async function toonPr(){
                   : (r.conclusion === 'success' || r.conclusion === 'skipped') ? 'done' : 'err';
         const mk  = r.status !== 'completed' ? '…'
                   : (r.conclusion === 'success' || r.conclusion === 'skipped') ? '✓' : '✗';
-        return `<div class="step ${cls}"><span class="mk">${mk}</span><span>${r.name}</span></div>`;
+        return `<div class="step ${cls}"><span class="mk">${mk}</span><span>${escH(r.name)}</span></div>`;
       }).join('')
     : `<div class="step now"><span class="mk">…</span><span>${t('adm.prwaiting')}</span></div>`;
 
   const url = previewUrl(pr.number);
   $('admPrPreview').innerHTML = (klaar && url)
-    ? `<a href="${url}" target="_blank" rel="noopener">🗺️ ${t('adm.prpreview')}</a>`
+    ? `<a href="${escH(url)}" target="_blank" rel="noopener">🗺️ ${t('adm.prpreview')}</a>`
     : `<span class="hint">${bezig ? t('adm.prwaiting') : mislukt ? t('adm.prfailed') : ''}</span>`;
 
   // The diff report. For an upload out of the waiting room it sits in the body
@@ -764,10 +764,10 @@ async function renderCleanup(){
   card.hidden = false;
   $('admCleanupList').innerHTML = bestanden.length ? bestanden.map(b => `
     <div style="margin:10px 0;padding:10px;border:1px solid var(--line);border-radius:10px">
-      <div style="font-weight:650;margin-bottom:8px;word-break:break-all">${b.path}</div>
+      <div style="font-weight:650;margin-bottom:8px;word-break:break-all">${escH(b.path)}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn ghost" data-promote="${b.path}">${t('adm.cleanuppromote')}</button>
-        <button class="btn ghost" data-discard="${b.path}">${t('adm.cleanupdiscard')}</button>
+        <button class="btn ghost" data-promote="${escH(b.path)}">${t('adm.cleanuppromote')}</button>
+        <button class="btn ghost" data-discard="${escH(b.path)}">${t('adm.cleanupdiscard')}</button>
       </div>
     </div>`).join('') : `<p class="hint">${t('adm.cleanupempty')}</p>`;
 }

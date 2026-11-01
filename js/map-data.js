@@ -188,9 +188,9 @@ async function loadMeta(){
     if(adminEl){
       const gebouwd = m.generated ? m.generated.replace('T',' ').replace('Z',' UTC') : '?';
       adminEl.innerHTML =
-        `<b>${m.source_file || '?'}</b><br>` +
-        `release ${m.release || '?'} · ${m.zones || '?'} ${t('set.zones')}<br>` +
-        `${t('adm.processed')} ${gebouwd}` +
+        `<b>${escH(m.source_file || '?')}</b><br>` +
+        `release ${escH(m.release || '?')} · ${escH(m.zones || '?')} ${t('set.zones')}<br>` +
+        `${t('adm.processed')} ${escH(gebouwd)}` +
         (m.directory_failed ? '<br>⚠ WWFF-directory was onbereikbaar' : '');
       adminEl.className = 'fb';
     }
