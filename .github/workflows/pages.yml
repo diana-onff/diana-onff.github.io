@@ -77,6 +77,13 @@ jobs:
 
       - name: Determine the destination
         id: dest
+        # The branch name of the run that triggered this one is chosen by
+        # whoever pushed it, and this job may write to gh-pages: it goes in
+        # through env, never straight into the script, where a ${{ }} would be
+        # pasted in as shell code.
+        env:
+          RUN_PR: ${{ github.event.workflow_run.pull_requests[0].number }}
+          RUN_BRANCH: ${{ github.event.workflow_run.head_branch }}
         run: |
           # "." is the live site. Only main/master may end up there — an unknown
           # branch gets an empty destination and publishes nothing; better
@@ -86,8 +93,8 @@ jobs:
               echo "path=preview/pr-${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
               ;;
             workflow_run)
-              PR="${{ github.event.workflow_run.pull_requests[0].number }}"
-              BR="${{ github.event.workflow_run.head_branch }}"
+              PR="$RUN_PR"
+              BR="$RUN_BRANCH"
               if [ -n "$PR" ]; then
                 echo "path=preview/pr-$PR" >> "$GITHUB_OUTPUT"
               elif [ "$BR" = "main" ] || [ "$BR" = "master" ]; then

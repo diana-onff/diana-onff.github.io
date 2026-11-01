@@ -202,13 +202,19 @@ jobs:
       # at the report, and carrying on with less data is actually useful there.
       - name: Convert
         if: steps.kmz.outputs.found == '1'
+        # Values that come from outside (a branch name typed into Run workflow)
+        # go in through env, never straight into the script: a ${{ }} in a run
+        # block is pasted in as shell code before the shell ever sees it.
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_BRANCH: ${{ github.event.inputs.branch }}
         run: |
           REFS="${ONFF_REFS_CSV:-https://wwff.co/wwff-data/wwff_directory.csv}"
           STRICT=""
           # Being strict only makes sense when nobody is watching. A build for a
           # pull request and a build from the waiting room are both judged by a
           # human before they end up anywhere.
-          if [ "${{ github.event_name }}" != "pull_request" ] && [ -z "${{ github.event.inputs.branch }}" ]; then
+          if [ "$EVENT_NAME" != "pull_request" ] && [ -z "$INPUT_BRANCH" ]; then
             STRICT="--strict"
           fi
           # The output check further down needs to know whether this was an
@@ -335,12 +341,16 @@ jobs:
       # ---------------------------------------------- pull request: committing
       - name: Put the result on the pull request branch
         if: github.event_name == 'pull_request' && steps.diff.outputs.changed == '1'
+        # The branch name of a pull request is chosen by whoever opened it, so
+        # it goes in through env (see the Convert step), not into the script.
+        env:
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
           git config user.name  "diana-bot"
           git config user.email "diana-bot@users.noreply.github.com"
           git add data report.md
           git commit -q -m "data: converted $DIANA_COUNTRIES"
-          git push -q origin "HEAD:${{ github.event.pull_request.head.ref }}"
+          git push -q origin "HEAD:${PR_BRANCH}"
 
       - name: Post the diff report on the pull request
         if: github.event_name == 'pull_request'
