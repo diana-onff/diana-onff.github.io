@@ -409,7 +409,7 @@ The Admin panel includes a small form that builds this snippet for you, see
 **Everything is stored on this one device, in this one browser; nothing
 syncs.** Your callsigns, locator, country, quick words, language, statistics
 choice, the PINs of announcements you made and (if you ticked it) a remembered
-Admin token all live in that browser's local storage. Open Diana on your phone
+Admin token (encrypted) all live in that browser's local storage. Open Diana on your phone
 and then on your laptop, and you set it up again on the laptop: Diana has no
 account system to tie the two together. Clearing the browser's site data,
 using a private window, or removing the installed app clears these settings,

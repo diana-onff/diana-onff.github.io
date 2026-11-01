@@ -80,7 +80,7 @@ published app do not belong in the same place:
 | Main branch | usually `main`, and the same name in both |
 | Staging folder | where an uploaded file waits for approval — `incoming/`. The country you pick becomes a folder inside it |
 | Access token | a GitHub **fine-grained personal access token** |
-| "Remember the token on this device" | see the security note below — unticked by default |
+| "Remember the token on this device" | unticked by default; when ticked, the token is stored encrypted with a passphrase, see below |
 
 Leave the source repo empty and everything goes to the app repo. That is
 the arrangement from before the two-repository split; it still works, but
@@ -214,25 +214,63 @@ If you close the app in the seconds between merging and the move, the file
 stays in `incoming/`. That is untidy but harmless: nothing reads that folder
 on its own. The next time you open the Admin panel, Diana finishes the move.
 
+### Remembering the token: encrypted, with a passphrase
+
+Since v2.2.2 "Remember the token on this device" never stores the token
+itself:
+
+1. Fill in the token and tick **Remember the token on this device**.
+2. Two fields appear. Type a passphrase of **at least 10 characters**, twice,
+   and tap **Remember encrypted**. A few words work best, for example
+   `groene specht in het bos`; a short PIN would be guessed in minutes by
+   someone who copied the stored data.
+3. On the device only the encrypted token is stored (AES-GCM, with a key made
+   from your passphrase with PBKDF2-SHA256, 600,000 rounds, all the browser's
+   own Web Crypto).
+4. Next time you open the Admin panel, the token field is shut and Diana asks
+   for the passphrase: type it and tap **Unlock** (or Enter). The token is
+   then in memory for that tab only; reloading asks again.
+5. A pending upload waits while the panel is locked ("An upload is pending.
+   Unlock the token above to follow it up."). After unlocking it is followed
+   up exactly as before.
+6. **Forgot the passphrase?** Tap **Enter the token again**. The encrypted
+   copy is deleted and you paste your token as on the first day. Nothing else
+   is lost.
+7. **New token?** Paste it over the old one: the stored copy is deleted at
+   once and Diana asks for a passphrase again.
+8. Untick **Remember** to delete the stored copy.
+
+A token that an older version had stored in plain text is taken off the
+device the first time 2.2.2 starts. It stays usable for that one session,
+and the panel asks you to choose a passphrase or to untick remember.
+
+There is no limit on wrong attempts: in a browser that would be easy to wipe,
+so it would protect nothing. The length of the passphrase is the protection.
+
 ### A plain warning about the token
 
-Anything written to `localStorage` — which is what "remember the token on
-this device" does — is readable by anyone with access to that browser
-profile, and by any script that runs on that page. That is simply what
-`localStorage` is; Diana doesn't and can't change that. This is exactly why:
+Even encrypted, a remembered token is only as safe as the device and the
+passphrase. And while the panel is unlocked, the token is in the page's
+memory, readable by any script that runs on that page. This is exactly why:
 
-- the checkbox is **off by default** — the token is only kept in memory for
+- the checkbox is **off by default**: the token is only kept in memory for
   that browser tab unless you explicitly ask Diana to remember it
 - the token should be fine-grained, limited to the two Diana repositories
   (the public app repo and the private source repo), with only Contents,
-  Pull requests and Actions, nothing broader. (The warning in the panel
-  itself still says "THIS repository"; it means the same token.)
+  Pull requests and Actions, nothing broader
 - never paste the token anywhere else: not in a chat, not in an e-mail, not
   in a file in a repository. GitHub's push protection blocks a token in a
   commit, but not in a message
 - give it a short expiration and renew it rather than issuing one that
   never expires
 - never tick "remember" on a shared or public computer
+- a lost device: delete the token on github.com (your profile picture →
+  **Settings → Developer settings → Personal access tokens → Fine-grained
+  tokens** → the token → **Delete**) and make a new one
+
+An alternative that needs no passphrase in Diana at all: leave remember
+unticked and keep the token in your password manager, then fill it in from
+there each time.
 
 ### Generating an embed snippet
 
@@ -248,9 +286,9 @@ and it produces a ready-to-paste `<iframe>`:
 
 - The **other WWFF areas** (the blue dots) are off inside an embed unless
   `world=1` is in the address; the checkbox adds it.
-- The **spots** are on in every embed. The checkbox "Spots on by default"
-  adds `spots=1`, which changes nothing; to hide the spots, add `&spots=0` to
-  the address by hand. (Unticking the checkbox does not do that yet.)
+- The **spots** are on in every embed. Untick "Spots on by default" and the
+  code gets `spots=0`, which hides them (since v2.2.2; older snippets made
+  with the box unticked still show spots, add `&spots=0` to those by hand).
 
 `?embed=1` hides Diana's own navigation and header so the map fits cleanly
 into someone else's page layout: see

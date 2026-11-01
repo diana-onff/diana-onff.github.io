@@ -532,7 +532,7 @@ never called during normal browsing. Full flow in [ADMIN.md](ADMIN.md).
 | `localStorage` keys `diana.activator` / `diana.spotter` / `diana.chips` / `diana.bands` | the last callsigns used on the Spot screen, your five comment chips, your bands | No |
 | `localStorage` keys `diana.consent.seen` / `diana.consent.stats` | that the welcome screen was answered, and whether anonymous statistics are allowed | No |
 | `localStorage` keys `diana.wizard.done` / `diana.wizard.todo` / `diana.nearkm` / `diana.cond.last` | wizard progress, the Field info radius, the last space-weather numbers | No |
-| `localStorage` (admin keys) | remembered repository/branch/path, and the GitHub token **only if the "remember" checkbox was ticked** | No |
+| `localStorage` (admin keys) | remembered repository/branch/path, and, **only if the "remember" checkbox was ticked**, the GitHub token encrypted with the administrator's passphrase (`diana.adm.tokenenc`: AES-GCM, key from PBKDF2-SHA256 with 600,000 rounds; since v2.2.2 never the token itself) | No |
 | `localStorage` key `diana.agendas` | announcements made from this device: reference, date, and the PIN needed to edit or cancel them on Spotline's own site | No |
 | Cache Storage (service worker) | app shell, every file under `data/`, map tiles (LRU-capped) | No — per browser profile |
 

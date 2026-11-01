@@ -41,7 +41,7 @@ makes handover harder, not safer).
 |---|---|---|---|---|---|
 | `SOURCE_TOKEN` | Read access to the private `diana-source` repo | GitHub Actions **secret**, in the **public** repo (`diana-onff/diana-onff.github.io` → Settings → Secrets and variables → Actions → Secrets) | Nobody, once saved — GitHub secrets are write-only from that point on | Yes, if you gave it one when you created it (recommended) | The nightly build can't fetch the KMZ, falls back to `source/` in the public repo (empty, normally), and prints a `::warning::` in the Actions log. The site itself keeps working — this only stops *new* data from arriving |
 | `WWFF_API_KEY` | The whole point of the Worker — WWFF's API key | Cloudflare Worker **secret** (`wrangler secret put`), scoped to the `diana-spotline` Worker only | Nobody — Cloudflare encrypts it on entry; not the dashboard, not `wrangler`, not the API | No built-in expiry; WWFF can revoke or ask you to rotate it | Self-spotting and announcing stop working (`401` from the Worker); the map, the zone data and reading spots are unaffected — they never used this key |
-| An administrator's GitHub token | Write access to both repositories, from inside Diana's Admin panel | The browser's own memory for that tab, or `localStorage` on that one device if "remember" was ticked | That one person, on that one device | Whatever you set when creating it — 90 days is a sane default | That one person can no longer upload through the Admin panel until they make a new one. Nothing else is affected, and nobody else's token is touched |
+| An administrator's GitHub token | Write access to both repositories, from inside Diana's Admin panel | The browser's own memory for that tab, or, if "remember" was ticked, encrypted with that person's passphrase in `localStorage` on that one device (since v2.2.2) | That one person, on that one device, after typing the passphrase | Whatever you set when creating it — 90 days is a sane default | That one person can no longer upload through the Admin panel until they make a new one. Nothing else is affected, and nobody else's token is touched |
 | Cloudflare account login (`wrangler login`) | The ability to deploy the Worker or change its secrets/settings | Whoever's machine ran `wrangler login`; Cloudflare's own session | That person | Cloudflare sessions expire on their own after inactivity; re-run `wrangler login` | You can't deploy or rotate `WWFF_API_KEY` until someone logs in again — the Worker itself keeps running regardless |
 
 Two credentials that sound like secrets but are handled entirely by GitHub
@@ -112,8 +112,9 @@ theirs is about to expire, or already has:
 1. They create a new fine-grained token exactly as described in
    [ADMIN.md — Creating the token](ADMIN.md#connecting-to-a-repository).
 2. They open Diana's Admin panel and paste it in over the old one.
-3. If "remember" was ticked, the old value in `localStorage` is simply
-   overwritten — no separate step to "delete" the expired one.
+3. If "remember" was ticked, pasting the new token deletes the encrypted
+   copy of the old one, and Diana asks for a passphrase to remember the new
+   one. No separate step to "delete" the expired one.
 
 Nobody else needs to do anything. One administrator's expired token has zero
 effect on any other administrator, or on the site.
