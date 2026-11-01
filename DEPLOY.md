@@ -16,15 +16,15 @@ and how to replace one, see [docs/MAINTENANCE.md](docs/MAINTENANCE.md).
 There are two different things bundled in that question.
 
 **The zone boundaries are public regardless.** Diana is a static web app:
-every visitor's browser downloads `onff.geojson` to draw the map — that's how
+every visitor's browser downloads `data/zones/<prog>.geojson` to draw the map — that's how
 a static map works, on any hosting, public repository or not. Publishing
-Diana *as a web app* already means publishing the boundaries. They are
-already public in practice today, in the ONFF blog's own embedded Google My
-Maps.
+Diana *as a web app* already means publishing the boundaries. (For Belgium
+they were already public in practice, in the ONFF blog's own embedded Google
+My Maps.)
 
-**Making the *repository* public adds exactly one more thing: the original
-KMZ file**, redistributed on a second channel outside ONFF's own
-membership-gated groups.io. That file is largely a WDPA export (itself open
+**Making the *repository* public would add exactly one more thing: the
+original KMZ files**, redistributed on a second channel outside the
+programmes' own distribution (for ONFF, the membership-gated groups.io). That file is largely a WDPA export (itself open
 data), but distributing it is a courtesy question for ONFF's coordinator, not
 a technical one — which is why this project keeps that one file out of the
 public repository entirely, in a private repo of its own. See
@@ -35,14 +35,19 @@ public repository entirely, in a private repo of its own. See
 ## 2. What actually runs where
 
 ```
-diana-onff/diana-onff.github.io   (public)    the app, data/, docs/, the two
+diana-onff/diana-onff.github.io   (public)    the app, data/, docs/, the three
                                                 GitHub Actions workflows, and
-                                                the Worker's source code
+                                                the Worker's source code.
+                                                Branches: main (source),
+                                                gh-pages (the published site
+                                                and PR previews), conditions
+                                                (space weather, one commit)
         │
         │  build-data.yml checks this repo out with SOURCE_TOKEN,
         │  read-only, to reach the KMZ
         ▼
-diana-onff/diana-source            (private)   only the ONFF KMZ files, and
+diana-onff/diana-source            (private)   only the KMZ files, in
+                                                source/<PROG>/ per country, and
                                                 an `incoming/` waiting room for
                                                 an upload nobody has approved yet
 
@@ -70,9 +75,10 @@ actual ceilings and how far normal use sits below them.
 
 ## 3. Publishing a new release, day to day
 
-This is now [docs/ADMIN.md §1](docs/ADMIN.md#1-publishing-a-new-onff-release)
-in full — either a plain GitHub upload or Diana's own in-app Admin panel, both
-ending at the same pull request and the same preview-then-merge review. It
+This is now [docs/ADMIN.md §1](docs/ADMIN.md#1-publishing-a-new-release-for-a-country)
+in full: a coordinator e-mails the KMZ to wwffmembers@gmail.com, the Diana
+team uploads it in the in-app Admin panel, and a pull request with a preview
+is reviewed before it goes live. It
 isn't duplicated here to avoid the two documents drifting apart the way this
 one drifted from reality before this rewrite.
 
@@ -80,10 +86,12 @@ one drifted from reality before this rewrite.
 
 ## 4. Limits worth knowing when deploying
 
-- **GitHub's web upload limit is 25 MiB per file.** The ONFF KMZ is around
-  17 MB, so it fits; past 25 MiB it would need to go through git instead.
+- **GitHub's web upload limit is 25 MiB per file.** Only for the fallback
+  upload on github.com; the Admin panel goes through the API. The ONFF KMZ is
+  around 17 MB.
 - **GitHub Pages: 1 GB site, and a soft limit of roughly 10 builds an hour.**
-  Diana publishes a few megabytes, a handful of times a month.
+  Diana publishes some tens of megabytes (the worldwide points included),
+  once a night and after each merge.
 - The full list, including the ones that matter for ongoing operation (KV
   writes, the shared WWFF budget, Actions minutes) is in
   [MAINTENANCE.md §8](docs/MAINTENANCE.md#8-limits-worth-watching) — kept

@@ -1,6 +1,6 @@
 # Developer guide
 
-How to get the repository running on your own machine, how the two GitHub
+How to get the repository running on your own machine, how the three GitHub
 Actions workflows fit together, and how `data/*.json` actually gets made —
 both the automatic way and the manual one.
 
@@ -13,11 +13,15 @@ app itself, its data sources, its APIs) see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ```
 diana/
-├─ source/            official ONFF KMZ releases, as received from BOS groups.io
-├─ build/             KMZ → GeoJSON conversion                    ← build-time
-│  ├─ kmz2geojson.py
+├─ source/            empty on purpose: the KMZ files live in the private repo diana-source
+├─ build/             KMZ → GeoJSON conversion, and the other build scripts  ← build-time
+│  ├─ kmz2geojson.py  the conversion, one country per run
+│  ├─ conditions.py   fetches the space weather numbers (conditions.yml)
+│  ├─ radiozones.py   builds web/geo/radio-zones.json by hand, see MAINTENANCE.md §7
+│  ├─ paginabasis.sh  the site's base URL, shared by the workflows
 │  ├─ requirements.txt
-│  └─ site.sh         assembles the publishable folder (excludes source/)
+│  ├─ site.sh         assembles the publishable folder (excludes source/)
+│  └─ tests/          browser and build tests, see build/tests/README.md
 ├─ data/              the output — what the app actually loads
 │  ├─ countries.json       the manifest: which countries have boundaries, and which files
 │  │                       each is made of. Merged per build, never rewritten. Without it
@@ -29,8 +33,10 @@ diana/
 │  │  ├─ onff-index.json      lightweight index, no geometry
 │  │  └─ dlff.geojson … the same again for every other country
 │  ├─ wwff-programs.json    every WWFF programme worldwide → its country (for the spots filter)
-│  ├─ wwff-world.geojson    every active WWFF reference worldwide except the one just built,
-│  │                        as bare points
+│  ├─ wwff-world.geojson    every active WWFF reference worldwide, as bare points (the blue
+│  │                        dots); the app hides the ones of the country it has loaded
+│  ├─ wwff-activity.json    QSO count of every WWFF reference worldwide (0 = ATNO)
+│  ├─ sites/<prog>.json     the directory's website link per reference, for "More info"
 │  ├─ meta.json
 │  └─ onff*.json/geojson    the same Belgian files under their pre-manifest names, at the top
 │                           level. No longer written by the build; a fallback for an old
@@ -40,13 +46,17 @@ diana/
 │  ├─ index.html      the markup, and the <script> tags in the order they must run
 │  ├─ css/app.css     every style, one file (see below)
 │  ├─ js/             the logic, one file per screen or concern — see below
+│  ├─ geo/            radio-zones.json (CQ/ITU zones, ITU regions) and its NOTICE.txt
+│  ├─ kmz-guide.pdf   the KMZ format guide for coordinators
 │  ├─ manifest.webmanifest
 │  ├─ sw.js           service worker (offline cache)
 │  └─ vendor/         MapLibre GL JS, vendored locally (not a CDN)
+├─ worker/            the Cloudflare Worker in front of WWFF Spotline (SPOTLINE.md)
 ├─ docs/              this documentation set
 └─ .github/workflows/
-   ├─ build-data.yml  runs the conversion on a pull request
-   └─ pages.yml       publishes to GitHub Pages (with PR previews)
+   ├─ build-data.yml  the conversion: on a pull request, on request from the Admin panel, nightly
+   ├─ pages.yml       publishes to GitHub Pages (with PR previews)
+   └─ conditions.yml  space weather for the Conditions tab, twice an hour
 ```
 
 The split that matters: **`build/` runs on a GitHub-hosted runner and never
@@ -67,30 +77,36 @@ splash screen's `url("start.jpg")`, which needed `../` in front of it.
 ### `web/js/` — one file per screen, and why the order is not negotiable
 
 These were a single `app.js` of nearly 5800 lines until it was cut apart along
-the section headings that were already in it. They were not rewritten and not
-reordered: concatenating them in the order below reproduces that file
-character for character, apart from one line noted in `map.js`.
+the section headings that were already in it. Files added since (the wizard,
+the conditions, the privacy page and others) follow the same pattern. The
+table is in `<script>` order:
 
 | File | What lives in it |
 |---|---|
-| `core.js` | `$()`, `APP_VERSION`, the build stamp, the splash screen, `remember()`/`recall()` |
-| `i18n-strings.js` | the `STR` tables — eight languages, and by far the biggest file |
+| `core.js` | `$()`, `APP_VERSION`, the build stamp, the splash screen, `remember()`/`recall()`, `escH()` |
+| `radiogeo.js` | locator ↔ coordinates, distance and bearing, used by many screens |
+| `i18n-strings.js` | the `STR` tables: eight languages, and by far the biggest file |
 | `i18n.js` | picking a language, `t()`, `applyLang()`, `rerender()` |
-| `map-data.js` | the zone/index/activity state and everything that loads it |
-| `map.js` | the MapLibre map, all layers, selection, the detail panel, search, the popovers |
-| `spots.js` | the Spotline feed, filters, the list, arcs, the spot detail |
+| `map-data.js` | the manifest, the zone/index/activity state and everything that loads it, `selectedRefInfo()` |
+| `map.js` | the MapLibre map, all layers, selection, the detail panel (boundary, point, blue dot), search, the popovers |
+| `spots.js` | the Spotline feed, filters, the list, arcs, the spot detail, the agenda tab |
 | `install.js` | the "put Diana on your device" flow |
 | `gestures.js` | swipe-down-to-close on the bottom panels |
 | `nav.js` | the bottom bar and switching between full screens |
-| `settings.js` | Settings, the locator field, and where the map opens |
+| `settings.js` | Settings, the locator field, the country, and where the map opens |
+| `privacy.js` | the welcome screen (location, anonymous statistics) and the Privacy page |
+| `releases.js` | "What's new": the release notes, in Dutch and English |
 | `admin.js` | the whole admin screen: GitHub API, upload, pull request, cleanup, embed code |
-| `self-spot.js` | reporting a spot yourself (Screen 3) |
-| `agenda.js` | announcing an activation (Screen 3b) |
-| `session.js` | the activation session and GPS evidence (Screen 4) |
-| `rules.js` | the band plan and the rules screen (Screen 6) |
-| `nearby.js` | Nearby: the closest references and their activation history (Screen 7) |
-| `offline.js` | service worker registration, the update flow, downloading an area |
-| `geo.js` | point-in-polygon, distance, `bestFix()`/`locate()`, the status bar, the locate button |
+| `self-spot.js` | spotting yourself through the Worker, with the old form post as fallback |
+| `agenda.js` | announcing an activation, and your own PIN list |
+| `rules.js` | the band plan and the Rules screen |
+| `rules-text.js` | the WWFF rule texts shown on the Rules screen |
+| `nearby.js` | Field info, Areas tab: the closest references and their activation history |
+| `nearinfo.js` | Field info, Location tab: locator, zones, region, position details |
+| `conditions.js` | Field info, Conditions tab: Kp, SFI, band bars, storm rule |
+| `offline.js` | service worker registration, the update flow |
+| `geo.js` | point-in-polygon, `bestFix()`/`locate()`, the status card, the locate button |
+| `wizard.js` | the setup wizard and the tour after the first start |
 
 They are **ordinary scripts, not ES modules**, so they share one global scope
 exactly as the single file did — what `core.js` declares is what `spots.js`
@@ -102,11 +118,9 @@ That has three consequences worth knowing before you touch anything here:
 
 - **Append at the end of a file; do not move a line between files** without
   checking whether it runs at load time. A `function` declaration is hoisted
-  only within its own file now. As one file, `map.js`'s
-  `$('btnOffline').onclick = prefetchArea` worked even though `prefetchArea()`
-  is declared 2500 lines further down; across files that would silently be
-  `undefined`. It is wrapped in an arrow for exactly that reason — that one
-  line is the only thing the split changed.
+  only within its own file now: a handler assigned at load time in one file
+  to a function declared in a later file is `undefined` at that moment. Wrap
+  it in an arrow (`() => later()`) so the name is looked up when it runs.
 - **A new file has to be added in three places**: a `<script>` tag in
   `index.html`, an entry in `SHELL_FILES` in `sw.js`, and this table. Forget
   the second and the app works online and is broken offline, which you find
@@ -127,9 +141,9 @@ python3 -m http.server 8000
 ```
 
 Start the server **from the repository root**, not from `web/`. The app
-requests `../data/onff.geojson` (repository layout) and falls back to
-`./data/onff.geojson` (published layout) — starting the server inside `web/`
-puts `data/` outside the server root and both requests 404.
+requests `./data/countries.json` (published layout) and falls back to
+`../data/countries.json` (repository layout); starting the server inside
+`web/` puts `data/` outside the server root and both requests 404.
 
 No build step, no `npm install`, no bundler. `web/index.html` is a single
 static file; MapLibre GL JS is vendored under `web/vendor/` so the app has no
@@ -139,15 +153,16 @@ To also regenerate the data locally, see §4.
 
 ---
 
-## 3. The two GitHub Actions workflows
+## 3. The three GitHub Actions workflows
 
 ### `build-data.yml` — convert KMZ to GeoJSON
 
 | Trigger | What happens |
 |---|---|
-| Pull request touching `source/**.kmz`, `overrides.json`, or `build/**` | Runs `kmz2geojson.py`, commits the regenerated `data/*.json` to the PR branch, and posts (or updates) one PR comment with a diff report |
-| `schedule` — every night at **01:00 UTC** | Runs the same conversion against the newest KMZ already in `source/`, so the only thing that can actually change is whatever the WWFF directory itself changed since yesterday (new/renamed/retired references, updated QSO counts) — never a boundary, since those only come from a KMZ. The script runs with `--strict`, so an unreachable **or truncated** directory aborts the build instead of degrading; a **"Uitvoer controleren"** step then re-checks the *content* (zone count, and how many directory references were actually read) rather than merely whether the files are non-empty. Only past both does it commit — **directly to `main`**, no pull request — bumping the last digit of `APP_VERSION` in the same commit, and retrying the push up to three times with a rebase if `main` moved meanwhile. On failure, cancellation, or a run skipped for a missing KMZ, a **"Melding maken bij een mislukte nachtelijke build"** step opens a GitHub issue (or comments on the existing one) labelled `diana-nachtelijke-build` |
-| `workflow_dispatch` | Same conversion, run on demand from the Actions tab |
+| Pull request touching `source/**.kmz`, `overrides.json`, or `build/**` | Runs `kmz2geojson.py` per country, commits the regenerated data to the PR branch, and posts (or updates) one PR comment with a diff report |
+| `workflow_dispatch` with a `branch` input (the Admin panel) | Builds with the KMZ from `incoming/<country>/` in the private repo and puts the result on that branch; `main` is untouched. The panel then opens the pull request and puts the diff report in its description |
+| `schedule`: every night at **02:17 UTC** (off the full hour, when GitHub starts scheduled runs late) | Runs the same conversion, for every country, against the newest KMZ already in `source/<country>/` of the private repo, so the only thing that can actually change is whatever the WWFF directory itself changed since yesterday (new/renamed/retired references, updated QSO counts) — never a boundary, since those only come from a KMZ. The script runs with `--strict`, so an unreachable **or truncated** directory aborts the build instead of degrading; a **"Check the output"** step then re-checks the *content* (zone count, and how many directory references were actually read) rather than merely whether the files are non-empty. Only past both does it commit — **directly to `main`**, no pull request — retrying the push up to three times with a rebase if `main` moved meanwhile. On failure, cancellation, or a run skipped for a missing KMZ, an **"Open an issue or add to it"** step opens a GitHub issue (or comments on the existing one) labelled `diana-nachtelijke-build` |
+| `workflow_dispatch` without a branch | Same as the nightly run, on demand from the Actions tab |
 
 The nightly run is what makes brand-new WWFF references (and status/QSO
 changes) show up without anyone touching the repository, and — unlike a KMZ
@@ -164,7 +179,7 @@ The diff report looks like:
 > **945 zones** (was 932, +13) · **15 new** · **2 removed** · **7 boundary changed**
 
 with the actual lists collapsed under a `<details>` toggle. A removed zone is
-real information — ONFF does retire reference numbers — so it is always
+real information — programmes do retire reference numbers — so it is always
 surfaced, never silently applied.
 
 The comment is marker-based (`<!-- diana-preview -->`-style), so pushing a
@@ -193,9 +208,10 @@ drag-and-drop upload, etc.) is in [DEPLOY.md](../DEPLOY.md).
 
 `build/site.sh` assembles `_site/` from `web/` plus the data the app loads —
 `data/countries.json`, the whole of `data/zones/`, and the files shared by every
-country — and **excludes `source/`** — the KMZ never becomes part of the
-published site, even though it lives in the repository's git history so the
-Action can read it.
+country — and **excludes `source/`**. The KMZ never becomes part of the
+published site; it lives in the private repo, and the workflow fetches it
+with `SOURCE_TOKEN`. The script also replaces the build stamp and the service
+worker's `VERSION`, so every publication is a new version for the app.
 
 This script is a place to be careful. It once listed the Belgium-only filenames
 from before the manifest existed, and kept listing them after the build had
@@ -224,6 +240,24 @@ pull request (new KMZ)
    pages.yml ── publishes to the live site
 ```
 
+From the Admin panel the start is different (the KMZ goes to `incoming/` in
+the private repo and the panel starts `build-data.yml` with a branch name),
+but from the pull request onwards it is the same picture. See
+[ADMIN.md §2](ADMIN.md#2-the-in-app-admin-panel).
+
+### `conditions.yml`: space weather
+
+Twice an hour (`7,37 * * * *`) and on request, `build/conditions.py` fetches
+Kp, solar flux, A index and sunspot number from NOAA SWPC and writes
+`conditions.json` to a branch of its own, `conditions`, force-pushed so it
+always holds one commit. The app reads it from
+`raw.githubusercontent.com/<owner>/<repo>/conditions/conditions.json`. Not on
+`main` on purpose: every commit there republishes the site and would give the
+app a new version 48 times a day. A source that is down keeps its previous
+value with its own timestamp; the app warns once the numbers are older than
+8 hours. GitHub starts scheduled runs on a best-effort basis, so gaps of a few
+hours happen.
+
 ---
 
 ## 4. Generating `data/*.json` manually
@@ -233,7 +267,7 @@ a pull request, or you're iterating on `overrides.json`.
 
 ```bash
 pip install -r build/requirements.txt --break-system-packages
-python build/kmz2geojson.py --kmz "source/ONFF 20260101.kmz"
+python build/kmz2geojson.py --kmz "ONFF_20260101.kmz" --program ONFF
 ```
 
 Takes roughly half a minute for the full Belgian dataset.
@@ -247,7 +281,7 @@ Takes roughly half a minute for the full Belgian dataset.
 | `--overrides` | `overrides.json` | manual name-correction file |
 | `--report` | `report.md` | where the diff report is written |
 | `--refs-csv` | `https://wwff.co/wwff-data/wwff_directory.csv` | the WWFF directory (URL **or** local path) — the list of which references exist |
-| `--program` | `ONFF` | comma-separated reference prefixes to keep from the directory, e.g. `ONFF,PAFF,DLFF` for a wider map |
+| `--program` | `ONFF` | the WWFF programme this KMZ belongs to, one per run. It decides which references are read from the directory, how they are recognised in the KMZ, and the output names (`data/zones/<prog>.*`) |
 | `--no-refs` | off | skip the directory entirely — for builds with no network |
 | `--strict` | off | exit non-zero if the directory is unreachable **or looks truncated** (fewer rows than expected, or a sharp drop against the previous build) instead of continuing with less data. The nightly run uses this: nothing written beats bad data committed unattended |
 
@@ -264,9 +298,11 @@ code, via a repository variable `ONFF_REFS_CSV`.
 ### What the script actually does
 
 1. Parses the KML inside the KMZ with `lxml`.
-2. Extracts the ONFF reference number from the **folder name**, not a data
-   field — placemarks are grouped under folders named `ONFF-nnnn <name>`.
-   This is a real quirk of the source data, not a design choice; see
+2. Finds the reference number of each placemark. In the ONFF export it is in
+   the **folder name**, not a data field (folders named `ONFF-nnnn <name>`);
+   other exports carry it elsewhere, and the script looks in names, folders
+   and attributes. A file whose references belong to another programme than
+   `--program` is refused. See
    [ARCHITECTURE.md](ARCHITECTURE.md#21-the-onff-kmz-one-layer-further-back).
 3. Merges every polygon under one reference number into a single
    `MultiPolygon` with `shapely.ops.unary_union` — some references (e.g.
@@ -277,30 +313,33 @@ code, via a repository variable `ONFF_REFS_CSV`.
    candidate names per reference, then applies `overrides.json` on top,
    keyed by reference number — **never by name**, so a correction survives
    the next release even if the source spelling changes again.
-6. Writes `data/onff.geojson` (full geometry), `data/onff-index.json` (the
-   same list without geometry — for search and lists without loading the
-   large file), and `data/meta.json` (provenance: source file, release date,
-   settings used).
+6. Writes `data/zones/<prog>.geojson` (full geometry),
+   `data/zones/<prog>-index.json` (the same list without geometry, for
+   reports and tooling), and `data/meta.json` (provenance: source file,
+   release date, settings used).
 7. Fetches the WWFF directory (`--refs-csv`), keeps the rows for `--program`,
    drops everything whose `status` is not `active`, and joins it to the polygons
    on the reference number. References with no polygon are written to
-   `data/onff-points.geojson` as Points — positioned from `overrides.json`
+   `data/zones/<prog>-points.geojson` as Points — positioned from `overrides.json`
    (`"point": [lon, lat]`, always wins), then the directory's coordinates, then
    its IARU locator. References with none of those are reported, not invented.
    The QSO count and last-activation date of every reference go to
-   `data/zones/<program>-activity.json`, which is what the Nearby screen and
-   the zone panel show. Every output of a run is per country and carries the
+   `data/zones/<program>-activity.json`, which is what Field info and the area
+   panel show. Every output of a run is per country and carries the
    programme in its name; `--program` decides which, one country per run. The
    run then merges itself into `data/countries.json` rather than rewriting it —
    see [ARCHITECTURE.md §2.1b](ARCHITECTURE.md#21b-one-country-per-file-and-a-manifest-over-them). Separately — over the **whole** directory, ignoring
    `--program` — every programme code is tallied against its most common
    `country` value and written to `data/wwff-programs.json`; and every active
-   reference that is *not* ONFF is written to `data/wwff-world.geojson` as a
-   bare `{ref, name}` Point (no boundary — same rule as the boundary-less ONFF
-   references above). The map's own zones stay ONFF-only regardless; these two
-   files feed, respectively, the spots screen's country picker and the
-   optional "other WWFF areas" map layer (on by default, see
-   [ARCHITECTURE.md §2.1.3](ARCHITECTURE.md#213-other-wwff-areas-worldwide)).
+   reference worldwide is written to `data/wwff-world.geojson` as a bare
+   `{ref, name}` Point, the loaded country's own included (the app hides
+   those, since it shows their boundaries). Over the whole directory too:
+   `data/wwff-activity.json` (QSO count per reference, 0 = ATNO) and
+   `data/sites/<prog>.json` (website links for "More info"). These feed the
+   spots screen's country filter and ATNO mark, the "other WWFF areas" map
+   layer (on by default, see
+   [ARCHITECTURE.md §2.1.3](ARCHITECTURE.md#213-other-wwff-areas-worldwide)),
+   and the panel of a blue dot.
 8. Diffs the new output against the previous release and writes
    `report.md` — new zones, removed zones, boundary changes, and how many
    boundary-less references were placed or left unplaced.
@@ -322,12 +361,23 @@ like a new KMZ would.
 
 ---
 
-## 5. Publishing a new ONFF release (short version)
+## 5. Publishing a new release for a country (short version)
 
-The full walkthrough, with screenshots-worth of detail, is in
-[ADMIN.md](ADMIN.md#1-publishing-a-new-onff-release). In short: upload the
-new KMZ to `source/` on a branch → open a pull request → `build-data.yml`
-comments the diff, `pages.yml` comments a preview link → look at the
-preview → merge to publish, or close/revert to discard. No local checkout is
-required for this path at all — it can be done entirely from github.com, or
-from Diana's own in-app Admin panel (§`ADMIN.md`).
+The full walkthrough is in [ADMIN.md §1](ADMIN.md#1-publishing-a-new-release-for-a-country).
+In short: a coordinator e-mails the KMZ to wwffmembers@gmail.com → a team
+member uploads it in Diana's Admin panel → the file waits in `incoming/` of
+the private repo, `build-data.yml` converts it on a branch, the panel opens
+a pull request with the diff report, `pages.yml` publishes a preview → look
+at the preview → **Publish** (merge) to go live, or **Reject**. No local
+checkout is needed.
+
+## 6. Tests
+
+`build/tests/` holds Playwright browser tests and build tests, one script per
+feature, each runnable on its own (`python3 build/tests/test_<name>.py`
+against a local server on port 8011). [build/tests/README.md](../build/tests/README.md)
+lists them, one line each. Known since v2.2.1: one check each in
+`test_new.py` ("points really do render"), `test_final.py` ("button in the
+panel fully usable again") and `test_worldpoints.py` ("on your own country,
+only its points are left") fails on a detail that changed after the test was
+written; the app itself is fine there.

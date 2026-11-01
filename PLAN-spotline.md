@@ -1,3 +1,10 @@
+> **Historisch document.** Dit is het oorspronkelijke stappenplan voor de
+> Spotline-integratie, bewaard voor de geschiedenis en de afwegingen. Het
+> beschrijft niet de huidige toestand. Hoe het nu werkt staat in
+> [docs/SPOTLINE.md](docs/SPOTLINE.md) en [worker/README.md](worker/README.md);
+> sommige stappen hieronder (zoals de instelling "altijd op de oude manier
+> versturen") zijn later weer verdwenen.
+
 # Stappenplan — Spotline-API, proxy, installatie en documentatie
 
 Werkdocument voor de overstap van "spots lezen" naar "spots en agenda's

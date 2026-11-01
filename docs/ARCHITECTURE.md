@@ -13,27 +13,30 @@ Diana has **no backend of its own**. It is a static site: `web/index.html` for
 the markup, `web/css/app.css` for the styles, and `web/js/` for the logic — one
 file per screen or concern, loaded in a fixed order as plain scripts sharing
 one global scope (see `DEVELOPER.md` for the table and the rules that come
-with that order). Plus three small JSON files it reads at load time, plus a
-handful of third-party endpoints it calls directly from the visitor's browser.
+with that order). Plus the data files under `data/` it reads at load time,
+plus a handful of endpoints it calls directly from the visitor's browser.
 
 ```
                          ┌─────────────────────────┐
-                         │   visitor's browser      │
-                         │                          │
-                         │   web/index.html         │
-                         │   (map, screens, logic)  │
-                         └────────────┬─────────────┘
+                         │   visitor's browser     │
+                         │   web/index.html        │
+                         │   (map, screens, logic) │
+                         └────────────┬────────────┘
                                       │
-        ┌─────────────────┬──────────┼──────────────┬───────────────────┐
-        ▼                 ▼          ▼               ▼                   ▼
- data/countries     tiles.openfreemap  spots.wwff.co   api.github.com
- data/zones/*       .org (map tiles)   (spots, agenda,  (Admin panel
- data/meta.json     from this repo's   self-spot POST,   only — see
- (same repo,        published gh-pages  ref validation)   ADMIN.md)
-  no API needed)
+   ┌──────────────┬───────────────┬───┴───────────┬────────────────┬──────────────┐
+   ▼              ▼               ▼               ▼                ▼              ▼
+ data/*         tiles.         spots.wwff.co   diana-spotline   raw.github-    api.github.com
+ (same site:    openfreemap    (read: spots,   .workers.dev     usercontent    (Admin panel
+ countries,     .org           agenda)         (write: spot,    .com           only, see
+ zones, world,  (base map)                     announce; holds  (conditions    ADMIN.md)
+ activity,                                     the API key)     branch: space
+ sites, meta)                                                   weather)
+
+ cloud.umami.is: anonymous visit counts, only loaded after an explicit yes
 ```
 
-Nothing here needs a server Diana controls. The service worker
+Nothing here needs a server Diana runs, apart from the small Cloudflare
+Worker that keeps WWFF's API key out of the page (§2.3). The service worker
 (`web/sw.js`) adds an offline cache on top of exactly these same requests —
 it does not introduce a new data source.
 
@@ -46,9 +49,13 @@ it does not introduce a new data source.
 | `data/countries.json` | small | the map, first of all | one entry per programme that has boundaries: its country name, counts, release, and which files belong to it. The app reads this to know what it can load; a data set from before it existed has none, and the app then falls back to the Belgian filenames it always used |
 | `data/zones/onff.geojson` | 3.7 MB (≈1 MB gzipped) | the map, on load | one `MultiPolygon` per ONFF reference, with name, province, area, and whatever attributes the source KMZ provided |
 | `data/zones/onff-points.geojson` | small | the map, on load (optional — a missing file is not an error) | one `Point` per reference that exists on the ONFF list but has **no boundary** in the KMZ |
-| `data/zones/onff-activity.json` | 39 kB | the zone detail panel (on load) and the Nearby screen | QSO count and last-activation date per reference, taken from the WWFF directory. Since v1.8.0 this is the **only** source of activation figures — see §2.2 |
+| `data/zones/onff-activity.json` | 39 kB | the zone detail panel (on load) and Field info, Areas tab | QSO count and last-activation date per reference, taken from the WWFF directory. Since v1.8.0 this is the **only** source of activation figures — see §2.2 |
 | `data/wwff-programs.json` | 7.5 kB | the Spots screen and Settings, to fill the "one specific country" list | every WWFF programme in the directory (worldwide) mapped to its country — has nothing to do with which zones the map draws |
 | `data/wwff-world.geojson` | 9.4 MB (≈1.4 MB gzipped) | the map, on load (optional — a missing file just leaves the layer empty) | one `Point` per active WWFF reference worldwide (~64,700 of them, and that count includes countries that already have boundaries elsewhere — see §2.1b), with only `ref` and `name` — never a boundary, for the same reason `onff-points.geojson` never invents one. The client, not this file, leaves out the one country whose boundaries it actually has loaded |
+| `data/wwff-activity.json` | ~1 MB | the Spots screen (ATNO mark, QSO count) and the panel of a blue dot | the QSO count of every active WWFF reference worldwide, `ref → count`; 0 means never activated (ATNO). The loaded country's own table wins where both have a figure |
+| `data/sites/<prog>.json` | small, one per programme | the "More info" link in a spot's sheet and in an area panel, fetched only for the programme needed | the directory's website link per reference |
+| `web/geo/radio-zones.json` | ~0.4 MB | Field info, Location tab, and the radio facts in an area panel | CQ and ITU zone and ITU region boundaries, from HB9HIL/hamradio-zones-geojson (MIT, see `web/geo/NOTICE.txt`). Built by hand with `build/radiozones.py`, not by the nightly build |
+| `conditions.json` on the branch `conditions` | small | Field info, Conditions tab | Kp, solar flux, A index, sunspot number from NOAA SWPC, with the time each was fetched. Written twice an hour by `conditions.yml`, read from `raw.githubusercontent.com`; the last good copy is kept in `localStorage` (`diana.cond.last`) for offline use |
 | `data/zones/onff-index.json` | 210 kB | **not loaded by the app** — it exists for tooling, reports and anything built alongside Diana | the zone list **without geometry**: reference, name, province, area, centroid, bounding box, plus a `points` array covering the boundary-less references (including those with no known coordinate, which therefore appear in no other file) |
 | `data/meta.json` | small | not shown to the user; provenance only | which source KMZ, which release date, which build settings, and how many boundary-less references were placed or left unplaced |
 
@@ -59,7 +66,7 @@ file.
 
 The app tries `./data/...` first (published layout, data next to
 `index.html`) and falls back to `../data/...` (repository layout, one level
-up) — see `loadData()` / `fetchFirst()` in `index.html`. This is what lets
+up) — see `fetchFirst()` / `dataURL()` in `web/js/map-data.js`. This is what lets
 the exact same file work whether you're browsing the published site or a
 checkout served from the repo root.
 
@@ -117,14 +124,15 @@ which of them have a *boundary*. The two are joined on the reference number:
 | in the KMZ, **not** in the directory | flagged as a warning in the build report — currently none |
 
 That table is the whole de-duplication rule: **a polygon always wins, so a
-reference is drawn once and only once.** 932 + 16 = 948 = exactly the number of
-active ONFF references the directory lists.
+reference is drawn once and only once.** Boundaries plus points add up to
+exactly the number of active references the directory lists for that
+programme (for ONFF at the time of writing: 932 + 16 = 948).
 
 The same directory read also produces `data/wwff-programs.json` — every WWFF
 programme in the file (not only ONFF) mapped to its country, e.g.
 `{"program":"PAFF","country":"Netherlands"}`. This has nothing to do with the
-map itself, which stays ONFF-only regardless; it exists purely so the **spots
-screen** can offer "just this country" without Diana shipping a hand-maintained
+boundaries on the map; it exists so the **spots screen** (and the country
+setting) can offer "just this country" without Diana shipping a hand-maintained
 country list that would drift out of date. A reference's programme is read
 straight from its own prefix (`PAFF-0104` → `PAFF`) — the same string the
 directory's own `program` column carries — so the app needs no separate
@@ -190,8 +198,15 @@ loaded into this session — is available as a separate, optional layer sourced
 from `data/wwff-world.geojson` (§2.1.1). Points only, same "point ≠ boundary"
 rule as §2.1.2, and drawn with MapLibre's built-in `cluster:true` GeoJSON
 clustering so a world-zoom view shows a manageable number of circles instead
-of tens of thousands of overlapping dots; clicking a cluster zooms in,
-clicking an individual point shows its reference and name in a popup.
+of tens of thousands of overlapping dots; clicking a cluster zooms in.
+Clicking an individual point (since v2.2.0) opens the same panel as a
+reference without a boundary, filled with what Diana knows about it from the
+shared files only: locator, zones, QSO count or ATNO, distance and bearing,
+website. No empty fields. For a country Diana has boundaries for but has not
+loaded, the panel offers **Show <country>**, which switches the country
+setting and reopens the same reference with its boundary. `selectedRefInfo()`
+in `map-data.js` is what lets Spot and Agenda take the reference from any of
+the three kinds of panel.
 
 On by default (`showWorld = true`), matching the "everything worldwide"
 default chosen for spots — see §2.3. It follows the one country setting
@@ -367,7 +382,8 @@ out of 946 — while `data/onff-activity.json`, already sitting in the same
 release, had a QSO total and a last-activation date for 926 of them. ONFF-0002
 has thousands of QSOs and a 2024 activation, and the heatmap called it never
 touched. A number that is wrong in a way the reader cannot see is worse than
-no number, so the screen was replaced by **Nearby** (`web/js/nearby.js`),
+no number, so the screen was replaced by **Nearby** (`web/js/nearby.js`, today
+the Areas tab of **Field info**),
 which reads `data/onff-activity.json` only.
 
 What that costs: no per-year breakdown, and no colouring of the zones on the
@@ -442,8 +458,8 @@ used to be the only route. Form submissions are not subject to CORS, so this
 works even when the Worker does not. It is offered automatically when the
 Worker is unreachable, switched off, or over its daily ceiling — but not when
 Spotline has *refused* the spot, because the old route would refuse it too and
-simply not tell you. It can also be made permanent per device with "Always
-send the old way" in Settings. What it cannot do is confirm anything: you see
+simply not tell you. (The Settings option "Always send the old way" was
+removed in v2.0.) What it cannot do is confirm anything: you see
 that the spot left, not that it arrived.
 
 **Announcing an activation (Fase 4) reuses the same Check/Send pattern and
@@ -511,11 +527,18 @@ never called during normal browsing. Full flow in [ADMIN.md](ADMIN.md).
 | `localStorage` key `diana.lang` | language preference: a language code, or `auto` to follow the browser. Absent means English | No |
 | `localStorage` keys `diana.call` / `diana.callp` / `diana.grid` / `diana.view` | callsign, portable callsign, grid locator, home-view preference | No |
 | `localStorage` keys `diana.installed` / `diana.inst.asked` | whether the app was installed, and whether the install banner has already been dismissed once (the banner then stays hidden for good — Settings' own "Install as an app" card keeps working regardless, it is not gated on this flag) | No |
-| `localStorage` keys `diana.spotFilter` / `diana.worldFilter` | which spots/agenda items to show (`'all'`, `'onff'`, or a programme code), and the same choice for the "other WWFF areas" map layer — two independent settings, see §2.1.3 and §2.3 | No |
+| `localStorage` key `diana.homeprog` | the country whose boundaries are loaded (§2.1b) | No |
+| `localStorage` keys `diana.spotFilter2` / `diana.spots` | which spots and agenda items to show (`'all'` or a programme code; the blue dots follow the same choice, §2.1.3), and whether the spots layer is on | No |
+| `localStorage` keys `diana.activator` / `diana.spotter` / `diana.chips` / `diana.bands` | the last callsigns used on the Spot screen, your five comment chips, your bands | No |
+| `localStorage` keys `diana.consent.seen` / `diana.consent.stats` | that the welcome screen was answered, and whether anonymous statistics are allowed | No |
+| `localStorage` keys `diana.wizard.done` / `diana.wizard.todo` / `diana.nearkm` / `diana.cond.last` | wizard progress, the Field info radius, the last space-weather numbers | No |
 | `localStorage` (admin keys) | remembered repository/branch/path, and the GitHub token **only if the "remember" checkbox was ticked** | No |
 | `localStorage` key `diana.agendas` | announcements made from this device: reference, date, and the PIN needed to edit or cancel them on Spotline's own site | No |
-| Session GPX track (in memory / downloaded file) | an activation session's GPS trace | Not stored at all beyond the download — never uploaded anywhere |
-| Cache Storage (service worker) | app shell, the three `data/*.json` files, map tiles (LRU-capped) | No — per browser profile |
+| Cache Storage (service worker) | app shell, every file under `data/`, map tiles (LRU-capped) | No — per browser profile |
+
+The GPS position is used on the device only (distance, bearing, which area
+you are in, your locator) and is never sent anywhere. It goes into a spot only
+as the reference you chose, never as coordinates.
 
 There is no account system and no server-side state anywhere in Diana. Every
 one of these lives in one browser, on one device. See
@@ -526,18 +549,27 @@ in practice for someone using Diana on more than one device.
 
 ## 4. Offline behaviour (service worker)
 
-`web/sw.js` applies one rule consistently: **cache-first for anything that's
-reviewed and versioned, network-first with a visible fallback for anything
-that has to be fresh.**
+`web/sw.js` applies one rule consistently: **network-first with the cache
+as a safety net for anything that has to be fresh, cache-first only for what
+never changes within a version.**
 
 | Request | Strategy |
 |---|---|
-| App shell (`index.html`, `manifest.webmanifest`, vendored MapLibre, every `data/*.json`/`data/*.geojson` file including `wwff-world.geojson`, in both possible layouts) | cache-first, refreshed opportunistically |
-| Map tiles (`tiles.openfreemap.org`) | cache-first, own cache bucket, roughly LRU-trimmed at 3000 entries (~60 MB) |
-| Live data (`spots.wwff.co`) | network-first; falls back to the last cached response only if the network request fails, so a visitor is never shown stale spots without the app having tried for fresh ones first |
+| The page itself (navigation) | network-first with a 3.5 s timeout, otherwise the cached `index.html` |
+| Everything under `data/`, subfolders included | `dataVers()`: the fresh copy if it arrives complete within 3.5 s, otherwise the copy on the device, with the fresh one stored for next time. Own cache `diana-data` |
+| Map tiles (`tiles.openfreemap.org`) | cache-first, own cache `diana-tiles`, roughly LRU-trimmed at 3000 entries (~60 MB) |
+| Live data (`spots.wwff.co`) | network-first; the last cached response only if the network fails |
+| The rest of the shell (scripts, styles, vendor, icons) | cache-first in `diana-vN-shell`; it only changes with `VERSION` |
 
-Caches are versioned (`diana-v3-shell`, `diana-v3-tiles`); a version bump in
-`sw.js` drops every old cache on activation.
+`build/site.sh` gives `VERSION` a new value on every publication, so a new
+service worker arrives with nearly every nightly refresh. On activation it
+deletes only the previous **shell** cache: `diana-data` and `diana-tiles`
+keep their names on purpose, so an overnight update never takes the map or
+the boundaries away from someone who opens the app in the field without
+signal (`build/tests/test_sw_update.py`).
+
+The space-weather file on `raw.githubusercontent.com` does not go through the
+service worker's caches; `conditions.js` keeps its own last good copy.
 
 ---
 
@@ -546,20 +578,29 @@ Caches are versioned (`diana-v3-shell`, `diana-v3-tiles`); a version bump in
 ```
 load index.html
    │
-   ├─ loadData() ── data/onff.geojson + onff-index.json + meta.json
-   │                (independent of the map — search, rules, session
-   │                 screens all work even if the map never loads)
+   ├─ data/countries.json, then the chosen country's data/zones/<prog>.*
+   │     and data/meta.json   (independent of the map: search, rules and the
+   │                           other screens work even if the map never loads)
    │
    ├─ map init ── tiles.openfreemap.org (style + vector tiles)
-   │              paintZones() once both data AND style are ready
+   │              boundaries and points drawn once both data AND style are ready
+   │
+   ├─ data/wwff-world.geojson ── the blue dots, after the country's own data
    │
    ├─ startSpots() ── spots.wwff.co/static/{spots,agendas_active,agendas}.json
-   │                  polled every 30s while a relevant screen is open
+   │                  polled every 30 s while a relevant screen is open;
+   │                  data/wwff-activity.json for the QSO counts and ATNO
    │
-   ├─ Nearby screen opened ── data/onff-activity.json, from this repo
+   ├─ Field info opened ── activity table (Areas), web/geo/radio-zones.json
+   │                        (Location), conditions.json from raw.githubusercontent.com
+   │                        (Conditions)
    │
-   ├─ self-spot submitted ── real form POST to spots.wwff.co/spots/store
-   │                          (bypasses fetch/CORS entirely)
+   ├─ Spot: Check, then Send ── POST to the Worker, which calls the Spotline API
+   │      (only if the Worker fails: the old form post to spots.wwff.co/spots/store,
+   │       offered as a button)
+   ├─ Agenda: announce ── POST to the Worker
+   │
+   ├─ statistics ── cloud.umami.is, only after an explicit yes on the welcome screen
    │
    └─ Admin panel used ── api.github.com, only on explicit user action
 ```

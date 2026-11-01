@@ -20,7 +20,7 @@ access, and there are two clearly different jobs hiding behind that one word:
 
 | | **Content administrator** | **Technical maintainer** |
 |---|---|---|
-| Does | Publishes new ONFF releases: uploads a KMZ, looks at the preview, merges or rejects | Everything a content administrator does, **plus** touching secrets, redeploying the Worker, changing repository settings |
+| Does | Publishes new releases for a country: uploads the KMZ a coordinator sent in, looks at the preview, publishes or rejects | Everything a content administrator does, **plus** touching secrets, redeploying the Worker, changing repository settings |
 | Needs | GitHub **Write** access to both repositories, and their own fine-grained token (§4) | The above, **plus** GitHub **Admin/Owner** rights on both repositories, and access to the project's Cloudflare account |
 | Cannot do | Read or change any secret, redeploy the Worker, change branch protection or Actions settings | — |
 | How many, realistically | As many as you trust to publish | One or two — every extra person here is someone who could print `WWFF_API_KEY` in a workflow log or drain the Cloudflare account |
@@ -69,7 +69,7 @@ this repository.
    once).
 7. Go to the **public** repo → **Settings → Secrets and variables → Actions →
    Secrets** tab → find `SOURCE_TOKEN` → **Update** → paste the new value.
-8. Verify: **Actions → "Build ONFF data" → Run workflow**, leave the branch
+8. Verify: **Actions → "Build map data" → Run workflow**, leave the branch
    field empty, run it. Open the run and check the "Determine the source
    directory" step — it should say `Source: private repo diana-onff/diana-source`
    with **no** `::warning::` line above it.
@@ -222,6 +222,45 @@ makes a handover harder, not safer:
 
 ---
 
+## 6a. The GitHub security settings
+
+Set once, checked every now and then. Everything below is on today, except
+where it says *advised*; this is the list to compare against.
+
+**Organisation (`diana-onff`)**: github.com → your profile picture → **Your
+organizations** → `diana-onff` → **Settings**. (Check the top left of the
+settings page: it must show the organisation, not a repository.)
+
+| Setting | Where | Value | Why |
+|---|---|---|---|
+| Two-factor authentication | Authentication security | **Require two-factor authentication**, with **Only allow secure two-factor methods** | A stolen password alone is not enough. A member without 2FA loses access to the organisation's repositories (stays a member) until they turn it on |
+| Fine-grained tokens | Personal access tokens → Settings | allowed; *advised*: a maximum lifetime of 90 days or less | The Admin panel needs one; a short lifetime limits a leaked one |
+| Owners | People | one owner today; *advised*: a second owner | Without a second owner, losing that one account locks everyone out of the settings |
+
+Check the members now and then: **People** → filter **Two-factor** →
+anything other than *Secure* should list nobody.
+
+**Public repo (`diana-onff.github.io`)**: the repository → **Settings**.
+
+| Setting | Where | Value | Why |
+|---|---|---|---|
+| Workflow permissions | Actions → General | **Read and write permissions** | The workflows commit data and publish `gh-pages` |
+| Fork pull request workflows | Actions → General | **Require approval for all external contributors** | A stranger's pull request runs nothing until a team member approves it. Uploads by the team are not affected |
+| Secret Protection, Push protection | Code security (newer screens: Advanced Security) | **on** | GitHub warns about, and blocks, a token pushed by mistake |
+| Ruleset on `main` | Rules → Rulesets | **Restrict deletions** and **Block force pushes**, active | `main` is the live site: it cannot be deleted or rewritten. Merging pull requests and the nightly commit still work |
+| Pages | Pages | branch `gh-pages`, folder `/ (root)` | See [INSTALL.md](INSTALL.md) |
+| Secret `SOURCE_TOKEN`, variable `SOURCE_REPO` | Secrets and variables → Actions | read-only token for `diana-source` (§3.1) | |
+
+**Private repo (`diana-source`)**: no workflows and no secrets. Only
+collaborators with **Write** (§4) and the read-only `SOURCE_TOKEN` reach it.
+
+The app escapes every value from a data file or from GitHub before it puts it
+on screen, and the workflows pass branch names through environment
+variables, never straight into a script (since v2.2.1, see
+`build/tests/test_escape.py`). Keep both habits in any change.
+
+---
+
 ## 7. Things that go stale quietly
 
 A checklist worth reading every few months, because none of these announce
@@ -239,10 +278,12 @@ themselves the way an expired password does:
   | (your own admin-panel token) | _fill in_ | _fill in_ | |
 
 - **GitHub disables an inactive scheduled workflow after 60 days.** If the
-  repository sees no activity at all for two months, the nightly `01:00 UTC`
-  build quietly stops running — GitHub emails the repository owner when this
-  happens, and re-enabling it is one click on **Actions → "Build ONFF data" →
-  "Enable workflow"**. On an active project this practically never triggers,
+  repository sees no activity at all for two months, the nightly `02:17 UTC`
+  build and the half-hourly *Space weather* run quietly stop — GitHub emails
+  the repository owner when this happens, and re-enabling each is one click on
+  **Actions → "Build map data"** (or **"Space weather"**) **→ "Enable
+  workflow"**. A stale Conditions tab in the app (the 8-hour warning) is the
+  first sign. On an active project this practically never triggers,
   but a quiet period (a slow winter, an admin on leave) can be enough.
 - **The nightly build can fail without anyone noticing unless someone reads
   GitHub's notifications.** See §10.
@@ -251,7 +292,7 @@ themselves the way an expired password does:
   (used by the nightly run) refuses to build on a truncated or unreachable
   copy rather than publishing bad data; see §10 for what that failure looks
   like.
-- **The zone file for Nearby > Info (`web/geo/radio-zones.json`) is not part
+- **The zone file for Field info > Location (`web/geo/radio-zones.json`) is not part
   of the nightly build.** CQ and ITU zones and ITU regions change perhaps
   once a decade, so the file is built by hand and committed. If
   HB9HIL/hamradio-zones-geojson publishes corrected lines, or a country in
@@ -272,7 +313,7 @@ they're easy to forget about until the one week they matter:
 | Cloudflare KV writes | 1,000/day, free tier | The rate-limit counters themselves start failing to write — see `worker/README.md`'s "Limits, and why these numbers" section for how far normal traffic sits below this |
 | GitHub Actions minutes | Unlimited on the **public** repo; 2,000/month free on the **private** one | The private repo (`diana-source`) barely uses any — it holds no workflow of its own, it's only ever *checked out by* the public repo's workflow |
 | GitHub Pages | 1 GB site, soft limit ~10 builds/hour | Diana publishes a few megabytes per release, a handful of times a month — nowhere close |
-| GitHub web upload | 25 MiB per file | The ONFF KMZ is ~17 MB; if it ever grows past 25 MiB it has to go through git instead of drag-and-drop |
+| GitHub web upload | 25 MiB per file | Only matters for the fallback upload on github.com (ADMIN.md §1); the Admin panel sends the file through the API, which takes far more. The ONFF KMZ is ~17 MB |
 | WWFF's own API budget | ~100 requests/minute, ~1000/hour, shared with every Spotline client | Diana's own `LIMIT_GLOBAL_MINUTE` (40/min) stays comfortably under this on purpose — see [SPOTLINE.md](SPOTLINE.md#the-limits-and-where-the-numbers-come-from) |
 | Cloudflare Workers free tier | 100,000 requests/day | `LIMIT_GLOBAL_DAY` (90,000) is a deliberately softer version of this same wall — see `worker/README.md` |
 
@@ -288,8 +329,10 @@ npx wrangler kv key put --binding DIANA_KV switch off --remote
 ```
 
 Every request to the Worker then gets a clean `503` that the app already
-knows how to explain to a user, and self-spotting falls back to the old
-form-post route automatically. Turn it back on with:
+knows how to explain to a user ("spotting via Diana is switched off"), and
+the Spot screen offers the old form-post route as a button instead.
+Announcing an activation has no such fallback: it waits for the switch to go
+back on. Turn it back on with:
 
 ```
 npx wrangler kv key delete --binding DIANA_KV switch --remote
@@ -314,8 +357,8 @@ under github.com → Settings → Notifications, as an email too.
 Most of these are transient — WWFF's own directory file was briefly
 unreachable, and the next scheduled run the following night succeeds on its
 own. Only chase it yourself if it repeats for more than a night or two: use
-**Actions → "Build ONFF data" → Run workflow** to retry immediately rather
-than waiting for 01:00 UTC.
+**Actions → "Build map data" → Run workflow** to retry immediately rather
+than waiting for the next night.
 
 ---
 

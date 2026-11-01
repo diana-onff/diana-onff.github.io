@@ -1,43 +1,55 @@
 # Administrator guide
 
-Everything an ONFF/Diana administrator needs: publishing a new KMZ release,
-using the in-app Admin panel, and what to do when something doesn't work.
-For the one-time repository setup, see [INSTALL.md](INSTALL.md) — this
-document assumes that's already done and focuses on the recurring,
-day-to-day tasks. For every credential involved and how to replace one, see
-[MAINTENANCE.md](MAINTENANCE.md).
+Everything a Diana administrator needs: publishing a new area file (KMZ) for
+a country, using the in-app Admin panel, and what to do when something
+doesn't work. For the one-time repository setup, see [INSTALL.md](INSTALL.md):
+this document assumes that's already done and focuses on the recurring,
+day-to-day tasks. For every credential involved, the GitHub security
+settings, and how to replace a credential, see [MAINTENANCE.md](MAINTENANCE.md).
 
 ---
 
-## 1. Publishing a new ONFF release
+## 1. Publishing a new release for a country
 
-There are two equivalent ways to do this. Both end at the same pull
-request; pick whichever is more convenient.
+### Where the file comes from
 
-### Option A — GitHub's own web interface
+Regional coordinators do **not** upload anything themselves. They e-mail the
+official KMZ of their programme to **wwffmembers@gmail.com**, formatted as
+described in the KMZ format guide
+([kmz-guide.pdf](https://diana-onff.github.io/kmz-guide.pdf), published with
+the site from `web/kmz-guide.pdf`). Someone of the Diana team then uploads it.
+That keeps the number of people with a token small: today only the
+administrators of the `diana-onff` organisation have one.
 
-1. Download the new `ONFF_YYYYMMDD.kmz` from the BOS groups.io.
-2. On github.com, go to the `source/` folder → **Add file → Upload files** →
-   drag the file in → at the bottom choose **Create a new branch for this
-   commit** → **Propose changes**. (The file is around 17 MB; GitHub's web
-   upload limit is 25 MiB, so it fits.)
-3. Wait a couple of minutes. Two comments appear under the pull request: the
-   diff report (new/removed/changed-boundary zones) and a preview link.
-4. Open the preview and actually look at the map before doing anything else.
-5. Looks right → **Merge**. That *is* publishing — nothing else to do.
-6. Looks wrong → close the pull request without merging, or, if it's
-   already merged, use **Revert** on the merge commit to go back to the
-   previous version in one click.
+For ONFF itself the file is the `ONFF_YYYYMMDD.kmz` that the BOS publishes on
+groups.io.
 
-### Option B — the in-app Admin panel
+### The normal way: the in-app Admin panel
 
-Same underlying GitHub API calls, done from inside Diana instead of
-github.com — useful if you'd rather not leave the app, or want the
-embed-code generator in the same place. See §2 below for the full flow.
+Upload the file through Diana's own Admin panel (§2). It puts the KMZ in the
+waiting room `incoming/<country>/` of the private source repo, starts the
+conversion, and opens a pull request in the public repo with a diff report
+and a preview of the map. Look at the preview, then **Publish** (merge) or
+**Reject**. Publishing *is* going live; nothing else to do.
 
-Either way, a **removed zone is real information, not an error** — ONFF
-does retire reference numbers — so it's always shown in the diff, never
-silently applied without you seeing it first.
+### Fallback: GitHub's own web interface
+
+Only for the team, and only when the Admin panel cannot be used. Uploading
+straight to `source/<country>/` in the private repo skips the waiting room:
+there is **no pull request, no diff report and no preview**, and the next
+data build (at the latest the nightly one) publishes whatever is in that file.
+
+1. In `diana-onff/diana-source`, open `source/<country>/` → **Add file →
+   Upload files** → drag the file in → **Commit changes** on `main`.
+2. In the public repo: **Actions → Build map data → Run workflow** (branch
+   `main`, leave the branch field empty) to publish it now instead of tonight.
+3. Check the live site afterwards. If it is wrong, delete the new file from
+   `source/<country>/` (the previous release is the newest again) and run the
+   workflow once more.
+
+Through the Admin panel, a **removed zone is real information, not an
+error** (programmes do retire reference numbers), so it is always shown in
+the diff report, never silently applied without you seeing it first.
 
 ---
 
@@ -52,8 +64,9 @@ visitors. Two ways to reveal it:
 - open the app with `?admin=1` in the URL, or
 - click the Diana logo/wordmark **five times in a row**.
 
-Either one adds an "Admin" entry to the bottom navigation for the rest of
-that browser session.
+Either one adds an "Admin" entry to the bottom navigation. Once you have
+saved a repository in the panel, Diana remembers it on that device and shows
+Admin on every start, until you clear the app's data in the browser.
 
 ### Connecting to a repository
 
@@ -63,7 +76,7 @@ published app do not belong in the same place:
 | Field | What goes in it |
 |---|---|
 | App repo (public) | `owner/repo`, e.g. `diana-onff/diana-onff.github.io` — the app, the data and the workflows |
-| Source repo (private) | e.g. `diana-onff/diana-source` — the ONFF KMZ files, and nothing else |
+| Source repo (private) | e.g. `diana-onff/diana-source` — the KMZ files of every country, and nothing else |
 | Main branch | usually `main`, and the same name in both |
 | Staging folder | where an uploaded file waits for approval — `incoming/`. The country you pick becomes a folder inside it |
 | Access token | a GitHub **fine-grained personal access token** |
@@ -210,31 +223,39 @@ profile, and by any script that runs on that page. That is simply what
 
 - the checkbox is **off by default** — the token is only kept in memory for
   that browser tab unless you explicitly ask Diana to remember it
-- the token should be fine-grained, scoped to this one repository, with
-  contents + pull-request permissions only, nothing broader
+- the token should be fine-grained, limited to the two Diana repositories
+  (the public app repo and the private source repo), with only Contents,
+  Pull requests and Actions, nothing broader. (The warning in the panel
+  itself still says "THIS repository"; it means the same token.)
+- never paste the token anywhere else: not in a chat, not in an e-mail, not
+  in a file in a repository. GitHub's push protection blocks a token in a
+  commit, but not in a message
 - give it a short expiration and renew it rather than issuing one that
   never expires
 - never tick "remember" on a shared or public computer
 
 ### Generating an embed snippet
 
-The same Admin panel has an embed-code generator: fill in a province, a
-language, and whether the spots layer and/or the "other WWFF areas" layer
-should be on, and it produces a ready-to-paste `<iframe>`. Both layers are
-on by default in the app itself but default to **off** inside an embed —
-they only appear when their checkbox is ticked here, so an already-published
-snippet never changes on its own:
+The same Admin panel has an embed-code generator: fill in a province or
+region, a language, and whether the "other WWFF areas" layer should be on,
+and it produces a ready-to-paste `<iframe>`:
 
 ```html
-<iframe src="https://<your-domain>/?embed=1&prov=antwerpen&lang=en&spots=1&world=1"
+<iframe src="https://diana-onff.github.io/?embed=1&prov=antwerpen&lang=en&world=1"
         width="100%" height="600" style="border:0"
         loading="lazy" allow="geolocation"></iframe>
 ```
 
+- The **other WWFF areas** (the blue dots) are off inside an embed unless
+  `world=1` is in the address; the checkbox adds it.
+- The **spots** are on in every embed. The checkbox "Spots on by default"
+  adds `spots=1`, which changes nothing; to hide the spots, add `&spots=0` to
+  the address by hand. (Unticking the checkbox does not do that yet.)
+
 `?embed=1` hides Diana's own navigation and header so the map fits cleanly
-into someone else's page layout — see
-[USER_GUIDE.md §Embedding](USER_GUIDE.md#5-embedding-diana-on-another-page)
-for the full parameter reference and a live example.
+into someone else's page layout: see
+[USER_GUIDE.md §5](USER_GUIDE.md#5-embedding-diana-on-another-page) for the
+full parameter reference.
 
 ---
 
@@ -244,14 +265,15 @@ Diana joins two sources, and they need different amounts of work from you:
 
 | Source | How it arrives | What you do |
 |---|---|---|
-| **WWFF directory** (`wwff.co/wwff-data/wwff_directory.csv`) — which references exist, their official names, coordinates, QSO counts | **fetched automatically on every data build**, including a build every night at 01:00 UTC. It is regenerated daily at WWFF's end | nothing, normally — see below |
-| **ONFF KMZ** — the actual boundaries | **you upload it**, by hand, when ONFF publishes a new release | upload → check the preview → merge (§1) |
+| **WWFF directory** (`wwff.co/wwff-data/wwff_directory.csv`): which references exist, their official names, coordinates, QSO counts | **fetched automatically on every data build**, including a build every night at 02:17 UTC. It is regenerated daily at WWFF's end | nothing, normally, see below |
+| **A country's KMZ**: the actual boundaries | **the team uploads it**, by hand, when a coordinator sends a new release | upload → check the preview → publish (§1) |
 
 So a new *reference* (a park added to WWFF), a renamed one, a retired one, or
-updated QSO counts appear by themselves — a scheduled build runs every night
-at 01:00 UTC against whatever KMZ is already in the repository. Most nights
-this changes nothing (Belgian references don't move every day) and the run
-ends quietly with nothing committed.
+updated QSO counts appear by themselves: a scheduled build runs every night
+at 02:17 UTC, for every country, against whatever KMZ is already in
+`source/<country>/`. Most nights this changes little and the run ends
+quietly. (GitHub may start a scheduled run late on a busy night; that is
+normal.)
 
 When the directory *did* change and the build produced good output, that
 nightly run **commits straight to `main` by itself** — no pull request, no
@@ -273,8 +295,9 @@ ever appears when you upload a new KMZ — the nightly run never touches
 boundaries, and never opens a PR of its own when it succeeds.
 
 If you want the directory refreshed sooner than the next scheduled run, use
-**Actions → Build ONFF data → Run workflow** — same result, no upload
-needed, and no need to wait for 01:00 UTC.
+**Actions → Build map data → Run workflow** (branch `main`, leave the
+branch field empty): same result, no upload needed, and no need to wait for
+the night.
 
 You can also point the build at a **CSV of your own** instead of the live URL —
 set a repository variable `ONFF_REFS_CSV` (Settings → Secrets and variables →
@@ -284,14 +307,15 @@ the upload flow changes; it is the same build either way.
 
 ## 3.1 A reference with no boundary
 
-16 of ONFF's 948 active references have no polygon in the KMZ. Diana draws them
-as a dashed ring at an approximate position instead of hiding them — but it can
-only do that if it knows where they are.
+Not every active reference has a polygon in its country's KMZ. Diana draws
+those as a dashed ring with an amber dot at an approximate position instead of
+hiding them, but it can only do that if it knows where they are.
 
-Each data build reports the state in the pull-request comment:
+Each data build reports the state in the diff report, per country, for
+example:
 
-> **948 active references** in the directory · **932 with a boundary** from the
-> KMZ · **16 as a point** on the map · 16 retired (not shown)
+> **948 active references** in the directory · **947 with a boundary** from the
+> KMZ · **1 as a point** on the map · 16 deleted (not shown)
 
 A reference the directory has no position for at all would be searchable but
 appear nowhere on the map. To place one, add a coordinate to `overrides.json`:
@@ -304,9 +328,10 @@ appear nowhere on the map. To place one, add a coordinate to `overrides.json`:
 ```
 
 The order is `[longitude, latitude]` — GeoJSON order, so the smaller number
-usually comes first in Belgium. A point set here always wins over the ONFF index
-sheet's own coordinate column, and survives every future release, because the
-key is the reference number. Committing that change alone re-runs the build.
+usually comes first in Western Europe. A point set here always wins over the
+directory's own coordinate, and survives every future release, because the key
+is the reference number. A pull request on `overrides.json` re-runs the build
+and shows the result in a preview.
 
 Diana never invents a position: a reference with no coordinate from either
 source stays off the map deliberately, because a wrong pin in a nature reserve
@@ -374,20 +399,47 @@ no matter how often it was rebuilt.
 
 ### A pull request doesn't get a diff report or preview link
 
-Check that the PR actually touches `source/**.kmz`, `overrides.json`, or
-`build/**` — those are the only paths `build-data.yml` watches. A PR that
-only touches, say, `docs/` won't trigger a data rebuild, by design.
+- **From the Admin panel:** the diff report is in the pull request's own
+  description (below the `---`), not in a comment, and the panel shows it on
+  its "Pending upload" card. The preview link comes from *Publish to GitHub
+  Pages* once *Build map data* has finished; tap **Refresh** on the card.
+- **A hand-made pull request:** check that it actually touches
+  `source/**.kmz`, `overrides.json`, or `build/**`; those are the only paths
+  `build-data.yml` watches. A PR that only touches, say, `docs/` gets a
+  preview but no data rebuild, by design.
+
+### Where to see that an upload went wrong
+
+1. In the Admin panel: the step that failed turns red with GitHub's own
+   message next to it, and the "Pending upload" card marks a failed workflow
+   with ✗.
+2. On github.com, in the **public** repo: **Actions**. A red run of *Build
+   map data* or *Publish to GitHub Pages*: open it and read the failed step.
+3. A failing nightly run opens an issue labelled `diana-nachtelijke-build`
+   under **Issues**.
+
+The private source repo has no workflows: its Actions tab stays empty, that
+is normal.
+
+### Files left in the waiting room
+
+A file in `incoming/` that no longer belongs to a pull request (for example
+after a merge or a close on github.com) is listed on the Admin panel's
+**Clean up the staging folder** card, with **Move to source/** and **Delete**.
+Removing it by hand on github.com is just as good: delete the file, not the
+folder `incoming/` itself (an empty folder disappears from GitHub by itself
+anyway). Nothing reads `incoming/` on its own, so a forgotten file is untidy,
+never harmful.
 
 ---
 
-## 5. Before making the repository (or the source KMZ) public
+## 5. What is public and what is not
 
-Publishing Diana as a web app necessarily publishes the zone boundaries —
-any visitor's browser downloads `onff.geojson`, and that's true regardless
-of hosting choice. Making the **repository itself** public additionally
-republishes the raw source KMZ file on a second channel outside ONFF's own
-groups.io distribution. That second point is a courtesy question for the
-ONFF coordinator, not a technical constraint — see
-[DEPLOY.md §1](../DEPLOY.md#1-first-the-question-that-really-matters) and the
-data-licensing terms in [LICENSE](../LICENSE) before deciding how open to
-make the repository.
+The app repository is public, and publishing Diana as a web app necessarily
+publishes the zone boundaries: every visitor's browser downloads the
+converted `data/zones/<prog>.geojson`. The **source KMZ files** are another
+matter: they live only in the private `diana-source` repository and are never
+published by `build/site.sh`. Keep it that way unless a programme's
+coordinator agrees otherwise; see
+[DEPLOY.md §1](../DEPLOY.md#1-first-the-question-that-really-matters) and the data-licensing terms in
+[LICENSE](../LICENSE).

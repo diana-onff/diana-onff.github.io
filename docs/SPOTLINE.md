@@ -89,8 +89,9 @@ subject to CORS, so this works with no key, no proxy and no cooperation from
 anyone's server configuration. It is still in the code, as
 `verstuurKlassiek()`.
 
-It appears by itself whenever the Worker cannot help, and it can be made
-permanent per device with **"Always send the old way"** in Settings. What it
+It appears by itself, as a button, whenever the Worker cannot help. (The
+Settings option "Always send the old way" was removed in v2.0: Spot through
+the Worker is the way, this is the way out.) What it
 cannot do is confirm anything: Spotline's own page opens in a new tab and you
 read the result there, but the app never learns what happened. That gap is the
 entire reason the Worker exists — and the reason this stays a way out rather
@@ -136,7 +137,7 @@ than the alternative, which is that we already have the data.
 | wrong shape | rejected, certainly — same rule as the Worker applies |
 | unknown programme | rejected, certainly — this catches the common prefix typo |
 | `ONFF-…` we have | accepted, **with the name of the reserve** |
-| `ONFF-…` we do not have | rejected, certainly — the 946 are all of them |
+| `ONFF-…` we do not have | rejected: the directory's active list is complete |
 | another programme, world layer loaded | judged against `wwff-world.geojson` |
 | another programme, world layer not loaded | the programme's country, and an explicit "not checked here" |
 
@@ -148,6 +149,12 @@ Note that ONFF references are looked up in **two** files: `onff.geojson` for
 the areas with a boundary and `onff-points.geojson` for the point-only ones. A
 reference without a polygon is still a perfectly valid reference, and checking
 only the first file would reject a handful of real ones.
+
+Known limitation (v2.2.1): that ONFF row is written for Belgium as the loaded
+country. With another country loaded, the boundaries in memory are that
+country's, so a Belgian reference is reported as unknown under the field. It
+is only the hint under the field; Spotline still has the last word when you
+press Check.
 
 ## Operating it
 
