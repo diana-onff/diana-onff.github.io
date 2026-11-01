@@ -15,6 +15,12 @@
  * entry here is the version the app reports.
  */
 const RELEASES = [
+  { v: '2.2.2', date: '2026-11-01',
+    nl: ['Alleen voor het Diana-team: een onthouden toegangstoken in het beheerscherm wordt nu versleuteld bewaard met een wachtzin van minstens 10 tekens. Bij het openen vraagt Diana die wachtzin. Een token dat nog onversleuteld op het toestel stond, is meteen gewist.',
+         'De insluitcode in het beheerscherm verbergt de spots nu echt als je het vinkje uitzet.'],
+    en: ['For the Diana team only: a remembered access token in the admin screen is now stored encrypted with a passphrase of at least 10 characters. Diana asks for that passphrase when you open it. A token that was still stored unencrypted on the device has been deleted right away.',
+         'The embed code in the admin screen now really hides the spots when you untick the box.'] },
+
   { v: '2.2.1', date: '2026-11-01',
     nl: ['Beveiliging aangescherpt vóór de brede release. Namen en gegevens uit de gebiedsbestanden worden altijd als gewone tekst getoond, nooit als code. Voor jou verandert er niets zichtbaars.'],
     en: ['Security tightened ahead of the wider release. Names and details from the area files are always shown as plain text, never as code. Nothing changes in what you see.'] },

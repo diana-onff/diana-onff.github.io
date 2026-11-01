@@ -8,8 +8,16 @@
  * anyone who can get at this device and by every script running on this
  * page. That is why "remember" is off unless you tick it, why there is a
  * button to forget it, and why we recommend a fine-grained token that is
- * allowed only this one repository, only contents and pull requests, with
- * a short expiry date.
+ * allowed only the two Diana repositories, only contents, pull requests and
+ * Actions, with a short expiry date.
+ *
+ * Since 2.2.2 "remember" never stores the token itself. It stores the token
+ * encrypted with a passphrase of at least ten characters (PBKDF2-SHA256,
+ * 600,000 rounds, then AES-GCM, all the browser's own Web Crypto), and the
+ * panel asks for that passphrase once per page load. Someone who picks up
+ * an unlocked phone cannot use the token; while the panel is unlocked the
+ * token is in memory, as it always was. A token remembered in plain text by
+ * an older version is moved into memory and deleted from storage at once.
  * ================================================================== */
 const GH = 'https://api.github.com';
 
@@ -20,6 +28,21 @@ const adm = {
   path:   recall('adm.path') || 'incoming/',
   token:  recall('adm.token'),
 };
+
+/* A token remembered in plain text by a version before 2.2.2: keep it for this
+   page load, so nothing that is running breaks, but take it off the device
+   right now. The panel then asks for a passphrase to remember it encrypted. */
+const admOudToken = !!adm.token;
+if(admOudToken){ try{ localStorage.removeItem('diana.adm.token'); }catch{} }
+
+/* Declared up here, not with the rest of the encryption further down:
+   unlockAdmin() below runs at load and already needs them. */
+const ENC_KEY = 'adm.tokenenc';
+const ENC_ROUNDS = 600000;
+const PASS_MIN = 10;
+const kanVersleutelen = () => !!(window.crypto && crypto.subtle && window.TextEncoder);
+const naarB64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+const vanB64  = str => Uint8Array.from(atob(str), c => c.charCodeAt(0));
 
 /* Two repositories, one token. If the source field stays empty, everything is
    one repo — that is the setup from before the move, and it has to keep working
@@ -36,7 +59,13 @@ function unlockAdmin(){
   $('admBranch').value = adm.branch;
   $('admPath').value   = adm.path;
   $('admToken').value  = adm.token;
-  $('admRemember').checked = !!adm.token;
+  $('admRemember').checked = !!adm.token || heeftVersleuteld();
+  toonTokenSlot();
+  if(admOudToken && adm.token && !heeftVersleuteld()){
+    // Through data-i18n, so a language change later keeps the right message.
+    $('admPassLead').dataset.i18n = 'adm.passmigrate';
+    $('admPassLead').textContent = t('adm.passmigrate');
+  }
   buildEmbed();
   hervatUpload().catch(()=>{});
 }
@@ -59,14 +88,123 @@ const kaal = v => v.trim().replace(/^https?:\/\/github\.com\//,'').replace(/\.gi
   remember('adm.branch', adm.branch); remember('adm.path', adm.path);
   buildEmbed();
 }));
+/* ---------- the remembered token, encrypted ---------- */
+
+function heeftVersleuteld(){ return !!recall(ENC_KEY); }
+function wisVersleuteld(){ try{ localStorage.removeItem('diana.' + ENC_KEY); }catch{} }
+
+async function sleutelUit(wachtzin, zout, rondes){
+  const basis = await crypto.subtle.importKey('raw', new TextEncoder().encode(wachtzin),
+    'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2', salt:zout, iterations:rondes, hash:'SHA-256'},
+    basis, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
+}
+async function versleutelToken(token, wachtzin){
+  const zout = crypto.getRandomValues(new Uint8Array(16));
+  const iv   = crypto.getRandomValues(new Uint8Array(12));
+  const sleutel = await sleutelUit(wachtzin, zout, ENC_ROUNDS);
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, sleutel, new TextEncoder().encode(token));
+  return JSON.stringify({v:1, kdf:'PBKDF2-SHA256', n:ENC_ROUNDS,
+                         salt:naarB64(zout), iv:naarB64(iv), ct:naarB64(ct)});
+}
+/* A wrong passphrase makes AES-GCM refuse; that throws, and is the only answer. */
+async function ontsleutelToken(json, wachtzin){
+  const o = JSON.parse(json);
+  const sleutel = await sleutelUit(wachtzin, vanB64(o.salt), o.n || ENC_ROUNDS);
+  const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv:vanB64(o.iv)}, sleutel, vanB64(o.ct));
+  return new TextDecoder().decode(pt);
+}
+
+/* Which of the two boxes under the token field is showing:
+     unlock: an encrypted token is stored and not yet in memory
+     pass:   "remember" is ticked but nothing encrypted is stored yet */
+function toonTokenSlot(){
+  const slot = heeftVersleuteld() && !adm.token;
+  const kiezen = $('admRemember').checked && !heeftVersleuteld();
+  $('admUnlockBox').hidden = !slot;
+  $('admPassBox').hidden = !kiezen;
+  $('admToken').disabled = slot;
+}
+
+/* What unlocking gives back is exactly the state a typed-in token gives:
+   the same calls unlockAdmin() makes run once more, now with a token. */
+function naOntgrendelen(){
+  toonTokenSlot();
+  $('admSend').disabled = !magVersturen();
+  toonPr().catch(()=>{});
+  hervatUpload().catch(()=>{});
+}
+
 $('admToken').addEventListener('input', () => {
   adm.token = $('admToken').value.trim();
-  if($('admRemember').checked) remember('adm.token', adm.token);
+  // A changed token makes the stored copy stale: it has to be saved again.
+  if(heeftVersleuteld()){ wisVersleuteld(); }
+  toonTokenSlot();
 });
 $('admRemember').addEventListener('change', e => {
-  if(e.target.checked) remember('adm.token', adm.token);
-  else { try{ localStorage.removeItem('diana.adm.token'); }catch{} }
+  if(e.target.checked && !kanVersleutelen()){
+    e.target.checked = false;
+    showStatus('out', t('adm.nocrypto'), '');
+  }
+  if(!e.target.checked){
+    wisVersleuteld();
+    try{ localStorage.removeItem('diana.adm.token'); }catch{}
+    $('admPass1').value = $('admPass2').value = '';
+    $('admPassFb').textContent = '';
+  }
+  toonTokenSlot();
 });
+$('admPassSave').onclick = async () => {
+  const fb = $('admPassFb');
+  const p1 = $('admPass1').value, p2 = $('admPass2').value;
+  const zet = (tekst, cls) => { fb.textContent = tekst; fb.className = 'fb' + (cls ? ' ' + cls : ''); };
+  if(!adm.token) return zet(t('adm.passneedtoken'), 'bad');
+  if(p1.length < PASS_MIN) return zet(t('adm.passshort'), 'bad');
+  if(p1 !== p2) return zet(t('adm.passmismatch'), 'bad');
+  $('admPassSave').disabled = true;
+  zet(t('adm.passbusy'));
+  try{
+    remember(ENC_KEY, await versleutelToken(adm.token, p1));
+    try{ localStorage.removeItem('diana.adm.token'); }catch{}
+    $('admPass1').value = $('admPass2').value = '';
+    $('admPassLead').dataset.i18n = 'adm.passlead';
+    $('admPassLead').textContent = t('adm.passlead');
+    zet('', '');
+    showStatus('in', t('adm.passsaved'), '');
+    toonTokenSlot();
+  }catch(err){
+    zet('✗ ' + err.message, 'bad');
+  }finally{
+    $('admPassSave').disabled = false;
+  }
+};
+async function ontgrendel(){
+  const fb = $('admUnlockFb');
+  const wachtzin = $('admPassIn').value;
+  if(!wachtzin) return;
+  $('admUnlockBtn').disabled = true;
+  fb.textContent = t('adm.passbusy'); fb.className = 'fb';
+  try{
+    adm.token = await ontsleutelToken(recall(ENC_KEY), wachtzin);
+    $('admToken').value = adm.token;
+    $('admPassIn').value = '';
+    fb.textContent = ''; fb.className = 'fb';
+    naOntgrendelen();
+  }catch{
+    fb.textContent = t('adm.unlockbad'); fb.className = 'fb bad';
+  }finally{
+    $('admUnlockBtn').disabled = false;
+  }
+}
+$('admUnlockBtn').onclick = ontgrendel;
+$('admPassIn').addEventListener('keydown', e => { if(e.key === 'Enter') ontgrendel(); });
+$('admForget').onclick = () => {
+  wisVersleuteld();
+  $('admRemember').checked = false;
+  $('admPassIn').value = ''; $('admUnlockFb').textContent = '';
+  toonTokenSlot();
+  $('admToken').focus();
+};
 
 async function gh(path, opts){
   const r = await fetch(GH + path, {
@@ -559,8 +697,18 @@ async function toonPr(){
 
   const opgeslagen = huidigePr();
   const card = $('admPrCard');
+  if(opgeslagen && adm.repo && !adm.token && heeftVersleuteld()){
+    // Locked: the pull request is still there, it only waits for the passphrase.
+    card.hidden = false; stopPrPoll();
+    $('admPrHead').textContent = t('adm.prlocked'); $('admPrHead').className = 'fb';
+    $('admPrChecks').innerHTML = ''; $('admPrPreview').innerHTML = '';
+    $('admPrReport').hidden = true;
+    $('admPrMerge').disabled = true; $('admPrClose').disabled = true;
+    return;
+  }
   if(!opgeslagen || !adm.repo || !adm.token){ card.hidden = true; stopPrPoll(); return; }
   card.hidden = false;
+  $('admPrClose').disabled = false;
 
   let pr;
   try{
@@ -861,7 +1009,8 @@ function buildEmbed(){
   const q = ['embed=1'];
   const prov = $('embProv').value.trim(); if(prov) q.push('prov=' + encodeURIComponent(prov));
   const lg   = $('embLang').value.trim(); if(lg)   q.push('lang=' + encodeURIComponent(lg));
-  if($('embSpots').checked) q.push('spots=1');
+  // Spots are on in every embed by default; only switching them off needs a word.
+  if(!$('embSpots').checked) q.push('spots=0');
   if($('embWorld').checked) q.push('world=1');
   $('embCode').textContent =
 `<iframe src="${base}?${q.join('&')}"

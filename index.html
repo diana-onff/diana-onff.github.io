@@ -125,7 +125,25 @@
     <label class="fld"><span data-i18n="adm.token">Toegangstoken</span>
       <input id="admToken" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…"></label>
     <label class="chk"><input type="checkbox" id="admRemember"> <span data-i18n="adm.remember">Token op dit toestel onthouden</span></label>
-    <p class="warn" data-i18n="adm.tokenwarn">Een token in de browser is leesbaar voor iedereen die aan dit toestel kan. Gebruik een fine-grained token dat alleen déze repository mag, alleen inhoud en pull requests, met een korte vervaldatum. Niet doen op een gedeelde computer.</p>
+    <div id="admPassBox" hidden>
+      <p class="hint" id="admPassLead" data-i18n="adm.passlead">Kies een wachtzin. Op dit toestel komt alleen het versleutelde token te staan.</p>
+      <label class="fld"><span data-i18n="adm.passnew">Wachtzin (minstens 10 tekens)</span>
+        <input id="admPass1" type="password" autocomplete="new-password" spellcheck="false"></label>
+      <label class="fld"><span data-i18n="adm.passagain">Wachtzin nog eens</span>
+        <input id="admPass2" type="password" autocomplete="new-password" spellcheck="false"></label>
+      <button class="btn ghost" id="admPassSave" data-i18n="adm.passsave">Versleuteld onthouden</button>
+      <div class="fb" id="admPassFb"></div>
+    </div>
+    <div id="admUnlockBox" hidden>
+      <label class="fld"><span data-i18n="adm.passask">Wachtzin van het onthouden token</span>
+        <input id="admPassIn" type="password" autocomplete="current-password" spellcheck="false"></label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn amber" id="admUnlockBtn" data-i18n="adm.unlock">Ontgrendelen</button>
+        <button class="btn ghost" id="admForget" data-i18n="adm.forget">Token opnieuw invoeren</button>
+      </div>
+      <div class="fb" id="admUnlockFb"></div>
+    </div>
+    <p class="warn" data-i18n="adm.tokenwarn">Een token in de browser is leesbaar voor iedereen die aan dit toestel kan. Gebruik een fine-grained token dat alleen de twee Diana-repo's mag (de app-repo en de bron-repo), alleen inhoud, pull requests en Actions, met een korte vervaldatum. Onthouden gebeurt versleuteld met je wachtzin. Niet doen op een gedeelde computer.</p>
     <button class="btn ghost" id="admTest" data-i18n="adm.test">Verbinding testen</button>
     <div class="fb" id="admFb"></div>
   </div>
