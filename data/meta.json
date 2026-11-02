@@ -1,7 +1,7 @@
 {
   "source_file": "ONFF 20260802.kmz",
   "release": "2026-08-02",
-  "generated": "2026-11-01T09:17:01Z",
+  "generated": "2026-11-02T09:30:53Z",
   "zones": 947,
   "directory_failed": null,
   "directory_listed": 948,
@@ -13,7 +13,7 @@
   "activity_refs": 929,
   "world_points": 66125,
   "world_activity_refs": 67806,
-  "world_site_refs": 44743,
+  "world_site_refs": 44744,
   "source_polygons": 12538,
   "tolerance_deg": 5e-05,
   "decimals": 5,
