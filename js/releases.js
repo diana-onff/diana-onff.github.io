@@ -15,6 +15,14 @@
  * entry here is the version the app reports.
  */
 const RELEASES = [
+  { v: '2.2.3', date: '2026-11-03',
+    nl: ['Zoeken op de kaart vindt nu elke WWFF-referentie, ook in een land waarvan Diana geen grenzen heeft. Typ je alleen een nummer, dan zoekt Diana in je eigen land.',
+         'Veldinfo → Gebieden toont nu ook referenties van andere landen in de buurt, bijvoorbeeld over de grens. Bij een land zonder grenzen in Diana (zoals Spanje) bleef die lijst leeg en meldde Diana ten onrechte dat je positie niet gekend was.',
+         'Voor referenties uit een ander land kent Diana het aantal QSO\'s, maar niet de datum van de laatste activatie. Een tik opent het paneel, met Meld jezelf actief en Activatie aankondigen.'],
+    en: ['Search on the map now finds every WWFF reference, also in a country Diana has no boundaries for. Type just a number and Diana looks in your own country.',
+         'Field info → Areas now also lists references from other countries nearby, across the border for instance. For a country without boundaries in Diana (such as Spain) that list stayed empty and Diana wrongly said it did not know your position.',
+         'For references from another country Diana knows the QSO count but not the date of the last activation. A tap opens the panel, with Spot yourself here and Announce an activation.'] },
+
   { v: '2.2.2', date: '2026-11-01',
     nl: ['Alleen voor het Diana-team: een onthouden toegangstoken in het beheerscherm wordt nu versleuteld bewaard met een wachtzin van minstens 10 tekens. Bij het openen vraagt Diana die wachtzin. Een token dat nog onversleuteld op het toestel stond, is meteen gewist.',
          'De insluitcode in het beheerscherm verbergt de spots nu echt als je het vinkje uitzet.'],

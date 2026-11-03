@@ -746,7 +746,16 @@ function sheetButtons(prog){
 
 function select(ref, alsoIn){
   const f = zones.features.find(x=>x.properties.ref===ref);
-  if(!f){ const p = noPolyByRef.get(ref); if(p) selectPoint(p); return; }
+  if(!f){
+    const p = noPolyByRef.get(ref);
+    if(p){ selectPoint(p); return; }
+    // Since 2.2.3: a reference from the worldwide list (a search result or a
+    // row in Field info) opens the same panel as tapping its blue dot. Before,
+    // nothing happened at all.
+    const w = worldFeature(ref);
+    if(w) selectWorld(w);
+    return;
+  }
   selected = ref;
   const p = f.properties;
   const b = bboxOf(f.geometry);
@@ -841,15 +850,55 @@ map.on('click', e => {                       // a click beside an area closes th
 });
 
 /* ---------- search ---------- */
+/* One reference from the worldwide list, or null. */
+function worldFeature(ref){
+  const key = String(ref || '').toUpperCase();
+  if(!key || !worldPoints || !worldPoints.features) return null;
+  return worldPoints.features.find(f => (f.properties.ref || '').toUpperCase() === key) || null;
+}
+
+/* The loaded country first, exactly as before. Then, since 2.2.3, whatever
+   room is left goes to the worldwide list: every reference outside the loaded
+   country, by name or by (part of) its reference. A bare number ("0012") is
+   only matched there for your own programme, otherwise it would turn up the
+   0012 of every programme in the world. For a country without boundaries in
+   Diana (Spain, France ...) this is the only place its references are. */
+let worldSearchCache = null;   // [{ref, name, lr, ln}] in lower case, built once per world file
 function search(term){
   const t = term.trim().toLowerCase();
   if(t.length<2) return [];
   const digits = t.replace(/\D/g,'');
-  return index.filter(z =>
+  const home = (index || []).filter(z =>
       z.name.toLowerCase().includes(t) ||
       z.ref.toLowerCase().includes(t) ||
       (digits && z.ref.includes(digits.padStart(4,'0')))
     ).slice(0,40);
+  if(home.length >= 40 || !worldPoints || !worldPoints.features.length) return home;
+
+  if(!worldSearchCache || worldSearchCache.src !== worldPoints){
+    const rows = worldPoints.features.map(f => {
+      const ref = String(f.properties.ref || '').toUpperCase(), name = f.properties.name || '';
+      return {ref, name, lr: ref.toLowerCase(), ln: name.toLowerCase()};
+    });
+    worldSearchCache = {src: worldPoints, rows};
+  }
+  const have = new Set(home.map(z => z.ref));
+  const own = new Set(loadedPrograms);
+  const mine = typeof homeProgram === 'function' ? homeProgram() : '';
+  const num = digits ? digits.padStart(4,'0') : '';
+  const bare = /^\d+$/.test(t);    // only a number: your own programme, nothing else
+  const extra = [];
+  for(const w of worldSearchCache.rows){
+    if(have.has(w.ref) || own.has(refProgram(w.ref))) continue;
+    const hit = bare
+      ? (refProgram(w.ref) === mine && w.ref.endsWith('-' + num))
+      : (w.ln.includes(t) || w.lr.includes(t));
+    if(hit){
+      extra.push({ref: w.ref, name: w.name, prov: programCountry(refProgram(w.ref)), world: true});
+      if(home.length + extra.length >= 40) break;
+    }
+  }
+  return home.concat(extra);
 }
 $('q').addEventListener('input', e => {
   const rows = search(e.target.value);
