@@ -101,7 +101,7 @@ table is in `<script>` order:
 | `agenda.js` | announcing an activation, and your own PIN list |
 | `rules.js` | the band plan and the Rules screen |
 | `rules-text.js` | the WWFF rule texts shown on the Rules screen |
-| `nearby.js` | Field info, Areas tab: the closest references and their activation history |
+| `nearby.js` | Field info, Areas tab: the closest references (loaded country plus the worldwide list) and their activation history |
 | `nearinfo.js` | Field info, Location tab: locator, zones, region, position details |
 | `conditions.js` | Field info, Conditions tab: Kp, SFI, band bars, storm rule |
 | `offline.js` | service worker registration, the update flow |

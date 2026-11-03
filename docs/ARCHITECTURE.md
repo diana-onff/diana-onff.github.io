@@ -64,6 +64,14 @@ The app builds its own in-memory search index from `zones/onff.geojson` +
 rather than a runtime dependency — useful to know before optimising the wrong
 file.
 
+Since v2.2.3 search and Field info > Areas also use `wwff-world.geojson` for
+every reference outside the loaded country: search adds them below the
+country's own results (a bare number only within your own programme), and
+Areas merges them by distance, with the QSO count from `wwff-activity.json`
+and no activation date. `select(ref)` opens such a reference with the
+blue-dot panel. Before, a country without boundaries in Diana had an empty
+search and an empty Areas list (`build/tests/test_nearby_world.py`).
+
 The app tries `./data/...` first (published layout, data next to
 `index.html`) and falls back to `../data/...` (repository layout, one level
 up) — see `fetchFirst()` / `dataURL()` in `web/js/map-data.js`. This is what lets

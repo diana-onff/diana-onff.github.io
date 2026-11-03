@@ -111,8 +111,9 @@ see **Admin**.
 
 ### Map (◈)
 
-The main screen. At the top: **⌕** search by name or reference number,
-**◐** map style (Liberty, Positron, Bright, Dark), and **≡** layers and
+The main screen. At the top: **⌕** search by name or reference number
+(every WWFF reference worldwide; the loaded country's results come first, and
+a bare number such as `0012` looks only in your own country), **◐** map style (Liberty, Positron, Bright, Dark), and **≡** layers and
 language. Tap **Map** in the bottom bar at any time to centre the map on your
 own position again; the zoom stays as it is.
 
@@ -290,7 +291,11 @@ says which).
   Settings (10, 25, 50 or 100 km), with distance and bearing, the QSO count and
   the last activation. Sort by **Distance**, **Last active** or **QSO count**;
   the last two put the neglected references first. Up to a hundred lines, with
-  "Show more". Tap a line to open it on the map.
+  "Show more". Tap a line to open it on the map. References from other
+  countries are in the list too, across the border for instance, and for a
+  country without boundaries in Diana they are the whole list. For those,
+  Diana knows the QSO count (or ATNO) but not the date of the last activation,
+  so they come last when you sort on Last active.
 - **Location**: where you are in radio terms. UTC and local time with the time
   zone, your Maidenhead locator in six and eight characters, your position in
   decimal degrees and in degrees, minutes and seconds with its accuracy, your

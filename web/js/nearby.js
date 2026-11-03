@@ -43,12 +43,24 @@ let nearShown = NEAR_MAX_ROWS;
 
 /* Distance and bearing from where you are to every reference we have a centre
    point for, nearest first, cut to NEAR_COUNT, and only then ordered by
-   whatever the switch says. null means: we don't know where you are. */
+   whatever the switch says. null means: we don't know where you are.
+
+   Since 2.2.3 the list is not only the loaded country. Every other reference
+   in the WWFF list (the blue dots of map.js) takes part too, so a Belgian at
+   the Dutch border sees the Dutch references next door, and someone whose
+   country has no boundaries in Diana (Spain, France ...) sees anything at
+   all. Before, that last case had an empty list and the screen wrongly said
+   it did not know where you were. For those references Diana has the QSO
+   count (wwff-activity.json) but no date of the last activation: they say
+   so, and sort last on "Last active", except a never-activated one (ATNO),
+   which really is the longest untouched. `.loading` is set while the
+   worldwide list is still on its way. */
 function nearbyRows(){
   const p = myPos();
-  if(!p || !index || !index.length) return null;
+  if(!p) return null;
   const [lon, lat] = p;
-  const near = index
+  const km = cfg.nearkm || 25;
+  const near = (index || [])
     .map(z => {
       // Only the handful of references without a boundary carry a lat/lon of
       // their own; everything with a polygon has a bbox instead. The middle of
@@ -67,20 +79,78 @@ function nearbyRows(){
                known: !!a };
     })
     .filter(Boolean)
-    .filter(r => r.d <= (cfg.nearkm || 25) * 1000)
-    .sort((a,b) => a.d - b.d);
+    .filter(r => r.d <= km * 1000);
+  near.push(...nearbyWorldRows(lat, lon, km));
+  near.sort((a,b) => a.d - b.d);
   const total = near.length;
   near.splice(nearShown);
   near.total = total;
+  near.loading = !worldReady();
 
-  if(nearMetric === 'qso')     near.sort((a,b) => a.qso - b.qso || a.d - b.d);
+  // Unknown (null) after every number, so "fewest first" stays true for the ones we know.
+  if(nearMetric === 'qso')     near.sort((a,b) =>
+    ((a.qso == null) - (b.qso == null)) || (a.qso || 0) - (b.qso || 0) || a.d - b.d);
   if(nearMetric === 'recency') near.sort((a,b) =>
     // No date at all sorts as "longest ago": those are the ones worth a look.
+    // A reference from another country has no date here at all: last, since
+    // nothing is known about it, unless it was never activated.
+    (recencyUnknown(a) - recencyUnknown(b)) ||
     String(a.date || '').localeCompare(String(b.date || '')) || a.d - b.d);
   return near;
 }
 
+let nearWaiting = false, nearActWaiting = false;   // one repaint per load, not one per render
+const recencyUnknown = r => (r.world && r.qso !== 0) ? 1 : 0;
+
+/* The worldwide list is in (map.js), and Field info asks for it itself if
+   nothing else has yet: the "other WWFF areas" layer can be switched off. */
+function worldReady(){
+  if(typeof worldLoaded === 'undefined') return true;
+  if(!worldLoaded && typeof loadWorldPoints === 'function'){
+    const w = loadWorldPoints();
+    if(w && !nearWaiting){
+      nearWaiting = true;
+      w.then(() => { nearWaiting = false; if($('viewNearby').classList.contains('on')) renderNearby(); });
+    }
+  }
+  return worldLoaded;
+}
+
+/* The references around you that are not the loaded country's own, from the
+   worldwide list. A cheap latitude/longitude box first, so that only the
+   handful nearby get the real distance. */
+function nearbyWorldRows(lat, lon, km){
+  if(typeof worldPoints === 'undefined' || !worldPoints || !worldPoints.features.length) return [];
+  const have = new Set((index || []).map(z => z.ref));
+  const own = new Set(loadedPrograms);
+  const dLat = km / 111 + 0.01;
+  const dLon = km / (111 * Math.max(Math.cos(lat * Math.PI / 180), 0.01)) + 0.01;
+  if(!worldActivityLoaded){
+    const w = ensureWorldActivity();
+    if(w && !nearActWaiting){
+      nearActWaiting = true;
+      w.then(() => { nearActWaiting = false; if($('viewNearby').classList.contains('on')) renderNearby(); });
+    }
+  }
+  const out = [];
+  for(const f of worldPoints.features){
+    const c = f.geometry && f.geometry.coordinates;
+    if(!c) continue;
+    if(Math.abs(c[1] - lat) > dLat) continue;
+    let dl = Math.abs(c[0] - lon); if(dl > 180) dl = 360 - dl;
+    if(dl > dLon) continue;
+    const ref = String(f.properties.ref || '').toUpperCase();
+    if(!ref || have.has(ref) || own.has(refProgram(ref))) continue;
+    const d = haversine(lat, lon, c[1], c[0]);
+    if(d > km * 1000) continue;
+    out.push({ ref, name: f.properties.name || '', d, br: bearing(lat, lon, c[1], c[0]),
+               qso: qsoCountAnywhere(ref), date: null, known: false, world: true });
+  }
+  return out;
+}
+
 function lastActiveText(r){
+  if(r.world) return r.qso === 0 ? t('spots.atno') : t('near.nodate');
   if(!r.known) return t('near.nodata');
   if(!r.date)  return t('near.nodate');
   const d = new Date(r.date);
@@ -99,11 +169,16 @@ function renderNearby(){
   if(!box || !list) return;
   const rows = nearbyRows();
 
+  // The card around the list only when there is a list: empty, it showed as
+  // a bare white bar under the message.
+  list.parentElement.hidden = !(rows && rows.length);
+
   if(rows === null){
     // No GPS fix and no locator either. Say what is missing and where to fix it
     // rather than showing an empty list that looks broken.
     box.innerHTML = `<p class="hint">${t('near.nopos')}</p>`;
     list.innerHTML = '';
+    $('nearMore').hidden = true;
     return;
   }
 
@@ -113,8 +188,10 @@ function renderNearby(){
   if(!rows.length){
     // Possible at 10 km in an empty corner of the country: say so, rather than
     // leaving a header claiming nought references above an empty card.
-    box.innerHTML = `<p class="hint">${t('near.none').replace('{d}', km)}</p>`;
+    // Or, while the worldwide list is still loading, nothing yet.
+    box.innerHTML = `<p class="hint">${rows.loading ? t('near.loading') : t('near.none').replace('{d}', km)}</p>`;
     list.innerHTML = '';
+    $('nearMore').hidden = true;
     return;
   }
   // "100 / 217" when the ceiling bit, plain "61" when it did not.
@@ -130,7 +207,7 @@ function renderNearby(){
     <div class="spot" data-ref="${escH(r.ref)}">
       <span class="sig">◎</span>
       <span class="who"><div class="c">${escH(r.ref)} · ${escH(r.name)}</div>
-        <div class="f">${r.known ? `${r.qso.toLocaleString(locale())} QSO · ` : ''}${lastActiveText(r)}</div></span>
+        <div class="f">${(r.known || (r.world && r.qso > 0)) ? `${r.qso.toLocaleString(locale())} QSO · ` : ''}${lastActiveText(r)}</div></span>
       <span class="d"><b>${fmtKm(r.d)}</b>${Math.round(r.br)}°</span>
     </div>`).join('');
 }

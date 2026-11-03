@@ -121,7 +121,10 @@ with sync_playwright() as p:
        "fewest QSOs first — the ones worth a visit")
 
     pg.evaluate("() => { nearMetric = 'recency'; renderNearby(); }")
-    by_date = pg.evaluate("() => nearbyRows().map(r => r.date || '')")
+    # Since 2.2.3 references from across the border are in the list too. Diana
+    # has no activation date for those, so they go last (see
+    # test_nearby_world.py); the rule for the loaded country's own is as before.
+    by_date = pg.evaluate("() => nearbyRows().filter(r => !r.world).map(r => r.date || '')")
     ok(by_date == sorted(by_date), "by last active: longest untouched first")
 
     print("\n[6] tapping a reference opens it on the map")
