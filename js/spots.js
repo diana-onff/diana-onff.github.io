@@ -32,6 +32,12 @@ if(spotFilter === 'onff') spotFilter = 'ONFF';        // from before the filter 
 // menu claiming the opposite.
 syncSwitch('spots', showSpots);
 syncSwitch('arcs',  showArcs);
+// The same for the country / Worldwide buttons (here and in Settings), from
+// the saved choice, straight away. They used to wait for populateSpotCountries(),
+// which only runs once all data is in: on a slow connection the buttons showed
+// the page's own starting state (ONFF) for several seconds while the filter
+// itself was on Worldwide. Since 2.2.4.
+syncSpotFilterUI();
 let agendaSkipped = 0;
 
 function startSpots(){
@@ -223,9 +229,15 @@ function paintSpots(){
     }));
   }) : []});
 
+  // The labels get a source of their own with the same data (the -txt ones).
+  // Text needs the map's fonts, and a source whose fonts do not arrive (a
+  // slow or broken connection) draws nothing at all, dots and icons
+  // included. Apart, a missing font costs at most the label. Since 2.2.4.
   const sources = {
     'spots':      spotFC,
+    'spots-txt':  spotFC,
     'agenda-pts': agFC,
+    'agenda-txt': agFC,
     'spot-arcs':  arcs('spot', live),
     'agenda-arcs':arcs('agenda', agendaPlaced),
   };
@@ -319,14 +331,14 @@ function createSpotLayers(tries){
       paint:{'icon-opacity':['case',['get','stale'],0.45,1]}});
 
     if(map.getStyle().glyphs){
-      map.addLayer({ id:'agenda-label', type:'symbol', source:'agenda-pts',
+      map.addLayer({ id:'agenda-label', type:'symbol', source:'agenda-txt',
         layout:{'text-field':['format',['get','call'],{'font-scale':1.2},
                               '\n',{}, ['get','when'],{'font-scale':0.85}],
                 'text-font':['Noto Sans Regular'],'text-size':13,'text-line-height':1.15,
                 'text-offset':[0,1.3],'text-anchor':'top','text-padding':4},
         paint:{'text-color':'#7c3510','text-halo-color':'#fff','text-halo-width':2.6,
                'text-halo-blur':0.2}});
-      map.addLayer({ id:'spots-call', type:'symbol', source:'spots',
+      map.addLayer({ id:'spots-call', type:'symbol', source:'spots-txt',
         // Who is on there is the answer you are looking for; frequency and mode
         // are secondary. Hence one label in two sizes instead of three lines of
         // equally small grey.
