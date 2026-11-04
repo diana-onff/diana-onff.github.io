@@ -126,6 +126,7 @@ function paintNoPoly(tries){
     if(npDrawn !== dataGen){
       npDrawn = dataGen;
       map.getSource('onff-np').setData(noPoly);
+      if(map.getSource('onff-np-txt')) map.getSource('onff-np-txt').setData(noPoly);
     }
     return;
   }
@@ -140,8 +141,13 @@ function paintNoPoly(tries){
             'icon-size':['interpolate',['linear'],['zoom'],7,0.6,12,1],
             'visibility': (showZones && showNoPoly) ? 'visible':'none'}
   });
+  // The label on a source of its own: see 'spots-txt' in spots.js. A font
+  // that does not arrive then costs the label, not the ring.
+  if(map.getStyle().glyphs){
+    map.addSource('onff-np-txt',{type:'geojson',data:noPoly});
+  }
   if(map.getStyle().glyphs) map.addLayer({
-    id:'np-label', type:'symbol', source:'onff-np',
+    id:'np-label', type:'symbol', source:'onff-np-txt',
     layout:{'text-field':['get','ref'],'text-font':['Noto Sans Regular'],'text-size':11,
             'text-offset':[0,1.4],'text-anchor':'top','text-allow-overlap':false,'text-padding':6,
             'visibility': (showZones && showNoPoly && showLabels) ? 'visible':'none'},
@@ -295,9 +301,21 @@ function paintWorld(tries){
   // so the count under it has to come from here.
   if(typeof updateCounts === 'function') updateCounts();
   const src = map.getSource('wwff-world');
-  if(src){ src.setData(data); applyVisibility(); return; }
+  if(src){
+    src.setData(data);
+    if(map.getSource('wwff-world-txt')) map.getSource('wwff-world-txt').setData(data);
+    applyVisibility(); return;
+  }
   if(!worldPoints.features.length) return;
   map.addSource('wwff-world', { type:'geojson', data, cluster:true, clusterRadius:50, clusterMaxZoom:9 });
+  // The numbers on the clusters and the reference labels come from a twin
+  // with exactly the same data and clustering, so they land on the same
+  // spots. Since 2.2.4: when both were one source, a font that did not arrive
+  // (slow or broken connection) kept every blue dot off the map, even though
+  // the data was there. Now it costs the numbers and labels at most.
+  if(map.getStyle().glyphs){
+    map.addSource('wwff-world-txt', { type:'geojson', data, cluster:true, clusterRadius:50, clusterMaxZoom:9 });
+  }
   // Its own colour, and deliberately not green or orange: those are already
   // taken by the areas, the spots and the agenda. Blue reads immediately as
   // "another country".
@@ -306,7 +324,7 @@ function paintWorld(tries){
             'circle-radius':['step',['get','point_count'],13, 50,17, 500,22, 5000,27],
             'circle-stroke-width':1.5, 'circle-stroke-color':'#fff' } });
   if(map.getStyle().glyphs) map.addLayer({
-    id:'world-cluster-count', type:'symbol', source:'wwff-world', filter:['has','point_count'],
+    id:'world-cluster-count', type:'symbol', source:'wwff-world-txt', filter:['has','point_count'],
     layout:{'text-field':['get','point_count_abbreviated'],'text-font':['Noto Sans Regular'],'text-size':11},
     paint:{'text-color':'#fff'} });
   // Growing with the zoom: zoomed out there are thousands of them and they have
@@ -320,7 +338,7 @@ function paintWorld(tries){
   // Only from zoom 11 on: below that it is a cloud of text, above it it is
   // exactly what you want to know without having to tap.
   if(map.getStyle().glyphs) map.addLayer({
-    id:'world-label', type:'symbol', source:'wwff-world', filter:['!',['has','point_count']],
+    id:'world-label', type:'symbol', source:'wwff-world-txt', filter:['!',['has','point_count']],
     minzoom:11,
     layout:{'text-field':['get','ref'],'text-font':['Noto Sans Regular'],'text-size':11,
             'text-offset':[0,1.1],'text-anchor':'top','text-allow-overlap':false,'text-padding':6},
@@ -330,10 +348,12 @@ function paintWorld(tries){
     map.on('click','world-clusters', e => {
       const f = map.queryRenderedFeatures(e.point, {layers:['world-clusters']})[0];
       const clusterId = f.properties.cluster_id;
-      map.getSource('wwff-world').getClusterExpansionZoom(clusterId, (err, zoom) => {
-        if(err) return;
-        map.easeTo({center: f.geometry.coordinates, zoom});
-      });
+      // MapLibre 4 answers with a promise and no longer calls a callback, so
+      // a tap on a cluster quietly did nothing (fixed in 2.2.4).
+      const p = map.getSource('wwff-world').getClusterExpansionZoom(clusterId);
+      if(p && typeof p.then === 'function'){
+        p.then(zoom => map.easeTo({center: f.geometry.coordinates, zoom})).catch(() => {});
+      }
     });
     // A blue dot opens the same panel as any other reference (selectWorld()
     // below), not a bare popup: the worldwide files already carry its QSO

@@ -15,6 +15,14 @@
  * entry here is the version the app reports.
  */
 const RELEASES = [
+  { v: '2.2.4', date: '2026-11-04',
+    nl: ['De blauwe bolletjes staan meteen op de kaart zodra de wereldwijde lijst binnen is. Ze wachtten tot nu op de lettertypes voor de getallen, en bij een trage of onderbroken verbinding bleven ze daardoor weg. Hetzelfde voor spots en punten zonder grens.',
+         'De knoppen "land" en "Wereldwijd" tonen bij het opstarten meteen je bewaarde keuze. Ze stonden de eerste seconden op ONFF, ook als je Wereldwijd gekozen had.',
+         'Een tik op een groepje blauwe bolletjes zoomt weer in.'],
+    en: ['The blue dots are on the map as soon as the worldwide list is in. Until now they waited for the fonts of the numbers, so on a slow or broken connection they stayed away. The same for spots and points without a boundary.',
+         'The country and Worldwide buttons show your saved choice right from the start. For the first seconds they showed ONFF, even when you had chosen Worldwide.',
+         'Tapping a group of blue dots zooms in again.'] },
+
   { v: '2.2.3', date: '2026-11-03',
     nl: ['Zoeken op de kaart vindt nu elke WWFF-referentie, ook in een land waarvan Diana geen grenzen heeft. Typ je alleen een nummer, dan zoekt Diana in je eigen land.',
          'Veldinfo → Gebieden toont nu ook referenties van andere landen in de buurt, bijvoorbeeld over de grens. Bij een land zonder grenzen in Diana (zoals Spanje) bleef die lijst leeg en meldde Diana ten onrechte dat je positie niet gekend was.',

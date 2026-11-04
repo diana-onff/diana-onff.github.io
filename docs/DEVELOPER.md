@@ -376,8 +376,16 @@ checkout is needed.
 `build/tests/` holds Playwright browser tests and build tests, one script per
 feature, each runnable on its own (`python3 build/tests/test_<name>.py`
 against a local server on port 8011). [build/tests/README.md](../build/tests/README.md)
-lists them, one line each. Known since v2.2.1: one check each in
-`test_new.py` ("points really do render"), `test_final.py` ("button in the
-panel fully usable again") and `test_worldpoints.py` ("on your own country,
-only its points are left") fails on a detail that changed after the test was
-written; the app itself is fine there.
+lists them, one line each. Known red checks (v2.2.4). The first three are
+tests the data has outgrown, not faults in the app:
+
+- `test_new.py` "points really do render" and `test_swipe.py` "points really
+  rendered after every switch": they look over Belgium for its points without
+  a boundary, and the only one left is ONFF-0004, in Antarctica.
+- `test_worldpoints.py` "on your own country, only its points are left":
+  written when the Netherlands had no boundaries; now that it has, its blue
+  dots are rightly replaced by its areas.
+- `test_final.py` "button in the panel fully usable again": the button ends
+  at 984 px on the test's 860 px screen. Not yet looked into.
+- `test_conditions.py`, the band check for SFI 92 / Kp 1: depends on the
+  season of the day the test runs.

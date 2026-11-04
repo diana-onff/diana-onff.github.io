@@ -207,6 +207,15 @@ from `data/wwff-world.geojson` (§2.1.1). Points only, same "point ≠ boundary"
 rule as §2.1.2, and drawn with MapLibre's built-in `cluster:true` GeoJSON
 clustering so a world-zoom view shows a manageable number of circles instead
 of tens of thousands of overlapping dots; clicking a cluster zooms in.
+Since v2.2.4 the numbers on the clusters and the reference labels come from a
+twin source (`wwff-world-txt`) with the same data and clustering. The same
+for the spots (`spots-txt`), the agenda (`agenda-txt`) and the points without
+a boundary (`onff-np-txt`); the boundary labels already had their own
+(`onff-pts`). Text needs the map's fonts, and a MapLibre source whose fonts do
+not arrive draws none of its layers: with dots and numbers in one source, a
+slow or failed font kept every blue dot off the map. Now a missing font costs
+the text only (`build/tests/test_startup_ui.py`). MapLibre 4's
+`getClusterExpansionZoom()` returns a promise; the cluster tap uses that.
 Clicking an individual point (since v2.2.0) opens the same panel as a
 reference without a boundary, filled with what Diana knows about it from the
 shared files only: locator, zones, QSO count or ATNO, distance and bearing,
