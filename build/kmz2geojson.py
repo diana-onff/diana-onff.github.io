@@ -1150,6 +1150,13 @@ def point_refs(rows: list[dict[str, str]], read_warnings: list[str], read_failed
     # have no boundary, while more than three quarters of ONFF, DLFF, OZFF and
     # PAFF together carry a link in the directory. Cleaned up by clean_website().
     world_sites: dict[str, str] = {}
+    # The last activation per reference, worldwide (since 2.2.5), for Field
+    # info and the panel of a blue dot. Only a plausible date: the directory
+    # has one from the year 1059, which activityOf() in map-data.js drops for
+    # the loaded country too.
+    world_last: dict[str, str] = {}
+    last_cells = 0
+    this_year = datetime.now(timezone.utc).year
     site_cells = 0
     active_world = 0
     for row in rows:
@@ -1174,6 +1181,11 @@ def point_refs(rows: list[dict[str, str]], read_warnings: list[str], read_failed
             world_activity[ref] = int(q)
         elif not last:
             world_activity[ref] = 0
+        if last:
+            last_cells += 1
+            m = re.match(r"(\d{4})-\d{2}-\d{2}", last)
+            if m and 1990 <= int(m.group(1)) <= this_year + 1:
+                world_last[ref] = last[:10]
         site_raw = (row.get("website") or "").strip()
         if site_raw:
             site_cells += 1
@@ -1210,9 +1222,15 @@ def point_refs(rows: list[dict[str, str]], read_warnings: list[str], read_failed
                         "empty): data/sites/ not rewritten")
         world_sites = {}
     stats["site_cells"] = site_cells
+    # And for the dates: no lastAct anywhere means the column went, not that
+    # nothing was ever activated. Then data/lastact/ is left as it is.
+    if active_world and not last_cells:
+        warnings.append("WWFF directory has no activation dates at all (lastAct column missing or "
+                        "empty): data/lastact/ not rewritten")
+        world_last = None
 
     return (features, entries, activity, warnings, stats, programs_map, world_features,
-            world_activity, world_sites)
+            world_activity, world_sites, world_last)
 
 
 def convert(kml_path: Path, tolerance: float, decimals: int, overrides: dict,
@@ -1643,7 +1661,7 @@ def main() -> int:
     have = {r["ref"] for r in index_doc["refs"]}
     programs = [PROGRAM]
     (pt_features, pt_entries, activity, pt_warnings, pt_stats, programs_map, world_features,
-     world_activity, world_sites) = point_refs(
+     world_activity, world_sites, world_last) = point_refs(
         dir_rows, dir_warnings, dir_read_failed, programs, have, overrides, args.decimals)
     stats["warnings"].extend(pt_warnings)
     stats["warnings"].extend(_point_inside_other_polygon_warnings(geojson, pt_features))
@@ -1907,6 +1925,29 @@ def main() -> int:
             sites_written += len(refs)
         for old in sites_dir.glob("*.json"):
             if old.name not in keep:
+                old.unlink()
+
+    # The last activation per reference, one file per programme
+    # (data/lastact/<prog>.json), next to data/sites/ and for the same reasons:
+    # Field info only needs the programmes that are near you. Since 2.2.5.
+    if world_last and not directory_failed:
+        per_prog_last: dict[str, dict[str, str]] = defaultdict(dict)
+        for ref, d in world_last.items():
+            per_prog_last[ref.split("-")[0]][ref] = d
+        last_dir = args.out / "lastact"
+        last_dir.mkdir(parents=True, exist_ok=True)
+        keep_last = set()
+        for prog, refs in per_prog_last.items():
+            if not re.fullmatch(r"[A-Z0-9]{1,5}FF", prog):
+                continue
+            name = prog.lower() + ".json"
+            keep_last.add(name)
+            body = json.dumps({"refs": dict(sorted(refs.items()))}, separators=(",", ":"))
+            target = last_dir / name
+            if not target.is_file() or target.read_text(encoding="utf-8") != body:
+                target.write_text(body, encoding="utf-8")
+        for old in last_dir.glob("*.json"):
+            if old.name not in keep_last:
                 old.unlink()
 
     # If the directory was unreachable, all of these counts are zero — but the

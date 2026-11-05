@@ -100,7 +100,7 @@ function nearbyRows(){
 }
 
 let nearWaiting = false, nearActWaiting = false;   // one repaint per load, not one per render
-const recencyUnknown = r => (r.world && r.qso !== 0) ? 1 : 0;
+const recencyUnknown = r => (r.world && r.qso !== 0 && !r.date) ? 1 : 0;
 
 /* The worldwide list is in (map.js), and Field info asks for it itself if
    nothing else has yet: the "other WWFF areas" layer can be switched off. */
@@ -144,14 +144,26 @@ function nearbyWorldRows(lat, lon, km){
     const d = haversine(lat, lon, c[1], c[0]);
     if(d > km * 1000) continue;
     out.push({ ref, name: f.properties.name || '', d, br: bearing(lat, lon, c[1], c[0]),
-               qso: qsoCountAnywhere(ref), date: null, known: false, world: true });
+               qso: qsoCountAnywhere(ref), date: lastActAnywhere(ref), known: false, world: true });
+  }
+  // The dates come per programme (since 2.2.5): ask for the ones in this list,
+  // and draw again once they are in.
+  for(const prog of new Set(out.map(r => refProgram(r.ref)))){
+    if(lastTables[prog]) continue;
+    const w = ensureLastAct(prog);
+    if(w && !nearLastWaiting.has(prog)){
+      nearLastWaiting.add(prog);
+      w.then(ok => { nearLastWaiting.delete(prog);
+        if(ok && $('viewNearby').classList.contains('on')) renderNearby(); });
+    }
   }
   return out;
 }
+const nearLastWaiting = new Set();
 
 function lastActiveText(r){
-  if(r.world) return r.qso === 0 ? t('spots.atno') : t('near.nodate');
-  if(!r.known) return t('near.nodata');
+  if(r.world && !r.date) return r.qso === 0 ? t('spots.atno') : t('near.nodate');
+  if(!r.known && !r.world) return t('near.nodata');
   if(!r.date)  return t('near.nodate');
   const d = new Date(r.date);
   const shown = isNaN(d) ? r.date

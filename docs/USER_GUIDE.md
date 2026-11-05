@@ -293,9 +293,10 @@ says which).
   the last two put the neglected references first. Up to a hundred lines, with
   "Show more". Tap a line to open it on the map. References from other
   countries are in the list too, across the border for instance, and for a
-  country without boundaries in Diana they are the whole list. For those,
-  Diana knows the QSO count (or ATNO) but not the date of the last activation,
-  so they come last when you sort on Last active.
+  country without boundaries in Diana they are the whole list. Since 2.2.5
+  they show the date of the last activation too; only where the WWFF
+  directory has none, Diana says so, and those come last when you sort on
+  Last active.
 - **Location**: where you are in radio terms. UTC and local time with the time
   zone, your Maidenhead locator in six and eight characters, your position in
   decimal degrees and in degrees, minutes and seconds with its accuracy, your

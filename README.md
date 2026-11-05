@@ -161,6 +161,7 @@ A pull request on this file makes the build run again. Building by hand:
 | `data/wwff-activity.json` | the QSO count of every WWFF reference worldwide (0 = never activated, ATNO) |
 | `data/wwff-programs.json` | every WWFF programme and its country |
 | `data/sites/<prog>.json` | the website link per reference, for "More info" |
+| `data/lastact/<prog>.json` | the date of the last activation per reference, every programme (since 2.2.5), for Field info and the panel of a blue dot |
 | `data/meta.json` | provenance: which source file, which release, when it was built |
 
 `<prog>` is the programme in lower case: `onff`, `paff`, `dlff`, `ozff`. Files

@@ -146,6 +146,38 @@ function ensureSites(prog){
   return siteLoading[prog];
 }
 
+/* The last activation per reference for every programme, not only the loaded
+   country (since 2.2.5): data/lastact/<prog>.json, ref -> "YYYY-MM-DD", from
+   the directory's lastAct column. Loaded per programme and only when needed
+   (Field info, the panel of a blue dot), retried at most once a minute, the
+   same way as ensureSites() above. */
+const lastTables = {}, lastLoading = {}, lastFailedAt = {};
+function ensureLastAct(prog){
+  prog = String(prog || '').toUpperCase();
+  if(!/^[A-Z0-9]{1,5}FF$/.test(prog)) return null;
+  if(lastTables[prog]) return Promise.resolve(true);
+  if(lastLoading[prog]) return lastLoading[prog];
+  if(lastFailedAt[prog] && Date.now() - lastFailedAt[prog] < 60000) return null;
+  lastLoading[prog] = (async () => {
+    try{
+      const doc = await fetchFirst(dataURL('lastact/' + prog.toLowerCase() + '.json'));
+      lastTables[prog] = (doc && doc.refs) || {};
+    }catch{ lastFailedAt[prog] = Date.now(); }
+    delete lastLoading[prog];
+    return !!lastTables[prog];
+  })();
+  return lastLoading[prog];
+}
+/* The date, or null. The loaded country's own table first, as everywhere. */
+function lastActAnywhere(ref){
+  ref = String(ref || '').toUpperCase();
+  const own = activityOf(ref);
+  if(own && own.date) return own.date;
+  const table = lastTables[refProgram(ref)];
+  const v = table && table[ref];
+  return (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v)) ? v.slice(0, 10) : null;
+}
+
 /* For anything from outside (Spotline, the WWFF directory) that ends up in innerHTML. */
 const escH = v => String(v).replace(/[&<>"']/g, c =>
   ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

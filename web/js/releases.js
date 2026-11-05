@@ -15,6 +15,12 @@
  * entry here is the version the app reports.
  */
 const RELEASES = [
+  { v: '2.2.5', date: '2026-11-05',
+    nl: ['Veldinfo → Gebieden toont nu ook voor referenties buiten je eigen land de datum van de laatste activatie, en sorteren op "Laatst actief" werkt daar nu ook. Het paneel van een blauw bolletje toont die datum ook.',
+         'De datums komen uit de WWFF-directory en worden elke nacht ververst. Diana haalt alleen de programma\'s op die in jouw buurt liggen.'],
+    en: ['Field info → Areas now shows the date of the last activation for references outside your own country too, and sorting on "Last active" works for them as well. The panel of a blue dot shows that date too.',
+         'The dates come from the WWFF directory and are refreshed every night. Diana only fetches the programmes that are near you.'] },
+
   { v: '2.2.4', date: '2026-11-04',
     nl: ['De blauwe bolletjes staan meteen op de kaart zodra de wereldwijde lijst binnen is. Ze wachtten tot nu op de lettertypes voor de getallen, en bij een trage of onderbroken verbinding bleven ze daardoor weg. Hetzelfde voor spots en punten zonder grens.',
          'De knoppen "land" en "Wereldwijd" tonen bij het opstarten meteen je bewaarde keuze. Ze stonden de eerste seconden op ONFF, ook als je Wereldwijd gekozen had.',

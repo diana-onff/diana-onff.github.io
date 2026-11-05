@@ -52,6 +52,13 @@ if [ -d data/sites ]; then
   cp -r data/sites "$OUT/data/"
 fi
 
+# The last activation per reference, one file per programme (data/lastact/<prog>.json),
+# for Field info and the panel of a blue dot. Since 2.2.5; without it those say
+# "no activation date known", as before.
+if [ -d data/lastact ]; then
+  cp -r data/lastact "$OUT/data/"
+fi
+
 # Shared by every country: provenance, the worldwide programme list, the
 # worldwide points layer and the worldwide QSO counts (spots screen, ATNO).
 # The last three only exist after a build that could actually reach the WWFF

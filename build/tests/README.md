@@ -12,6 +12,7 @@ python3 build/tests/test_new.py      # etc.
 | File | What it guards |
 |---|---|
 | `test_new.py` | points without a boundary: loading, drawing, panel, search, layer button, and that the GPS test skips them |
+| `test_lastact.py` | the last activation per reference for every programme (since 2.2.5): point_refs() keeps a plausible date (date part only), drops the year 1059, empty cells and deleted references; the real build writes data/lastact/<prog>.json, one per programme, without a timestamp, and leaves them alone when the directory has no lastAct column, with the reason in the report |
 | `test_more.py` | language choice (English by default, "follow the browser", staying saved) and the install flow per platform |
 | `test_swipe.py` | swiping down to close panels, and whether all our own layers survive six style switches |
 | `test_final.py` | that the install bar gives way to an open panel |
