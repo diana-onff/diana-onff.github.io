@@ -702,6 +702,7 @@ function selectWorld(f){
   $('zoneName').textContent = p.name || ref;
   $('facts').innerHTML = radioFactsHtml(selectedPos[0], selectedPos[1]) + fromYouFact(selectedPos);
   addWorldQso(ref);
+  addWorldLast(ref);
   $('zoneNote').textContent = has
     ? t('zone.worldhas').split('{country}').join(country || prog)
     : t('zone.worldnote');
@@ -749,6 +750,26 @@ function addWorldQso(ref){
   };
   if(put()) return;
   const loading = ensureWorldActivity();
+  if(loading) loading.then(put);
+}
+
+/* The last activation in the panel of a blue dot (since 2.2.5), from
+   data/lastact/<prog>.json, as soon as that file is in. Nothing when the
+   directory has no date for it: no empty box. */
+function addWorldLast(ref){
+  const put = () => {
+    const box = $('facts');
+    if(selected !== ref || !box || box.querySelector('.fact.last')) return;
+    const d = lastActAnywhere(ref);
+    if(!d) return;
+    const html = `<div class="fact last"><div class="k">${t('zone.lastact')}</div><div class="v">${escH(d)}</div></div>`;
+    const site = box.querySelector('.fact.site');
+    if(site) site.insertAdjacentHTML('beforebegin', html); else box.insertAdjacentHTML('beforeend', html);
+    if($('sheet').classList.contains('open'))
+      requestAnimationFrame(()=>document.body.style.setProperty('--sheet-h', $('sheet').offsetHeight+'px'));
+  };
+  put();
+  const loading = ensureLastAct(refProgram(ref));
   if(loading) loading.then(put);
 }
 
