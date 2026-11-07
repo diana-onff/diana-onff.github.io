@@ -7,7 +7,7 @@
 
 ### Cross-check against the WWFF directory
 
-**1332 active references** in the directory · **1326 with a boundary** from the KMZ · **1 as a point** on the map · **5 without a position** · 36 deleted (not shown)
+**1382 active references** in the directory · **1326 with a boundary** from the KMZ · **51 as a point** on the map · **5 without a position** · 36 deleted (not shown)
 
 Every reference appears only once: if there is a polygon in the KMZ, that one wins and the directory row is used only to check against.
 
@@ -62,9 +62,35 @@ Diana puts these at a point inside the boundary instead (worldwide points, Nearb
 
 </details>
 
-<details><summary>⚠️ 1 warnings</summary>
+<details><summary>⚠️ 27 warnings</summary>
 
 - 5 references with no polygon and no usable position: DLFF-0015, DLFF-0016, DLFF-0017, DLFF-0020, DLFF-0808 — can be placed with "point": [lon, lat] in overrides.json
+- DLFF-1369 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0085's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
+- DLFF-1370 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0085's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
+- DLFF-1375 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0097's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
+- DLFF-1376 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0097's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
+- DLFF-1377 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0043's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
+- DLFF-1378 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0043's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
+- DLFF-1379 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0043's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
+- DLFF-1382 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0134's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
+- DLFF-1383 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0134's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
+- DLFF-1389 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0085's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
+- DLFF-1394 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0095's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
+- DLFF-1397 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0129's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
+- DLFF-1398 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0041's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
+- DLFF-1399 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0129's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
+- DLFF-1401 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0044's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
+- DLFF-1402 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0044's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
+- DLFF-1406 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0044's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
+- DLFF-1407 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0044's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
+- DLFF-1408 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0044's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
+- DLFF-1409 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0044's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
+- DLFF-1410 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0044's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
+- DLFF-1413 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0060's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
+- DLFF-1414 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0060's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
+- DLFF-1415 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0060's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
+- DLFF-1417 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0093's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
+- DLFF-1418 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0093's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
 
 </details>
 
