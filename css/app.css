@@ -516,6 +516,16 @@
   }
   .consent .cbrand .mark{width:34px;height:auto}
   .consent p{margin:6px 0 12px}
+  /* The reassurance about the location permission (since 2.2.6): its own
+     tinted box with a bar on the left, so it is read before the button. */
+  .locscope{
+    display:flex; gap:10px; align-items:flex-start;
+    background:#e8f5ee; border:1px solid #b7dfc8; border-left:5px solid var(--green-2);
+    border-radius:10px; padding:11px 12px; margin:4px 0 14px;
+    font-size:14.5px; line-height:1.45; color:var(--ink);
+  }
+  .locscope .lsic{font-size:18px; line-height:1.2}
+  .locscope b{display:block; color:var(--green); font-weight:700; margin-bottom:3px}
 
   /* Location state line: welcome screen and privacy page (privacy.js). */
   .locstate{margin:8px 0 10px;font-size:13px}

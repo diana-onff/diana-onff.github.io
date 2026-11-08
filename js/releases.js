@@ -15,6 +15,18 @@
  * entry here is the version the app reports.
  */
 const RELEASES = [
+  { v: '2.2.8', date: '2026-11-08',
+    nl: ['Het welkomstscherm zegt nu ook wat je locatie oplevert (de kaart toont automatisch het gebied waar je staat en de referenties in je buurt) en dat Diana ook zonder werkt: je geeft dan je locator in bij Instellingen.'],
+    en: ['The welcome screen now also says what your location gives you (the map automatically shows the area you are in and the references near you) and that Diana works without it too: you then enter your locator under Settings.'] },
+
+  { v: '2.2.7', date: '2026-11-08',
+    nl: ['Op het welkomstscherm staat nu ook dat de toestemming voor je locatie niet geldt voor andere programma\'s, naast niet voor andere websites.'],
+    en: ['The welcome screen now also says that the location permission does not apply to other programs, besides not to other websites.'] },
+
+  { v: '2.2.6', date: '2026-11-08',
+    nl: ['Het welkomstscherm zegt nu duidelijk dat de toestemming voor je locatie alleen voor Diana geldt, niet voor andere websites, en dat Diana je positie alleen vraagt terwijl je de app gebruikt.'],
+    en: ['The welcome screen now says clearly that the location permission is for Diana only, not for other websites, and that Diana only asks for your position while you are using the app.'] },
+
   { v: '2.2.5', date: '2026-11-05',
     nl: ['Veldinfo → Gebieden toont nu ook voor referenties buiten je eigen land de datum van de laatste activatie, en sorteren op "Laatst actief" werkt daar nu ook. Het paneel van een blauw bolletje toont die datum ook.',
          'De datums komen uit de WWFF-directory en worden elke nacht ververst. Diana haalt alleen de programma\'s op die in jouw buurt liggen.'],
