@@ -97,9 +97,10 @@ with tempfile.TemporaryDirectory() as tmp:
     ok((ld / "eaff.json").stat().st_mtime_ns == stamp, "and leaves the date files alone")
     ok("no activation dates at all" in (repo / "report.md").read_text(encoding="utf-8"), "while the report says why")
 
+    shutil.copytree(ROOT / "web", repo / "web")
     site = subprocess.run(["bash", "build/site.sh", str(pathlib.Path(tmp) / "site")], cwd=repo, capture_output=True, text=True)
-    ok((pathlib.Path(tmp) / "site" / "data" / "lastact" / "eaff.json").is_file() or site.returncode != 0,
-       "site.sh publishes data/lastact/" + ("" if site.returncode == 0 else f" (site.sh stopped: {site.stderr[-120:]})"))
+    ok(site.returncode == 0 and (pathlib.Path(tmp) / "site" / "data" / "lastact" / "eaff.json").is_file(),
+       "site.sh publishes data/lastact/" + ("" if site.returncode == 0 else f" (site.sh stopped: {site.stderr[-200:]})"))
 
 print("\n" + ("ALL OK" if not fails else f"{len(fails)} PROBLEMS: " + " | ".join(fails)))
 sys.exit(1 if fails else 0)

@@ -143,12 +143,14 @@ with sync_playwright() as p:
        "QSO count: fewest first, unknown counts last")
     pg.evaluate("() => { nearMetric = 'recency'; renderNearby(); }")
     rc = pg.evaluate(ROWS)["rows"]
-    tail = [x for x in rc if x["world"] and x["qso"] != 0]
+    tail = [x for x in rc if x["world"] and x["qso"] != 0 and not x["date"]]   # since 2.2.5 only those without a date
     ok(rc[len(rc) - len(tail):] == tail if tail else True, "Last active: foreign ones without a date at the end")
     hd = [x["date"] or "" for x in rc if not x["world"]]
     ok(hd == sorted(hd), "and the Belgian ones in the same order as before, longest untouched first")
     wl = pg.evaluate("() => [...document.querySelectorAll('#nearList .spot')].filter(e => !e.dataset.ref.startsWith('ONFF-')).map(e => e.querySelector('.f').textContent)")
-    ok(wl and all(("no activation date known" in x) or x == "ATNO" for x in wl), f"a foreign row says the date is not known ({wl[:1]})")
+    # Since 2.2.5 with the date from data/lastact/ when that file is there.
+    ok(wl and all(("no activation date known" in x) or ("last active" in x) or x == "ATNO" for x in wl),
+       f"a foreign row says when it was last active, or that the date is not known ({wl[:1]})")
     pg.evaluate("() => { nearMetric = 'dist'; renderNearby(); }")
 
     print("\n[5] Belgian search and panels are unchanged")

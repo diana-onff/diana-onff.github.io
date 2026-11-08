@@ -81,7 +81,14 @@ On a device that has never opened Diana, two short things come first.
 - **Allow precise location.** Diana uses your GPS to show which reserve you are
   in and which references are nearby. The position is used only on the screen
   in front of you and is never sent to a server. Diana does not ask the browser
-  for your position before this screen is answered.
+  for your position before this screen is answered. A line above the button
+  says what the location gives you (the map shows your area and the references
+  nearby automatically) and that Diana also works without it. A box above the
+  button says what the permission is: for Diana only, not for other websites or
+  programs (a browser grants location per website), and used only while you use the app,
+  a few seconds at a time. It does not switch the phone's GPS on or off; that
+  stays with Android or iOS. Without the permission, the locator in Settings
+  does the job.
 - **Anonymous statistics**: "Yes, I'll help" or "No, rather not". Nothing is
   counted unless you say yes; either way Diana works exactly the same.
 
