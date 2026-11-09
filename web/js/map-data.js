@@ -219,6 +219,24 @@ async function loadMeta(){
     // whether an upload really has been processed.
     if(adminEl){
       const gebouwd = m.generated ? m.generated.replace('T',' ').replace('Z',' UTC') : '?';
+      // Every country, not only the one meta.json happens to describe (the
+      // last one converted). Since 2.2.9: a country that went missing, like
+      // a release that was never converted, is visible here at a glance.
+      let landen = [];
+      try{
+        const doc = await fetchFirst(['./data/countries.json','../data/countries.json']);
+        landen = (doc.countries || []).filter(c => c && c.program);
+      }catch{}
+      if(landen.length){
+        const tijd = landen.map(c => c.generated || '').sort().pop() || m.generated || '';
+        adminEl.innerHTML = landen.map(c =>
+            `<div class="admland"><b>${escH(c.program)}</b> · ${escH(c.source_file || '?')}<br>` +
+            `release ${escH(c.release || '?')} · ${escH(c.refs ?? '?')} ${t('set.zones')}</div>`).join('') +
+          `<div class="admland">${t('adm.processed')} ${escH(tijd ? tijd.replace('T',' ').replace('Z',' UTC') : '?')}</div>` +
+          (m.directory_failed ? '<br>⚠ WWFF-directory was onbereikbaar' : '');
+        adminEl.className = 'fb';
+        return m;
+      }
       adminEl.innerHTML =
         `<b>${escH(m.source_file || '?')}</b><br>` +
         `release ${escH(m.release || '?')} · ${escH(m.zones || '?')} ${t('set.zones')}<br>` +

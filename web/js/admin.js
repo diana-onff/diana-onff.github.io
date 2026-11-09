@@ -33,6 +33,13 @@ const adm = {
    page load, so nothing that is running breaks, but take it off the device
    right now. The panel then asks for a passphrase to remember it encrypted. */
 const admOudToken = !!adm.token;
+// Resuming an upload after a restart (hervatUpload, further down). Declared up
+// here because unlockAdmin() runs while this file is still loading.
+let hervatTimer = null;
+// While this screen is doing an upload itself, it also makes the pull request
+// itself; resuming alongside it would race it for the same one.
+let uploadLoopt = false;
+const HERVAT_ELKE = 20000, HERVAT_TOT = 3600e3;   // every 20 s, for up to an hour
 if(admOudToken){ try{ localStorage.removeItem('diana.adm.token'); }catch{} }
 
 /* Declared up here, not with the rest of the encryption further down:
@@ -344,6 +351,125 @@ async function kmzEntry(file){
   return beste;
 }
 
+/* A loose .kml (since 2.2.9).
+ *
+ * The conversion on GitHub only picks up .kmz: per country it takes the newest
+ * KMZ and nothing else. A .kml sent as it was went into the waiting room,
+ * raised a pull request, and was then passed over without a word: the
+ * Portuguese release did exactly that. A KMZ is nothing more than a zip with
+ * the KML in it, so the panel makes one here, on the device, before anything
+ * is sent: one entry, doc.kml, deflated where the browser can, stored where it
+ * cannot. The KMZ is then read back and its KML compared with the original
+ * (length and CRC) before it counts; if that fails, the panel says automatic
+ * conversion did not work and asks for a .kmz, and nothing is sent. The check
+ * below then reads the KMZ like any other. Any other kind of file is refused
+ * outright.
+ */
+const KML_RE = /\.kml$/i, KMZ_RE = /\.kmz$/i;
+const CRC_TABEL = (() => {
+  const tab = new Uint32Array(256);
+  for(let n = 0; n < 256; n++){
+    let c = n;
+    for(let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    tab[n] = c >>> 0;
+  }
+  return tab;
+})();
+function crc32(bytes){
+  let c = 0xFFFFFFFF;
+  for(let i = 0; i < bytes.length; i++) c = CRC_TABEL[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+/* The zip around one KML, as a File. data is the KML as it goes in (raw or
+   deflated), methode 0 or 8, lengte and crc those of the raw KML. */
+function bouwKmz(naamBron, gewijzigd, data, methode, lengte, crc){
+  const naam = new TextEncoder().encode('doc.kml');
+  const d = new Date(gewijzigd || Date.now());
+  const tijd  = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+  const datum = ((Math.max(d.getFullYear(), 1980) - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+
+  const lokaal = new DataView(new ArrayBuffer(30 + naam.length));
+  lokaal.setUint32(0, ZIP_LOCAL, true);   lokaal.setUint16(4, 20, true);
+  lokaal.setUint16(6, 0, true);           lokaal.setUint16(8, methode, true);
+  lokaal.setUint16(10, tijd, true);       lokaal.setUint16(12, datum, true);
+  lokaal.setUint32(14, crc, true);        lokaal.setUint32(18, data.length, true);
+  lokaal.setUint32(22, lengte, true);     lokaal.setUint16(26, naam.length, true);
+  lokaal.setUint16(28, 0, true);
+  new Uint8Array(lokaal.buffer).set(naam, 30);
+
+  const centraal = new DataView(new ArrayBuffer(46 + naam.length));
+  centraal.setUint32(0, ZIP_CD, true);     centraal.setUint16(4, 20, true);
+  centraal.setUint16(6, 20, true);         centraal.setUint16(8, 0, true);
+  centraal.setUint16(10, methode, true);   centraal.setUint16(12, tijd, true);
+  centraal.setUint16(14, datum, true);     centraal.setUint32(16, crc, true);
+  centraal.setUint32(20, data.length, true); centraal.setUint32(24, lengte, true);
+  centraal.setUint16(28, naam.length, true); // extra, comment, disk, attributes: 0
+  centraal.setUint32(42, 0, true);         // the local header sits at the very start
+  new Uint8Array(centraal.buffer).set(naam, 46);
+
+  const eind = new DataView(new ArrayBuffer(22));
+  eind.setUint32(0, ZIP_EOCD, true);
+  eind.setUint16(8, 1, true); eind.setUint16(10, 1, true);
+  eind.setUint32(12, centraal.byteLength, true);
+  eind.setUint32(16, lokaal.byteLength + data.length, true);
+
+  return new File([lokaal.buffer, data, centraal.buffer, eind.buffer],
+                  naamBron.replace(KML_RE, '.kmz'), {type: 'application/vnd.google-earth.kmz'});
+}
+
+/* Reads the KMZ that was just made back, through the same zip reader the check
+   uses, and takes the KML out again: it has to be exactly as long as the one
+   chosen, with the same CRC. Only then is it sent. Where the browser cannot
+   inflate, a deflated entry is only checked for its structure. */
+async function kmzKlopt(kmz, lengte, crc){
+  try{
+    const e = await kmzEntry(kmz);
+    if(!e || (e.method !== 0 && e.method !== 8) || e.comp <= 0) return false;
+    let stroom = kmz.slice(e.start, e.start + e.comp).stream();
+    if(e.method === 8){
+      if(typeof DecompressionStream !== 'function') return true;
+      stroom = stroom.pipeThrough(new DecompressionStream('deflate-raw'));
+    }
+    const bytes = new Uint8Array(await new Response(stroom).arrayBuffer());
+    return bytes.length === lengte && crc32(bytes) === crc;
+  }catch{ return false; }
+}
+
+/* Throws when no sound KMZ could be made: the caller then says so and asks for
+   a .kmz instead. Deflated first; if that does not read back right, stored. */
+async function kmlNaarKmz(file){
+  const ruw = new Uint8Array(await file.arrayBuffer());
+  if(!ruw.length) throw new Error('empty');
+  const crc = crc32(ruw);
+  if(typeof CompressionStream === 'function'){
+    try{
+      const stroom = new Blob([ruw]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+      const ingepakt = new Uint8Array(await new Response(stroom).arrayBuffer());
+      if(ingepakt.length < ruw.length){
+        const kmz = bouwKmz(file.name, file.lastModified, ingepakt, 8, ruw.length, crc);
+        if(await kmzKlopt(kmz, ruw.length, crc)) return kmz;
+      }
+    }catch{}
+  }
+  const kmz = bouwKmz(file.name, file.lastModified, ruw, 0, ruw.length, crc);
+  if(await kmzKlopt(kmz, ruw.length, crc)) return kmz;
+  throw new Error('kmz not sound');
+}
+
+/* What will actually be sent for the chosen file: the file itself for a .kmz,
+   the KMZ made from it for a .kml (made once per choice), null for anything
+   else. */
+let keuzeOmgezet = {bron: null, belofte: null};
+function teVersturen(){
+  const f = $('admFile').files[0];
+  if(!f) return Promise.resolve(null);
+  if(KMZ_RE.test(f.name)) return Promise.resolve(f);
+  if(!KML_RE.test(f.name)) return Promise.resolve(null);
+  if(keuzeOmgezet.bron !== f) keuzeOmgezet = {bron: f, belofte: kmlNaarKmz(f)};
+  return keuzeOmgezet.belofte;
+}
+
 async function keurBestand(file, prog){
   if(!/^[A-Z0-9]{1,3}FF$/.test(prog)) return {staat:'onbekend'};
   let entry = null;
@@ -415,6 +541,16 @@ async function keurEnToon(){
   keurOk = true;
   keurLoopt = false;
   if(!fb) return;
+  if(file && !KMZ_RE.test(file.name) && !KML_RE.test(file.name)){
+    // Not a map file at all: say so before anything else, country or not.
+    ++keurBezig;
+    keurOk = false;
+    fb.hidden = false;
+    fb.className = 'fb bad';
+    fb.textContent = vulIn(t('adm.badtype'), {name: file.name});
+    $('admSend').disabled = true;
+    return;
+  }
   if(!file || !prog){
     fb.hidden = true;
     $('admSend').disabled = !magVersturen();
@@ -428,24 +564,37 @@ async function keurEnToon(){
   fb.className = 'fb';
   fb.textContent = t('adm.checking');
   $('admSend').disabled = true;
-  const uit = await keurBestand(file, prog);
+  let echt = file, voor = '';
+  if(KML_RE.test(file.name)){
+    try{ echt = await teVersturen(); }catch{ echt = null; }
+    if(beurt !== keurBezig) return;
+    if(!echt){
+      keurLoopt = false; keurOk = false;
+      fb.className = 'fb bad';
+      fb.textContent = t('adm.kmlfail');
+      $('admSend').disabled = true;
+      return;
+    }
+    voor = vulIn(t('adm.kmlwrapped'), {name: echt.name}) + ' ';
+  }
+  const uit = await keurBestand(echt, prog);
   if(beurt !== keurBezig) return;
   keurLoopt = false;
 
   if(uit.staat === 'goed'){
     fb.className = 'fb good';
-    fb.textContent = vulIn(t('adm.checkok'),
+    fb.textContent = voor + vulIn(t('adm.checkok'),
       {prog, n: uit.raak >= SCAN_GENOEG ? SCAN_GENOEG + '+' : uit.raak});
   }else if(uit.staat === 'ander'){
     keurOk = false;
     fb.className = 'fb bad';
-    fb.textContent = vulIn(t('adm.checkwrong'), {prog, other: uit.ander});
+    fb.textContent = voor + vulIn(t('adm.checkwrong'), {prog, other: uit.ander});
   }else if(uit.staat === 'leeg'){
     fb.className = 'fb warn';
-    fb.textContent = vulIn(t('adm.checknone'), {prog});
+    fb.textContent = voor + vulIn(t('adm.checknone'), {prog});
   }else{
     fb.className = 'fb';
-    fb.textContent = t('adm.checkfail');
+    fb.textContent = voor + t('adm.checkfail');
   }
   $('admSend').disabled = !magVersturen();
 }
@@ -529,10 +678,19 @@ async function opentPr(branch, bestand, program){
 }
 
 $('admSend').onclick = async () => {
-  const file = $('admFile').files[0];
   const prog = $('admProgram').value;
+  let file = null;
+  const gekozen = $('admFile').files[0];
+  if(gekozen && !KMZ_RE.test(gekozen.name) && !KML_RE.test(gekozen.name)){
+    // Normally the button is already shut for this; say it here too, before
+    // anything is sent, should it ever be pressed anyway.
+    showStatus('out', t('adm.failed'), vulIn(t('adm.badtype'), {name: gekozen.name}));
+    return;
+  }
+  try{ file = await teVersturen(); }catch{ file = null; }   // a .kml goes out as .kmz
   if(!file || !prog) return;
   $('admSend').disabled = true;
+  uploadLoopt = true;
   const bron   = bronRepo();
   // A folder per country, in the waiting room and in source/ alike. That is
   // what keeps a new German release from landing on top of the Belgian one.
@@ -575,6 +733,12 @@ $('admSend').onclick = async () => {
     // closes the app while the build is running finds it again on the next
     // opening via hervatUpload().
     bewaarBezig({branch, file: file.name, program: prog, at: new Date().toISOString()});
+    // This upload is now the one to follow. The previous pull request, if the
+    // app still remembered one, would otherwise stand in its way after a
+    // restart (see hervatUpload). It stays on GitHub, and the cleanup list
+    // still shows its file.
+    bewaarPr(null); stopPrPoll();
+    toonPr().catch(()=>{});
 
     drawSteps(++step);                                          // 8 wait for the branch
     const er = await wachtOpBranch(branch);
@@ -594,6 +758,7 @@ $('admSend').onclick = async () => {
     drawSteps(step, err.message);
     showStatus('out', t('adm.failed'), err.message);
   }finally{
+    uploadLoopt = false;
     $('admSend').disabled = false;
   }
 };
@@ -601,10 +766,16 @@ $('admSend').onclick = async () => {
 /* If you closed the app while the conversion was running, this picks up the
    thread again: the branch does exist by now, only the pull request was never
    made out of it. */
+
 async function hervatUpload(){
   const bezig = huidigBezig();
-  if(!bezig || !adm.repo || !adm.token) return;
-  if(huidigePr()){ bewaarBezig(null); return; }   // there is already a pull request
+  if(!bezig || !adm.repo || !adm.token || uploadLoopt) return;
+  // Only a pull request for this very branch means the work is done. Until
+  // 2.2.9 any remembered pull request counted, also an older one, and then
+  // the upload under way was thrown away: after a restart its follow-up was
+  // simply gone, while the build on GitHub ran on.
+  const oud = huidigePr();
+  if(oud && oud.branch === bezig.branch){ bewaarBezig(null); return; }
   try{
     // Maybe there is already a pull request for this branch — then just pick it up.
     const bestaand = await gh(`/repos/${adm.repo}/pulls?state=open&head=${adm.repo.split('/')[0]}:${encodeURIComponent(bezig.branch)}`);
@@ -620,9 +791,39 @@ async function hervatUpload(){
     showStatus('in', t('adm.resumed'), `#${pr.number}`);
     toonPr().catch(()=>{});
   }catch{
-    // Branch does not exist yet: the build is probably still running. Leave it
-    // be, opening the app next time will try again.
+    // Branch does not exist yet: the build is probably still running. Try
+    // again in a while for as long as this screen is open, and show that it
+    // is under way (toonPr), instead of nothing at all.
+    toonPr().catch(()=>{});
+    if(!hervatTimer && bezigLeeftijd(bezig) < HERVAT_TOT){
+      hervatTimer = setTimeout(() => { hervatTimer = null; hervatUpload().catch(()=>{}); }, HERVAT_ELKE);
+    }
   }
+}
+function bezigLeeftijd(bezig){
+  const t0 = Date.parse(bezig && bezig.at);
+  return isNaN(t0) ? Infinity : Date.now() - t0;
+}
+
+/* The follow-up card while a conversion runs and there is no pull request
+   yet: that state used to show nothing, which looked like a lost upload. */
+function toonLopend(bezig){
+  const card = $('admPrCard');
+  card.hidden = false; stopPrPoll();
+  const oud = bezigLeeftijd(bezig) >= HERVAT_TOT;
+  const vergrendeld = !adm.token && heeftVersleuteld();
+  $('admPrHead').textContent = vergrendeld ? t('adm.prlocked')
+    : vulIn(t(oud ? 'adm.runstale' : 'adm.running'), {file: bezig.file || '?', prog: bezig.program || '?'});
+  $('admPrHead').className = 'fb' + (oud && !vergrendeld ? ' warn' : '');
+  $('admPrChecks').innerHTML = (oud || vergrendeld) ? ''
+    : `<div class="step now"><span class="mk">…</span><span>${escH(t('adm.prwaiting'))}</span></div>`;
+  $('admPrPreview').innerHTML = oud && !vergrendeld
+    ? `<button class="btn ghost" id="admRunForget">${escH(t('adm.runforget'))}</button>` : '';
+  if(oud && !vergrendeld){
+    $('admRunForget').onclick = () => { bewaarBezig(null); toonPr().catch(()=>{}); };
+  }
+  $('admPrReport').hidden = true;
+  $('admPrMerge').disabled = true; $('admPrClose').disabled = true;
 }
 
 /* ================================================================== *
@@ -672,6 +873,7 @@ function stopPrPoll(){ if(prPoll){ clearInterval(prPoll); prPoll = null; } }
 document.addEventListener('visibilitychange', () => {
   if(document.visibilityState === 'visible' && document.body.classList.contains('admin')){
     toonPr().catch(()=>{});
+    hervatUpload().catch(()=>{});
   }
 });
 
@@ -697,6 +899,12 @@ async function toonPr(){
 
   const opgeslagen = huidigePr();
   const card = $('admPrCard');
+  const lopend = huidigBezig();
+  if(lopend && adm.repo && (!opgeslagen || opgeslagen.branch !== lopend.branch)
+     && (adm.token || heeftVersleuteld())){
+    toonLopend(lopend);
+    return;
+  }
   if(opgeslagen && adm.repo && !adm.token && heeftVersleuteld()){
     // Locked: the pull request is still there, it only waits for the passphrase.
     card.hidden = false; stopPrPoll();

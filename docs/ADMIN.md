@@ -159,7 +159,31 @@ only starts once the previous one has actually succeeded.
 
 Steps 8 and 9 survive you closing the app: the branch is built on GitHub
 regardless, and the next time you open the Admin panel Diana notices the
-unfinished upload and opens the pull request then.
+unfinished upload and opens the pull request then. With an encrypted token
+that happens right after you unlock it. Until the pull request exists, the
+follow-up card says the conversion is running, and while the Admin screen is
+open Diana checks again every 20 seconds. (Since v2.2.9. Before that, a pull
+request the app still remembered from an earlier upload made it throw the new
+upload's follow-up away after a restart, and the card stayed empty.) Starting
+a new upload makes the app forget the previous pull request: that one stays on
+GitHub and can be finished there. A conversion that has not produced a branch
+after an hour is reported as such, with a button to forget it.
+
+**A .kml is accepted too, anything else is refused (since v2.2.9).** The
+conversion on GitHub only reads `.kmz`: a loose `.kml` used to go through the
+whole upload, get a pull request, and then be skipped without a word. The
+panel now wraps a `.kml` into a `.kmz` on your own device before sending it
+(one entry, `doc.kml`; the name keeps its stem, `ctff_20261110.kml` becomes
+`ctff_20261110.kmz`), and says so under the file. The KMZ it made is read back
+first and its KML compared with the original (length and CRC). If that does
+not come out right, or the file is empty, the panel says that automatic
+conversion did not work on this device and asks you to upload a `.kmz`
+yourself (zip the `.kml`, rename the zip to `.kmz`); the send button stays shut. Any other file type gets an
+error straight away and the send button stays shut: nothing is sent.
+
+**Live now** lists every country with its source file, release and number of
+areas, plus when the build last ran. If a country you uploaded is not in that
+list, it was not converted.
 
 **Why you have to pick a country.** A KMZ does not say which programme it
 belongs to. The ONFF export carries its reference numbers in the names of its

@@ -15,6 +15,14 @@
  * entry here is the version the app reports.
  */
 const RELEASES = [
+  { v: '2.2.9', date: '2026-11-09',
+    nl: ['Beheer: een .kml-bestand wordt bij het uploaden zelf omgezet naar .kmz. De omzetting op GitHub leest alleen .kmz en sloeg een .kml stil over. Lukt die omzetting op een toestel niet, dan meldt Diana dat en vraagt ze om een .kmz. Een ander bestandstype krijgt meteen een foutmelding en wordt niet verstuurd.',
+         'Beheer: sluit je de app terwijl een upload wordt omgezet, dan pikt Diana hem bij het volgende openen weer op en toont ze dat de omzetting loopt. Een eerdere pull request zat dat soms in de weg, waardoor de opvolging verdween.',
+         'Beheer: "Nu live" toont nu alle landen met hun bronbestand en release, niet alleen het laatst verwerkte.'],
+    en: ['Admin: a .kml file is turned into a .kmz while uploading. The conversion on GitHub only reads .kmz and silently skipped a .kml. If that conversion does not work on a device, Diana says so and asks for a .kmz. Any other file type gets an error straight away and is not sent.',
+         'Admin: if you close the app while an upload is being converted, Diana picks it up again the next time and shows that the conversion is running. An earlier pull request sometimes got in the way, and the follow-up disappeared.',
+         'Admin: "Live now" lists every country with its source file and release, not only the one converted last.'] },
+
   { v: '2.2.8', date: '2026-11-08',
     nl: ['Het welkomstscherm zegt nu ook wat je locatie oplevert (de kaart toont automatisch het gebied waar je staat en de referenties in je buurt) en dat Diana ook zonder werkt: je geeft dan je locator in bij Instellingen.'],
     en: ['The welcome screen now also says what your location gives you (the map automatically shows the area you are in and the references near you) and that Diana works without it too: you then enter your locator under Settings.'] },
