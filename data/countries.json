@@ -1,6 +1,21 @@
 {
-  "generated": "2026-11-09T15:50:01Z",
+  "generated": "2026-11-09T16:38:00Z",
   "countries": [
+    {
+      "program": "CTFF",
+      "country": "Portugal",
+      "refs": 179,
+      "points": 101,
+      "release": "2026-11-10",
+      "source_file": "ctff_20261110.kmz",
+      "generated": "2026-11-09T16:38:00Z",
+      "bytes": 2738452,
+      "files": {
+        "zones": "zones/ctff.geojson",
+        "points": "zones/ctff-points.geojson",
+        "activity": "zones/ctff-activity.json"
+      }
+    },
     {
       "program": "DLFF",
       "country": "Federal Republic Of Germany",
