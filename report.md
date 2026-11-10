@@ -1,89 +1,68 @@
-### CTFF — `ctff_20261110.kmz`
+### DLFF — `DLFF_20261126.kmz`
 
-## Diana — new dataset from `ctff_20261110.kmz`
+## Diana — new dataset from `DLFF_20261126.kmz`
 
-**179 areas** (was 179, 0) · **0 new** · **0 gone** · **0 boundary changed**
+**1376 areas** (was 1326, +50) · **50 new** · **0 gone** · **0 boundary changed**
+
+<details><summary>50 new areas</summary>
+
+- `DLFF-1369` Kalkberge bei Röhrda und Weißenborn — province unknown, 634.2 ha
+- `DLFF-1370` Hessische Schweiz bei Meinhard — province unknown, 242.4 ha
+- `DLFF-1371` Unterm Siegel bei Bebra — province unknown, 8.9 ha
+- `DLFF-1372` Altwarmbüchener Moor — province unknown, 1227.2 ha
+- `DLFF-1373` Bockmerholz, Gaim — province unknown, 1124.3 ha
+- `DLFF-1374` Leineaue zwischen Hannover und Ruthe — province unknown, 966.4 ha
+- `DLFF-1375` Moorgebiet bei Arrach — province unknown, 12.7 ha
+- `DLFF-1376` Ponnholzbachtal — province unknown, 29.9 ha
+- `DLFF-1377` Großer Arbersee und Arberseewand — province unknown, 148.5 ha
+- `DLFF-1378` Riesloch — province unknown, 33.3 ha
+- `DLFF-1379` Großer Pfahl und Pfahlriegel St. Antoniuspfahl — province unknown, 24.2 ha
+- `DLFF-1380` Pöllwitzer Wald — province unknown, 2029.9 ha
+- `DLFF-1381` Laußnitzer Heide — province unknown, 1438.8 ha
+- `DLFF-1382` Pestruper Gräberfeld und Rosengarten — province unknown, 38.5 ha
+- `DLFF-1383` Benthullener Moor — province unknown, 270.0 ha
+- `DLFF-1384` Burgwald Dinklage — province unknown, 125.9 ha
+- `DLFF-1385` Nordwestufer der Rothsee-Hauptsperre — province unknown, 47.2 ha
+- `DLFF-1386` Halbinsel im Kleinen Brombachsee — province unknown, 42.0 ha
+- `DLFF-1387` Grafenmühle — province unknown, 88.5 ha
+- `DLFF-1388` Baggerweiher zwischen Bechhofen und Gauchsdorf — province unknown, 35.5 ha
+- `DLFF-1389` Meißner — province unknown, 932.6 ha
+- `DLFF-1390` Alte Kartause bei Gensungen — province unknown, 25.3 ha
+- `DLFF-1391` Rudolfshagen — province unknown, 75.7 ha
+- `DLFF-1392` Auenverbund Fulda — province unknown, 9026.5 ha
+- `DLFF-1393` Oberes Fuldatal — province unknown, 702.6 ha
+- `DLFF-1394` Oberes Pfefferfließ — province unknown, 125.3 ha
+- `DLFF-1395` Glindower Alpen — province unknown, 106.9 ha
+- `DLFF-1396` Oderaue Genschmar — province unknown, 261.4 ha
+- `DLFF-1397` Klienitz — province unknown, 201.1 ha
+- `DLFF-1398` Schönerlinder Teiche — province unknown, 40.8 ha
+- `DLFF-1399` Klapperberge — province unknown, 1454.6 ha
+- `DLFF-1400` Heidekrug — province unknown, 31.4 ha
+- `DLFF-1401` NSG Marscheider Bachtal — province unknown, 35.1 ha
+- `DLFF-1402` NSG Haenge der Neyetalsperre — province unknown, 12.0 ha
+- `DLFF-1403` NSG Hildener Heide-Schoenholz <D> — province unknown, 36.4 ha
+- `DLFF-1404` NSG Morper Bachtal <A> — province unknown, 73.5 ha
+- `DLFF-1405` NSG Stinderbachtal <A> — province unknown, 74.0 ha
+- `DLFF-1406` Wälder, Hänge, Ufer Gr. Dhünntalsp. Nebenbächen, Gr. Dhünn.,Purderbachtal — province unknown, 488.7 ha
+- `DLFF-1407` NSG Leyerbachtal — province unknown, 15.1 ha
+- `DLFF-1408` NSG Westener und Platzer Siefen — province unknown, 10.9 ha
+- `DLFF-1409` LSG-Morsbachtal, Eschbachtal, Seitentaeler und Haenge — province unknown, 883.3 ha
+- `DLFF-1410` LSG-Hochflaechen Buscher Hof, Hohen Hagen und Westhausen — province unknown, 444.8 ha
+- `DLFF-1411` LSG VO Kleve — province unknown, 1670.7 ha
+- `DLFF-1412` LSG Im Bereich der Isselburg-Werther Bruchniederung, der Millinger Ebene und Wittenhorster Sandplatten — province unknown, 1831.9 ha
+- `DLFF-1413` LSG \"Selbitztal mit Nebentälern\" im Gebiet des Landkreis Hof — province unknown, 1357.1 ha
+- `DLFF-1414` Schutz von Landschaftsteilen in den Landkreisen Hof, Kronach, Kulmbach, Münchberg, Naila und Stadtsteinach (Landschaftsteil Schorgasttal) — province unknown, 1072.7 ha
+- `DLFF-1415` Schutz von Landschaftsteilen (LSG Weißenstein bei Stammbach, Landkreis Münchberg) Landkreis Hof — province unknown, 20.1 ha
+- `DLFF-1416` Talsperre Dröda — province unknown, 4937.9 ha
+- `DLFF-1417` Waldnaabniederung — province unknown, 204.1 ha
+- `DLFF-1418` Hammerweiher — province unknown, 79.5 ha
+
+</details>
 
 
 ### Cross-check against the WWFF directory
 
-**280 active references** in the directory · **179 with a boundary** from the KMZ · **101 as a point** on the map · 665 deleted (not shown)
-
-Every reference appears only once: if there is a polygon in the KMZ, that one wins and the directory row is used only to check against.
-
-<details><summary>📍 3 references whose WWFF-directory position lies more than 2 km outside their own boundary</summary>
-
-Diana puts these at a point inside the boundary instead (worldwide points, Nearby > Info, agenda pins), so the dot matches the area on the map. Where the directory copies a neighbour's exact coordinates the directory is wrong and this list can go to WWFF as it is; for the others it is worth a look which of the two is wrong, the directory or the boundary in the KMZ. Coordinates are latitude, longitude.
-
-- `CTFF-0073` Paisagem Protegida Local do Rio Antua: 32.2 km outside its boundary (directory 40.8197, -8.4845, a point inside the boundary is 41.1481, -8.4727)
-- `CTFF-0241` Mata Nacional das Dunas de Vagos: 2.2 km outside its boundary (directory 40.5229, -8.7773, a point inside the boundary is 40.5316, -8.7339)
-- `CTFF-0252` Mata Nacional do Pedrogao, Marinha Grande: 2.2 km outside its boundary (directory 39.8613, -8.9635, a point inside the boundary is 39.9063, -8.9408)
-
-</details>
-
-<details><summary>⚠️ 46 warnings</summary>
-
-- CTFF-0255 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0317's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0318 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0395 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0008's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0464 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0454's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0465 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0454's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0466 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0454's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0661 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0011's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0738 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0838 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0841 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0887 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0886's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0897 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0898 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0899 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0900 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0901 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0902 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0903 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0904 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0905 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0906 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0907 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0908 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0909 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0910 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0911 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0912 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0914 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0915 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0106's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0917 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0918 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0919 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0920 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0921 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0922 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0923 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0924 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0925 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0926 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0927 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0928 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0929 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0930 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0931 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0932 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- CTFF-0933 has no polygon of its own, but its position from the WWFF directory falls inside CTFF-0030's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-
-</details>
-
-<sub>Release 2026-11-10 · 268 source polygons · generated by kmz2geojson 1.1.0</sub>
-
-### DLFF — `DLFF_20261025.kmz`
-
-## Diana — new dataset from `DLFF_20261025.kmz`
-
-**1326 areas** (was 1326, 0) · **0 new** · **0 gone** · **0 boundary changed**
-
-
-### Cross-check against the WWFF directory
-
-**1382 active references** in the directory · **1326 with a boundary** from the KMZ · **51 as a point** on the map · **5 without a position** · 36 deleted (not shown)
+**1382 active references** in the directory · **1376 with a boundary** from the KMZ · **1 as a point** on the map · **5 without a position** · 36 deleted (not shown)
 
 Every reference appears only once: if there is a polygon in the KMZ, that one wins and the directory row is used only to check against.
 
@@ -138,113 +117,11 @@ Diana puts these at a point inside the boundary instead (worldwide points, Nearb
 
 </details>
 
-<details><summary>⚠️ 27 warnings</summary>
+<details><summary>⚠️ 1 warnings</summary>
 
 - 5 references with no polygon and no usable position: DLFF-0015, DLFF-0016, DLFF-0017, DLFF-0020, DLFF-0808 — can be placed with "point": [lon, lat] in overrides.json
-- DLFF-1369 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0085's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- DLFF-1370 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0085's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- DLFF-1375 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0097's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- DLFF-1376 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0097's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- DLFF-1377 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0043's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- DLFF-1378 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0043's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- DLFF-1379 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0043's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- DLFF-1382 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0134's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- DLFF-1383 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0134's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- DLFF-1389 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0085's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- DLFF-1394 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0095's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- DLFF-1397 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0129's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- DLFF-1398 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0041's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- DLFF-1399 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0129's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- DLFF-1401 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0044's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- DLFF-1402 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0044's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- DLFF-1406 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0044's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- DLFF-1407 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0044's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- DLFF-1408 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0044's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- DLFF-1409 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0044's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- DLFF-1410 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0044's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- DLFF-1413 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0060's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- DLFF-1414 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0060's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- DLFF-1415 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0060's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- DLFF-1417 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0093's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
-- DLFF-1418 has no polygon of its own, but its position from the WWFF directory falls inside DLFF-0093's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
 
 </details>
 
-<sub>Release 2026-10-25 · 2670 source polygons · generated by kmz2geojson 1.1.0</sub>
-
-### OZFF — `OZFF_20261024.kmz`
-
-## Diana — new dataset from `OZFF_20261024.kmz`
-
-**331 areas** (was 331, 0) · **0 new** · **0 gone** · **0 boundary changed**
-
-
-### Cross-check against the WWFF directory
-
-**331 active references** in the directory · **331 with a boundary** from the KMZ · **0 as a point** on the map
-
-Every reference appears only once: if there is a polygon in the KMZ, that one wins and the directory row is used only to check against.
-
-<sub>Release 2026-10-24 · 606 source polygons · generated by kmz2geojson 1.1.0</sub>
-
-### PAFF — `PAFF_20261025.kmz`
-
-## Diana — new dataset from `PAFF_20261025.kmz`
-
-**281 areas** (was 281, 0) · **0 new** · **0 gone** · **0 boundary changed**
-
-
-### Cross-check against the WWFF directory
-
-**288 active references** in the directory · **281 with a boundary** from the KMZ · **7 as a point** on the map
-
-Every reference appears only once: if there is a polygon in the KMZ, that one wins and the directory row is used only to check against.
-
-<details><summary>📍 5 references whose WWFF-directory position lies more than 2 km outside their own boundary</summary>
-
-Diana puts these at a point inside the boundary instead (worldwide points, Nearby > Info, agenda pins), so the dot matches the area on the map. Where the directory copies a neighbour's exact coordinates the directory is wrong and this list can go to WWFF as it is; for the others it is worth a look which of the two is wrong, the directory or the boundary in the KMZ. Coordinates are latitude, longitude.
-
-- `PAFF-0104` Borkeld: 27.0 km outside its boundary (directory 52.5067, 6.6833, a point inside the boundary is 52.2727, 6.4983)
-- `PAFF-0015` Oosterschelde: 15.6 km outside its boundary (directory 51.6647, 4.4151, a point inside the boundary is 51.5672, 3.9596)
-- `PAFF-0079` Broekvelden, Vettenbroek & Polder Stein: 10.7 km outside its boundary (directory 52.1445, 4.8022, a point inside the boundary is 52.0365, 4.7791)
-- `PAFF-0019` Nationaal Park Veluwezoom: 4.5 km outside its boundary (directory 52.0800, 6.1500, a point inside the boundary is 52.0533, 6.0516)
-- `PAFF-0003` De Groote Peel: 2.3 km outside its boundary (directory 51.3300, 5.7500, a point inside the boundary is 51.3469, 5.8188)
-
-</details>
-
-<sub>Release 2026-10-25 · 2579 source polygons · generated by kmz2geojson 1.1.0</sub>
-
-### ONFF — `ONFF 20260802.kmz`
-
-## Diana — new dataset from `ONFF 20260802.kmz`
-
-**947 areas** (was 947, 0) · **0 new** · **0 gone** · **0 boundary changed**
-
-
-### Cross-check against the WWFF directory
-
-**948 active references** in the directory · **947 with a boundary** from the KMZ · **1 as a point** on the map · 16 deleted (not shown)
-
-Every reference appears only once: if there is a polygon in the KMZ, that one wins and the directory row is used only to check against.
-
-<details><summary>📍 1 references whose WWFF-directory position lies more than 2 km outside their own boundary</summary>
-
-Diana puts these at a point inside the boundary instead (worldwide points, Nearby > Info, agenda pins), so the dot matches the area on the map. Where the directory copies a neighbour's exact coordinates the directory is wrong and this list can go to WWFF as it is; for the others it is worth a look which of the two is wrong, the directory or the boundary in the KMZ. Coordinates are latitude, longitude.
-
-- `ONFF-0138` Moinet: 2.2 km outside its boundary (directory 50.0510, 5.8153, a point inside the boundary is 50.0511, 5.8513)
-
-</details>
-
-<details><summary>⚠️ 6 warnings</summary>
-
-- one placemark's name disagreed between ONFF-0434, ONFF-0439; the WWFF directory's name for ONFF-0434 ('Teunenberg') matched best, so it was used
-- one placemark's name disagreed between ONFF-0253, ONFF-0254; the WWFF directory's name for ONFF-0254 ('Kollintenbos/Kollinten') matched best, so it was used instead of the nearer ONFF-0253
-- one placemark's name disagreed between ONFF-0115, ONFF-0119; the WWFF directory's name for ONFF-0115 ('Het Leen') matched best, so it was used
-- one placemark's name disagreed between ONFF-0291, ONFF-0292; the WWFF directory's name for ONFF-0291 ('Haasop') matched best, so it was used
-- one placemark's name disagreed between ONFF-0076, ONFF-0079; the WWFF directory's name for ONFF-0079 ('Maskobossen') matched best, so it was used instead of the nearer ONFF-0076
-- release date in the KML (2026-01-01) differs from the filename (2026-08-02) — the filename was used
-
-</details>
-
-<sub>Release 2026-08-02 · 12538 source polygons · generated by kmz2geojson 1.1.0</sub>
+<sub>Release 2026-11-26 · 2844 source polygons · generated by kmz2geojson 1.1.0</sub>
 
