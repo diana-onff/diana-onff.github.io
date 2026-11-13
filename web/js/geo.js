@@ -433,6 +433,10 @@ function evaluate(lat,lon,accuracy,keepMap){
     const f = zones.features.find(x=>x.properties.ref===z.ref);
     if(pointInGeom(lon,lat,f.geometry)) inside.push(f);
   }
+  // In several at once: the smallest first, as a tap on the map does it (since
+  // 2.2.10). It is the one that opens; the others are a button away.
+  const grootte = f => { const a = Number(f.properties.area_ha); return isFinite(a) && a > 0 ? a : 0; };
+  inside.sort((a,b) => grootte(a) - grootte(b));
   // Unknown is not nought. This used to be `accuracy||0`, and nought metres is
   // read everywhere below as "no doubt whatsoever" — so a browser that would
   // not say how good its fix was got the most confident answer of all. Null

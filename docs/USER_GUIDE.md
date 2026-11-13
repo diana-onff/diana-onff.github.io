@@ -155,13 +155,24 @@ known, never an empty box:
 Under every panel: **Spot yourself here** and **Announce an activation**.
 Both open their form with the reference already filled in.
 
+**Areas on top of each other.** References overlap: a small reserve often lies
+inside a larger nature area. A tap opens the **smallest** area under your
+finger, so tap inside the reserve for the reserve, and in the area around it
+for the larger one. The smallest is also drawn on top. When more than one area
+lies at the tapped point, the panel lists the others as buttons under the
+facts ("This point is also inside these references"), each with its name and
+size: one tap switches to it, and a button there leads back. (Since v2.2.10.
+Before, the area that happened to be drawn last was the only one a tap could
+reach, and a reserve underneath a larger area could not be selected at all.)
+
 Panels at the bottom of the screen close by **swiping them down**, or with ×.
 On a phone only one bottom panel is visible at a time.
 
 **Am I inside the reserve?** A card at the bottom of the map answers that from
 your GPS: inside a reference, inside several at once (when references overlap),
 or outside, with the nearest one and its distance. Inside, it also gives the
-distance to the nearest boundary.
+distance to the nearest boundary. Inside several at once, the panel of the
+smallest opens, with the others as buttons to switch to.
 
 Finding your position takes a few seconds on purpose. A phone that has just
 woken its GPS answers from wifi and cell masts first, and that position can be
