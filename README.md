@@ -29,6 +29,7 @@ and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for why.
 | Document | Who for | Contents |
 |---|---|---|
 | [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | users | platforms, installing, the welcome screen and setup wizard, every screen explained, embedding, and the **limitations** (everything stays on the device, nothing syncs) |
+| [docs/SECURITY_USERS.md](docs/SECURITY_USERS.md) | users with a script blocker or strict settings | what Diana loads and from where, what to allow, and why reloading (F5 / Ctrl+R) matters |
 | [docs/ADMIN.md](docs/ADMIN.md) | the Diana team | how a country's area file reaches Diana, the in-app Admin panel, the nightly update, troubleshooting |
 | [docs/MAINTENANCE.md](docs/MAINTENANCE.md) | whoever keeps Diana running | every credential, the GitHub security settings, adding an administrator, the kill switch, what goes stale |
 | [docs/INSTALL.md](docs/INSTALL.md) | whoever sets Diana up somewhere new | the whole thing from zero: organisation, repositories, settings, the Worker, with a checkpoint after every step |

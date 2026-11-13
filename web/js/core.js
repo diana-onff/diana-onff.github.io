@@ -6,9 +6,15 @@
 const STYLE_URL = s => `https://tiles.openfreemap.org/styles/${s}`;
 const $ = id => document.getElementById(id);
 
+/* Scripts do run (since 2.2.11): this hides the "scripts are blocked" box on
+   the splash screen for good. Only when the map library came in as well: a
+   blocker that lets our own files through but stops that one leaves the app
+   just as stuck, and then the box should still say so. */
+if(window.maplibregl) document.documentElement.classList.add('js-ok');
+
 /* Version of the app itself. Shown on the splash screen and in Settings, so that
    a report along the lines of "it's behaving oddly" can be tied to a version. */
-const APP_VERSION = '2.2.10';
+const APP_VERSION = '2.2.11';
 /* Filled in at publish time by build/site.sh: the short commit hash and the date
    of that build. If the placeholder is still there, you are running a copy that
    never went through the build step — locally, or straight out of the repo.

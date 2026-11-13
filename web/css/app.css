@@ -463,6 +463,20 @@
     transition:opacity .5s ease, visibility .5s;
   }
   .splash.gone{opacity:0; visibility:hidden; pointer-events:none}
+  /* Scripts blocked (since 2.2.11): shown by the stylesheet alone after 10 s,
+     hidden for good as soon as the app's own scripts run. */
+  .splash-help{
+    position:absolute; z-index:3; left:50%; top:16px; transform:translateX(-50%);
+    width:calc(100% - 32px); max-width:460px; max-height:calc(100% - 200px); overflow:auto;
+    background:#fff; color:var(--ink); border-radius:14px; padding:16px 18px;
+    box-shadow:0 8px 28px rgba(0,0,0,.35); font-size:14px; line-height:1.45; text-align:left;
+    opacity:0; visibility:hidden; animation:splashhelp .4s ease 10s forwards;
+  }
+  .splash-help .sh-t{display:block; font-size:16px; margin-bottom:6px; color:#92400e}
+  .splash-help p{margin:8px 0 0}
+  .splash-help a{color:var(--green-2); font-weight:600}
+  .js-ok .splash-help{display:none}
+  @keyframes splashhelp{to{opacity:1; visibility:visible}}
   /* readability at the bottom, without flattening the illustration */
   .splash::after{
     content:""; position:absolute; inset:auto 0 0 0; height:58%;

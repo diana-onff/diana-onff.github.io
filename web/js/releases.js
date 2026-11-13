@@ -15,6 +15,12 @@
  * entry here is the version the app reports.
  */
 const RELEASES = [
+  { v: '2.2.11', date: '2026-11-14',
+    nl: ['Blijft Diana op het startscherm hangen omdat een scriptblocker alle scripts tegenhoudt, dan verschijnt na 10 seconden een vak dat uitlegt wat er aan de hand is: sta scripts toe voor diana-onff.github.io en herlaad de pagina met F5 of Ctrl+R (Mac: Cmd+R). Dat vak werkt zelf zonder scripts.',
+         'Nieuw document voor wie streng beveiligt: wat Diana laadt, van waar, en waarom (docs/SECURITY_USERS.md).'],
+    en: ['If Diana stays on the start screen because a script blocker stops every script, a box appears after 10 seconds explaining what is going on: allow scripts for diana-onff.github.io and reload the page with F5 or Ctrl+R (Mac: Cmd+R). That box works without any script itself.',
+         'New document for security-minded users: what Diana loads, from where, and why (docs/SECURITY_USERS.md).'] },
+
   { v: '2.2.10', date: '2026-11-13',
     nl: ['Gebieden die over elkaar liggen: een tik opent nu het kleinste gebied onder je vinger. Een reservaat binnen een groter natuurgebied was tot nu toe niet te kiezen, omdat het grote erbovenop lag.',
          'Het paneel toont de andere gebieden op dat punt als knoppen, zodat je met een tik wisselt. Sta je met je gps in meerdere gebieden tegelijk, dan opent het kleinste en staan de andere erbij.',
