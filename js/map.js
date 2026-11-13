@@ -37,6 +37,11 @@ function paintZones(){
 
   map.addLayer({
     id:'onff-fill', type:'fill', source:'onff',
+    // The smallest area on top (since 2.2.10). Areas overlap, and a reserve
+    // lying inside a larger park was drawn underneath it whenever the file
+    // happened to list the park later: its outline half hidden, and a tap
+    // never reached it. A higher key is drawn later, so: minus the area.
+    layout:{'fill-sort-key':['-', 0, ['coalesce',['get','area_ha'],0]]},
     paint:{
       'fill-color':'#2d6a4f',
       // 'zoom' is only allowed at the top of an interpolate, so the selection sits inside it.
@@ -47,6 +52,7 @@ function paintZones(){
   });
   map.addLayer({
     id:'onff-line', type:'line', source:'onff',
+    layout:{'line-sort-key':['-', 0, ['coalesce',['get','area_ha'],0]]},
     paint:{
       'line-color':['case',['boolean',['feature-state','sel'],false],'#d97706','#1b4332'],
       'line-width':['interpolate',['linear'],['zoom'],
@@ -73,9 +79,11 @@ function paintZones(){
   paintNoPoly();
 
   map.on('click','onff-fill', e => {
-    // Zones can overlap — show everything under the finger, not just the topmost one.
-    const hits = map.queryRenderedFeatures(e.point,{layers:['onff-fill']});
-    select(hits[0].properties.ref, hits.map(h=>h.properties.ref));
+    // Zones can overlap: the smallest one under the finger is the one meant
+    // (tap inside the reserve and you get the reserve, tap in the park around
+    // it and you get the park), and the panel offers the others to switch to.
+    const refs = kleinsteEerst(map.queryRenderedFeatures(e.point,{layers:['onff-fill']}).map(h=>h.properties.ref));
+    select(refs[0], refs);
   });
   map.on('mouseenter','onff-fill',()=>map.getCanvas().style.cursor='pointer');
   map.on('mouseleave','onff-fill',()=>map.getCanvas().style.cursor='');
@@ -565,6 +573,39 @@ function applyVisibility(){
 }
 
 /* ---------- selection & detail panel ---------- */
+/* Several areas at one point, each once, smallest first. Sorted here by the
+   area in the data and not left to the order the map happens to return: a
+   multi-part area comes back once per part, and an area without a known size
+   counts as the smallest, so it can always be reached. */
+function kleinsteEerst(refs){
+  const opp = ref => {
+    const f = zones.features.find(x=>x.properties.ref===ref);
+    const a = f && Number(f.properties.area_ha);
+    return isFinite(a) && a > 0 ? a : 0;
+  };
+  return [...new Set(refs)].map(r => [r, opp(r)]).sort((a,b) => a[1]-b[1]).map(x => x[0]);
+}
+
+/* The other areas at the tapped point, as buttons in the panel (since 2.2.10).
+   Until then this was a sentence naming them, and no way to open one: with the
+   larger area on top, the one underneath could not be selected at all. The
+   same set travels along, so you can switch back. */
+function toonOok(ref, alsoIn){
+  const box = $('zoneAlso');
+  if(!box) return;
+  const ook = kleinsteEerst((alsoIn||[]).filter(r => r !== ref && zones.features.some(x=>x.properties.ref===r)));
+  box.hidden = !ook.length;
+  if(!ook.length){ box.innerHTML = ''; return; }
+  box.innerHTML = `<div class="lbl">${escH(t('zone.also'))}</div>` + ook.map(r => {
+    const p = zones.features.find(x=>x.properties.ref===r).properties;
+    const ha = Number(p.area_ha);
+    return `<button class="alsobtn" data-ref="${escH(r)}"><span class="pill">${escH(r)}</span>` +
+           `<span class="nm">${escH(p.name || '')}</span>` +
+           (isFinite(ha) && ha > 0 ? `<span class="ha">${escH(ha.toLocaleString(locale()))} ha</span>` : '') + `</button>`;
+  }).join('');
+  box.querySelectorAll('.alsobtn').forEach(b => { b.onclick = () => select(b.dataset.ref, alsoIn); });
+}
+
 function featureIdOf(ref){ return zones.features.findIndex(f=>f.properties.ref===ref); }
 
 function reselect(){ if(selected) markSelected(selected); }
@@ -652,6 +693,7 @@ function selectPoint(f){
     + radioFactsHtml(selectedPos[0], selectedPos[1])
     + activityFacts(p.ref);
   $('zoneNote').textContent = t('zone.nopolynote').split('{prog}').join(refProgram(p.ref) || 'WWFF');
+  toonOok(null, null);
   addAreaSite(p.ref);
   sheetButtons(null);
 
@@ -706,6 +748,7 @@ function selectWorld(f){
   $('zoneNote').textContent = has
     ? t('zone.worldhas').split('{country}').join(country || prog)
     : t('zone.worldnote');
+  toonOok(null, null);
   addAreaSite(ref);
   sheetButtons(has ? prog : null);
 
@@ -823,9 +866,8 @@ function select(ref, alsoIn){
   const parts = f.geometry.coordinates.length;
   const notes = [];
   if(parts > 1) notes.push(t('zone.partsnote').replace('{n}', parts));
-  const overlap = (alsoIn||[]).filter(r=>r!==ref);
-  if(overlap.length) notes.push(t('zone.overlap').replace('{refs}', overlap.join(', ')));
   $('zoneNote').textContent = notes.join(' ');
+  toonOok(ref, alsoIn);
   addAreaSite(ref);
   sheetButtons(null);
 

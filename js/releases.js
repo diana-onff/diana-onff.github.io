@@ -15,6 +15,14 @@
  * entry here is the version the app reports.
  */
 const RELEASES = [
+  { v: '2.2.10', date: '2026-11-13',
+    nl: ['Gebieden die over elkaar liggen: een tik opent nu het kleinste gebied onder je vinger. Een reservaat binnen een groter natuurgebied was tot nu toe niet te kiezen, omdat het grote erbovenop lag.',
+         'Het paneel toont de andere gebieden op dat punt als knoppen, zodat je met een tik wisselt. Sta je met je gps in meerdere gebieden tegelijk, dan opent het kleinste en staan de andere erbij.',
+         'Velden naast elkaar staan nu altijd op één lijn, ook als een label in een langere taal over twee regels loopt. Het label voor het roepteken van de activator is in elke taal één kort woord, bijvoorbeeld "Ativador" in het Portugees.'],
+    en: ['Areas that lie on top of each other: a tap now opens the smallest area under your finger. A reserve inside a larger nature area could not be selected until now, because the larger one lay on top.',
+         'The panel shows the other areas at that point as buttons, so you switch with a tap. If your GPS puts you in several areas at once, the smallest opens and the others are listed with it.',
+         'Fields side by side now always stay in line, also when a label runs over two lines in a longer language. The label for the activator\'s callsign is one short word in every language, for example "Ativador" in Portuguese.'] },
+
   { v: '2.2.9', date: '2026-11-09',
     nl: ['Beheer: een .kml-bestand wordt bij het uploaden zelf omgezet naar .kmz. De omzetting op GitHub leest alleen .kmz en sloeg een .kml stil over. Lukt die omzetting op een toestel niet, dan meldt Diana dat en vraagt ze om een .kmz. Een ander bestandstype krijgt meteen een foutmelding en wordt niet verstuurd.',
          'Beheer: sluit je de app terwijl een upload wordt omgezet, dan pikt Diana hem bij het volgende openen weer op en toont ze dat de omzetting loopt. Een eerdere pull request zat dat soms in de weg, waardoor de opvolging verdween.',
