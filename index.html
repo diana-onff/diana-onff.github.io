@@ -635,6 +635,18 @@
     <div class="sbar"><i id="splashBar"></i></div>
     <div class="sver" id="splashVer"></div>
   </div>
+  <!-- Since 2.2.11. When a script blocker stops every script, nothing in the
+       app runs, so this screen would stay forever with no word of why. This
+       box needs no script at all: the stylesheet shows it after 10 s, and the
+       app hides it the moment its own scripts run (core.js sets js-ok on the
+       html element). English only, because picking a language takes a script. -->
+  <div class="splash-help" id="splashHelp" role="alert">
+    <b class="sh-t">Diana cannot start: its scripts are blocked.</b>
+    <p>Every script Diana needs comes from <b>diana-onff.github.io</b> itself, nothing from other sites. If you use a script blocker (NoScript, uBlock Origin, …), allow scripts for this site only.</p>
+    <p><b>Then reload the page:</b> press <b>F5</b> or <b>Ctrl+R</b> (Mac: <b>Cmd+R</b>). On a phone: pull the page down, or tap the reload button of the browser. Without reloading, the block stays in place.</p>
+    <p>Still stuck? Another extension may block too: switch them off one by one for this site. <a href="https://github.com/diana-onff/diana-onff.github.io/blob/main/docs/SECURITY_USERS.md" target="_blank" rel="noopener">What Diana loads, and why</a></p>
+  </div>
+  <noscript><style>.splash-help{animation:none;opacity:1;visibility:visible}</style></noscript>
 </div>
 
 <!-- First launch only: explains the location permission the browser is about
