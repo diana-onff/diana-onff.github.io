@@ -74,7 +74,8 @@ start screen is worse than a bare map. Embedded in someone else's page
 
 **Stuck on the start screen?** Then a script blocker (NoScript, uBlock Origin
 and the like) is stopping Diana's scripts, and nothing in the app can run.
-Since v2.2.11 a box on the start screen says so after 10 seconds. Allow scripts
+Since v2.2.11 a box on the start screen says so after 20 seconds (10 in
+v2.2.11). Allow scripts
 for diana-onff.github.io only, then **reload the page with F5 or Ctrl+R** (Mac:
 Cmd+R; on a phone, pull the page down or tap reload): without reloading the
 block stays. Exactly what Diana loads and why is in

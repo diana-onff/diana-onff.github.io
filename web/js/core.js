@@ -11,10 +11,14 @@ const $ = id => document.getElementById(id);
    blocker that lets our own files through but stops that one leaves the app
    just as stuck, and then the box should still say so. */
 if(window.maplibregl) document.documentElement.classList.add('js-ok');
+// Our own scripts run but the map library was blocked (since 2.2.12): then we
+// know already, so the box shows straight away and the start screen stays,
+// instead of making way after 12 s for an app that cannot draw a map.
+else document.documentElement.classList.add('js-nomap');
 
 /* Version of the app itself. Shown on the splash screen and in Settings, so that
    a report along the lines of "it's behaving oddly" can be tied to a version. */
-const APP_VERSION = '2.2.11';
+const APP_VERSION = '2.2.12';
 /* Filled in at publish time by build/site.sh: the short commit hash and the date
    of that build. If the placeholder is still there, you are running a copy that
    never went through the build step — locally, or straight out of the repo.
@@ -41,7 +45,7 @@ function splashStep(pct, key){
   if(txt && key) txt.textContent = t(key);
 }
 function splashDone(){
-  if(splashHidden) return;
+  if(splashHidden || !window.maplibregl) return;
   splashHidden = true;
   const wait = Math.max(0, MIN_SPLASH_MS - (Date.now() - splashStart));
   setTimeout(() => {

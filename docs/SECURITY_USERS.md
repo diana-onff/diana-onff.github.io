@@ -8,7 +8,10 @@ allow exactly what Diana needs and nothing more.
 
 Diana is a web app: without JavaScript nothing in it runs. When a blocker
 stops every script, the start screen stays up. Since v2.2.11 a box appears on
-it after 10 seconds saying so (that box needs no script itself).
+it after 20 seconds saying so (that box needs no script itself; 10 seconds
+in v2.2.11, which on a very weak connection could show it for nothing on a
+first visit). If only the map library is blocked, Diana's own scripts notice
+and show the box at once.
 
 1. Allow scripts for **diana-onff.github.io** only. Not `github.io` and not
    `github.com`: Diana needs neither.

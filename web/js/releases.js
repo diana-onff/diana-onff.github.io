@@ -15,6 +15,12 @@
  * entry here is the version the app reports.
  */
 const RELEASES = [
+  { v: '2.2.12', date: '2026-11-14',
+    nl: ['Het vak over geblokkeerde scripts op het startscherm verschijnt nu na 20 seconden in plaats van 10. Op een heel zwakke verbinding kon het bij een eerste bezoek anders onterecht even opduiken.',
+         'Blokkeert een scriptblocker alleen de kaartbibliotheek, dan merkt Diana dat zelf: het vak verschijnt meteen en het startscherm blijft staan.'],
+    en: ['The box about blocked scripts on the start screen now appears after 20 seconds instead of 10. On a very weak connection it could otherwise show briefly for nothing on a first visit.',
+         'If a script blocker stops only the map library, Diana notices it herself: the box shows at once and the start screen stays.'] },
+
   { v: '2.2.11', date: '2026-11-14',
     nl: ['Blijft Diana op het startscherm hangen omdat een scriptblocker alle scripts tegenhoudt, dan verschijnt na 10 seconden een vak dat uitlegt wat er aan de hand is: sta scripts toe voor diana-onff.github.io en herlaad de pagina met F5 of Ctrl+R (Mac: Cmd+R). Dat vak werkt zelf zonder scripts.',
          'Nieuw document voor wie streng beveiligt: wat Diana laadt, van waar, en waarom (docs/SECURITY_USERS.md).'],
