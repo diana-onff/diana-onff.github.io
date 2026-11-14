@@ -15,6 +15,10 @@
  * entry here is the version the app reports.
  */
 const RELEASES = [
+  { v: '2.2.13', date: '2026-11-14',
+    nl: ['Nieuw in Instellingen: de knop Handleiding. Die opent de handleiding van Diana in je browser, in je eigen taal. Diana zelf blijft gewoon staan waar je was.'],
+    en: ['New in Settings: the User guide button. It opens the Diana user guide in your browser, in your own language. Diana itself stays exactly where you were.'] },
+
   { v: '2.2.12', date: '2026-11-14',
     nl: ['Het vak over geblokkeerde scripts op het startscherm verschijnt nu na 20 seconden in plaats van 10. Op een heel zwakke verbinding kon het bij een eerste bezoek anders onterecht even opduiken.',
          'Blokkeert een scriptblocker alleen de kaartbibliotheek, dan merkt Diana dat zelf: het vak verschijnt meteen en het startscherm blijft staan.'],
