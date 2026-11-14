@@ -18,7 +18,7 @@ else document.documentElement.classList.add('js-nomap');
 
 /* Version of the app itself. Shown on the splash screen and in Settings, so that
    a report along the lines of "it's behaving oddly" can be tied to a version. */
-const APP_VERSION = '2.2.12';
+const APP_VERSION = '2.2.13';
 /* Filled in at publish time by build/site.sh: the short commit hash and the date
    of that build. If the placeholder is still there, you are running a copy that
    never went through the build step — locally, or straight out of the repo.

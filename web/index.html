@@ -320,6 +320,11 @@
   <p class="privacy">🔒 <span data-i18n="set.localonly">Alles wat je hier invult blijft in de browser van dít toestel.</span></p>
   <p class="hint" style="text-align:center;margin:2px 0 0"><span data-i18n="set.version">Versie</span> <span id="setVer"></span></p>
   <p class="hint" style="text-align:center;margin:2px 0 0"><span data-i18n="set.data">Gegevens</span> <span id="setData">…</span></p>
+  <!-- The user guide lives on its own address (another origin than the app), so
+       the link always opens in the browser or a new tab and never inside the
+       installed app. The address per language is set in applyLang() (i18n.js). -->
+  <p style="text-align:center;margin:12px 0 0"><a class="btn ghost" id="helpBtn" href="https://diana-faunaflora.github.io/" target="_blank" rel="noopener" style="display:inline-block;text-decoration:none;font-size:12.5px;padding:8px 14px" data-i18n="set.help">Handleiding</a></p>
+  <p class="hint" style="text-align:center;margin:4px 0 0" data-i18n="set.helphint">Opent de handleiding in je browser. Diana blijft gewoon staan.</p>
   <p style="text-align:center;margin:8px 0 0"><button class="btn ghost" id="btnRefresh" style="font-size:12.5px;padding:8px 14px" data-i18n="set.refresh">Op updates controleren</button></p>
   <p style="text-align:center;margin:8px 0 0"><button class="btn ghost" id="relOpenBtn" style="font-size:12.5px;padding:8px 14px" data-i18n="set.releases">Wat is er nieuw</button></p>
   <p style="text-align:center;margin:8px 0 0"><button class="btn ghost" id="wzRerun" style="font-size:12.5px;padding:8px 14px" data-i18n="wz.rerun">Opstartwizard opnieuw doorlopen</button></p>

@@ -1,5 +1,7 @@
 /* Order: what the user chose > the browser's language if we speak it > English. */
 const LANGS = ['en','nl','fr','de','da','it','es','pt'];
+/* The user guide: a separate site on its own address (not part of this app). */
+const HELP_SITE = 'https://diana-faunaflora.github.io/';
 /* Order: ?lang= in the URL, then the choice from Settings, then English.
  *
  * "auto" is an explicit choice to follow the browser language — anyone who
@@ -32,6 +34,9 @@ function applyLang(){
   document.documentElement.lang = lang;
   document.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent = t(el.dataset.i18n); });
   document.querySelectorAll('[data-i18n-ph]').forEach(el=>{ el.placeholder = t(el.dataset.i18nPh); });
+  // The user guide has a start page per language; English is the root.
+  const help = document.getElementById('helpBtn');
+  if(help) help.href = HELP_SITE + (lang === 'en' ? '' : lang + '/');
   rerender();
 }
 
