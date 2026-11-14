@@ -579,8 +579,15 @@ never changes within a version.**
 | Live data (`spots.wwff.co`) | network-first; the last cached response only if the network fails |
 | The rest of the shell (scripts, styles, vendor, icons) | cache-first in `diana-vN-shell`; it only changes with `VERSION` |
 
-`build/site.sh` gives `VERSION` a new value on every publication, so a new
-service worker arrives with nearly every nightly refresh. On activation it
+`build/site.sh` sets `VERSION` (and the build stamp in `core.js`) to a
+fingerprint of the app files: everything published from `web/`, nothing under
+`data/`. A new service worker therefore arrives only when the app itself
+changed. A nightly refresh that brings only new data leaves `sw.js`, `core.js`
+and `index.html` byte for byte the same, and the new data still arrives,
+through `dataVers()` above, at the next start. (Until v2.2.12 `VERSION` was
+the commit hash, so every nightly refresh looked like a new release: phones
+fetched the whole app again at the first start of the day and showed "new
+version"; `build/tests/test_stamp.py`.) On activation a new service worker
 deletes only the previous **shell** cache: `diana-data` and `diana-tiles`
 keep their names on purpose, so an overnight update never takes the map or
 the boundaries away from someone who opens the app in the field without

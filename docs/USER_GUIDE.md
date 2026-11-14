@@ -381,6 +381,11 @@ Two tabs:
 - **Install as an app**, see §2.
 - At the bottom: the version and data line, **Check for updates**, **What's
   new** (the release notes, newest first) and **Run the setup wizard again**.
+  The version line reads like `v2.2.12 · 6757ec3 · 14/11/2026`: the version,
+  a code for this exact build of the app, and the date of that release. The
+  code only changes when the app itself changes, not when the nightly refresh
+  brings new data; the data line below it says how fresh the data is. A new
+  version of the app is therefore announced only when there really is one.
 
 Everything here stays in the browser of this device; see §Limitations.
 

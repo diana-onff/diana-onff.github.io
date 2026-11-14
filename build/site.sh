@@ -7,8 +7,9 @@
 #
 # This is also where the version stamp is set. That happens at build time on
 # purpose and not in the repo: a number you have to bump by hand sooner or later
-# stands still — and then the app lies about what you are running. The commit hash
-# is always right, without anyone having to think about it.
+# stands still, and then the app lies about what you are running. The stamp is a
+# fingerprint of the app files (see "version stamp" below): always right, without
+# anyone having to think about it, and unchanged by a refresh of the data alone.
 set -euo pipefail
 
 OUT="${1:-_site}"
@@ -110,19 +111,38 @@ else
 fi
 
 # --------------------------------------------------------------- version stamp
-# Inside an Action the hash is in GITHUB_SHA; locally we ask git itself. If
-# neither works (an unpacked zip with no .git), then "lokaal" is a more honest
-# answer than a made-up number.
-SHA="${GITHUB_SHA:-}"
-if [ -z "$SHA" ]; then
-  SHA="$(git rev-parse HEAD 2>/dev/null || true)"
-fi
-KORT="${SHA:0:7}"
-[ -n "$KORT" ] || KORT="lokaal"
-
-# Date of the commit itself, not of the moment of building: build the same point
-# twice and the same stamp ought to come out.
-DATUM="$(git log -1 --format=%cd --date=format:'%d/%m/%Y' 2>/dev/null || date -u +'%d/%m/%Y')"
+# Since 2.2.12 the stamp is a fingerprint of the app itself, not the commit.
+#
+# It used to be the commit hash. Every nightly data refresh is a commit, so
+# every night the service worker came out different, and every phone took that
+# for a new release: it fetched the whole app again (about 3 MB) at the first
+# start of the day, right while the app was starting, and showed "new version"
+# although not one byte of the app had changed. Fresh data never needed any of
+# that: data/ is asked for fresh at every start through its own route in the
+# service worker (dataVers), whatever the version.
+#
+# So: a hash over every file the app consists of, which is everything that was
+# just copied out of web/, and nothing under data/. A night that only brings
+# new data leaves it, and with it sw.js, core.js and index.html, byte for byte
+# the same; a package that changes any app file gives a new one. The date comes
+# from the newest entry in releases.js, which is part of the app as well, so it
+# does not move with the data either. test_site.py checks both directions.
+read -r KORT DATUM < <(python3 - "$OUT" <<'PY'
+import hashlib, pathlib, re, sys
+uit = pathlib.Path(sys.argv[1])
+h = hashlib.sha256()
+for f in sorted(p for p in uit.rglob("*") if p.is_file()):
+    rel = f.relative_to(uit).as_posix()
+    if rel.split("/")[0] == "data":
+        continue
+    h.update(rel.encode("utf-8") + b"\0")
+    h.update(f.read_bytes() + b"\0")
+m = re.search(r"date:\s*'(\d{4})-(\d{2})-(\d{2})'", (uit / "js" / "releases.js").read_text(encoding="utf-8"))
+datum = f"{m.group(3)}/{m.group(2)}/{m.group(1)}" if m else "?"
+print(h.hexdigest()[:7], datum)
+PY
+)
+[ -n "${KORT:-}" ] || { echo "site.sh: could not compute the app fingerprint" >&2; exit 1; }
 BUILD="$KORT · $DATUM"
 
 # The app reads this as the constant BUILD. Python instead of sed, because a
@@ -149,9 +169,10 @@ js = treffers[0]
 tekst = js.read_text(encoding="utf-8")
 js.write_text(tekst.replace("'__DIANA_BUILD__'", f"'{build}'"), encoding="utf-8")
 
-# The service worker gets its own cache name per build. That way it clears out
-# everything from the previous release by itself on activation, and an old version
-# in the cache is no longer a matter of patience but of a single reload.
+# The service worker gets its own cache name per release of the app. That way it
+# clears out everything from the previous release by itself on activation, and an
+# old version in the cache is no longer a matter of patience but of a single
+# reload. A data-only build keeps the same name, and so the same sw.js.
 sw = uit / "sw.js"
 tekst = sw.read_text(encoding="utf-8")
 import re

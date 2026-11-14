@@ -127,7 +127,11 @@ That has three consequences worth knowing before you touch anything here:
   out in the woods with no signal.
 - **The build stamp** (`'__DIANA_BUILD__'` in `core.js`) is replaced by
   `build/site.sh`, which searches every file under `js/` and stops the build
-  unless it finds it exactly once.
+  unless it finds it exactly once. Since v2.2.12 the stamp is a fingerprint of
+  the app files (all of `web/`, not `data/`) plus the date of the newest entry
+  in `releases.js`, not the commit: a data-only refresh keeps it, and with it
+  `sw.js`, unchanged, so phones see a new version only when the app changed.
+  The same fingerprint goes into `VERSION` in `sw.js`.
 
 ---
 
