@@ -618,6 +618,15 @@
 
   body.embed .nav, body.embed .brand, body.embed .counts{display:none}
   body.embed .topbar{padding-top:8px}
+  /* The country picker exists in an embed only (map.js, setupEmbedCountry). */
+  .embcountry{
+    height:42px; max-width:min(240px, calc(100vw - 180px)); min-width:0;
+    border:0; border-radius:12px; background:var(--card); box-shadow:var(--shadow);
+    padding:0 10px; font:inherit; font-size:14px; color:var(--ink);
+    text-overflow:ellipsis; cursor:pointer;
+  }
+  .embcountry[hidden]{display:none}
+  .embcountry:focus-visible{outline:2px solid var(--leaf);outline-offset:1px}
   @media (max-width:520px){
     .pop{right:12px;left:12px;width:auto}
     .pop + .pop{right:12px;top:64px}

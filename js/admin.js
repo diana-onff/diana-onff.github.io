@@ -1217,6 +1217,7 @@ function buildEmbed(){
   const q = ['embed=1'];
   const prov = $('embProv').value.trim(); if(prov) q.push('prov=' + encodeURIComponent(prov));
   const lg   = $('embLang').value.trim(); if(lg)   q.push('lang=' + encodeURIComponent(lg));
+  const pg   = $('embProg').value.trim().toUpperCase(); if(pg) q.push('prog=' + encodeURIComponent(pg));
   // Spots are on in every embed by default; only switching them off needs a word.
   if(!$('embSpots').checked) q.push('spots=0');
   if($('embWorld').checked) q.push('world=1');
@@ -1225,7 +1226,7 @@ function buildEmbed(){
         width="100%" height="600" style="border:0"
         loading="lazy" allow="geolocation"></iframe>`;
 }
-['embProv','embLang'].forEach(id => $(id).addEventListener('input', buildEmbed));
+['embProv','embLang','embProg'].forEach(id => $(id).addEventListener('input', buildEmbed));
 $('embSpots').addEventListener('change', buildEmbed);
 $('embWorld').addEventListener('change', buildEmbed);
 $('embCopy').onclick = async () => {

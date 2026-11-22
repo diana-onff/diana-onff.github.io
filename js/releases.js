@@ -15,6 +15,12 @@
  * entry here is the version the app reports.
  */
 const RELEASES = [
+  { v: '2.2.14', date: '2026-11-22',
+    nl: ['Diana ingesloten op een andere website (zoals de kaart op wwff.co) heeft nu bovenaan een keuzelijst met de landen waarvan Diana de grenzen kent. Kies je een land, dan laadt Diana die grenzen en gaat de kaart erheen.',
+         'Met ?prog= in het adres bepaal je met welk land Diana opent, bijvoorbeeld ?embed=1&prog=DLFF voor Duitsland. Die keuze geldt alleen voor dat bezoek en verandert je eigen instellingen niet.'],
+    en: ['Diana embedded on another website (such as the map on wwff.co) now has a picker at the top with the countries Diana has boundaries for. Pick a country and Diana loads its boundaries and moves the map there.',
+         'With ?prog= in the address you choose the country Diana opens with, for example ?embed=1&prog=DLFF for Germany. That choice holds for that visit only and does not change your own settings.'] },
+
   { v: '2.2.13', date: '2026-11-14',
     nl: ['Nieuw in Instellingen: de knop Handleiding. Die opent de handleiding van Diana in je browser, in je eigen taal. Diana zelf blijft gewoon staan waar je was.'],
     en: ['New in Settings: the User guide button. It opens the Diana user guide in your browser, in your own language. Diana itself stays exactly where you were.'] },

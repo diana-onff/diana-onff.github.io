@@ -591,7 +591,7 @@ function setSpotFilter(value){
   spotFilter = value;
   remember('spotFilter2', spotFilter);
   // Worldwide is not a country, so it does not overwrite which country is yours.
-  if(value !== 'all') remember('homeprog', value);
+  if(value !== 'all') chooseHomeCountry(value);
   syncSpotFilterUI();
   paintSpots(); renderSpots();
   // The dots of other countries answer to this same choice now, instead of to
@@ -621,7 +621,7 @@ function setSpotFilter(value){
 function setHomeCountry(prog){
   if(!prog) return;
   const was = homeCountry();
-  remember('homeprog', prog);
+  chooseHomeCountry(prog);
   syncSpotFilterUI();
   if(prog !== was && typeof switchCountry === 'function') return switchCountry(prog);
   syncCountryUI();
@@ -683,7 +683,7 @@ $('setSpotCountry').addEventListener('change', e=>{
    the map to that country. */
 ['setCall','setCallP'].forEach(id => $(id).addEventListener('input', () => {
   syncSpotFilterUI();
-  if(!recall('homeprog')){
+  if(!recall('homeprog') && !progOverride){
     const mine = homeCountry();
     const sel = $('setSpotCountry');
     if(sel && sel.options.length) sel.value = mine;
