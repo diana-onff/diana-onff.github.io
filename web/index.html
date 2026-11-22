@@ -23,6 +23,7 @@
 
 <div class="topbar">
   <div class="brand"><img class="mark" src="logo.png" alt="" width="30" height="20"> Diana</div>
+  <select class="embcountry" id="embCountry" hidden></select>
   <div class="spacer"></div>
   <button class="iconbtn" id="btnSearch" aria-expanded="false" title="Zoeken">⌕</button>
   <button class="iconbtn" id="btnStyle"  aria-expanded="false" title="Kaartstijl">◐</button>
@@ -197,6 +198,8 @@
         <input id="embProv" type="text" autocomplete="off" placeholder="antwerpen"></label>
       <label class="fld"><span data-i18n="adm.emblang">Taal</span>
         <input id="embLang" type="text" autocomplete="off" placeholder="nl"></label>
+      <label class="fld"><span data-i18n="set.country">Land</span>
+        <input id="embProg" type="text" autocomplete="off" placeholder="ONFF"></label>
     </div>
     <label class="chk"><input type="checkbox" id="embSpots" checked> <span data-i18n="adm.embspots">Spots meteen aan</span></label>
     <label class="chk"><input type="checkbox" id="embWorld"> <span data-i18n="adm.embworld">Ook andere WWFF-gebieden</span></label>

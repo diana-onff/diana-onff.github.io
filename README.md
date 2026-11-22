@@ -107,6 +107,7 @@ and that falls outside the server root.
 |---|---|
 | `?lang=nl\|fr\|en\|de\|da\|it\|es\|pt` | force the language; without it the app is English unless another language was chosen in Settings |
 | `?ref=ONFF-0104` | zoom straight in on one area |
+| `?prog=DLFF` | open with that country's boundaries (since 2.2.14); for this visit only, nothing is saved. In an embed a picker on the map lets the visitor switch to another country with boundaries |
 | `?prov=limburg` | zoom in on a region of the loaded country (a Belgian province, for instance) |
 | `?spots=0` | hide the live spots, which are otherwise always on, also in an embed |
 | `?world=1` | show the other WWFF references worldwide in an embed, where they are off by default |

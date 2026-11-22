@@ -24,6 +24,24 @@ let wwffPrograms = [];
    manifest instead, so that a second country is a file in data/ rather than a
    change to the code. */
 let countries = [];        // what data/countries.json offers
+
+/* ?prog=DLFF: which country the map opens with. Made for the iframe on the
+   WWFF website, which otherwise always showed Belgium: an iframe has nothing
+   saved and no callsign, so homeCountry() fell back to ONFF for everyone.
+   It holds for this visit only and is never written to storage. In an embed
+   the country picker on the map changes this same value, and nothing else:
+   someone else's page has no business leaving settings behind. Outside an
+   embed a choice in Settings ends it and is saved as always. */
+const embedMode = new URLSearchParams(location.search).get('embed') === '1';
+let progOverride = (new URLSearchParams(location.search).get('prog') || '').trim().toUpperCase();
+if(!/^[A-Z0-9]{2,6}$/.test(progOverride)) progOverride = '';
+
+/* The one way a country choice gets stored. */
+function chooseHomeCountry(prog){
+  if(embedMode){ progOverride = prog; return; }
+  progOverride = '';
+  remember('homeprog', prog);
+}
 let loadedPrograms = [];   // what is actually in zones/index right now
 let activity = {};
 
@@ -290,6 +308,7 @@ async function loadCountries(){
  * spots.js: glancing at Worldwide does not mean you have stopped caring about
  * the Netherlands. */
 function homeCountry(have){
+  if(progOverride) return progOverride;
   const saved = recall('homeprog');
   if(saved) return saved;
   // cfg first: a callsign just typed in Settings has not necessarily been
@@ -469,6 +488,8 @@ async function loadData(){
    nothing but dots on it is otherwise indistinguishable from a map that is
    broken. */
 function syncCountryUI(){
+  const pick = $('embCountry');
+  if(pick && pick.options.length) pick.value = homeCountry();
   const el = $('setCountryState');
   if(!el) return;
   const prog = homeCountry();

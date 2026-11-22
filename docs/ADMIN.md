@@ -299,7 +299,8 @@ there each time.
 ### Generating an embed snippet
 
 The same Admin panel has an embed-code generator: fill in a province or
-region, a language, and whether the "other WWFF areas" layer should be on,
+region, a language, a country (programme code such as DLFF, since v2.2.14;
+empty opens with ONFF), and whether the "other WWFF areas" layer should be on,
 and it produces a ready-to-paste `<iframe>`:
 
 ```html
@@ -310,6 +311,8 @@ and it produces a ready-to-paste `<iframe>`:
 
 - The **other WWFF areas** (the blue dots) are off inside an embed unless
   `world=1` is in the address; the checkbox adds it.
+- The **country** field adds `prog=`. Whatever is filled in, the visitor can
+  still switch country with the picker on the map.
 - The **spots** are on in every embed. Untick "Spots on by default" and the
   code gets `spots=0`, which hides them (since v2.2.2; older snippets made
   with the box unticked still show spots, add `&spots=0` to those by hand).

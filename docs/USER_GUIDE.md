@@ -428,6 +428,7 @@ anything that accepts HTML.
 | `?embed=1` | hides Diana's own navigation and header, so it fits inside someone else's page |
 | `?lang=en\|nl\|fr\|de\|da\|it\|es\|pt` | forces a language |
 | `?ref=ONFF-0104` | opens directly zoomed to one reference |
+| `?prog=DLFF` | opens with that country's boundaries instead of Belgium's (since 2.2.14); holds for this visit only and changes no saved setting |
 | `?prov=antwerpen` | zooms to a region of the loaded country |
 | `?spots=0` | hides the live spots, which are on by default, in an embed too |
 | `?world=1` | shows the other WWFF areas, which are off by default in an embed |
@@ -436,6 +437,16 @@ anything that accepts HTML.
 In an embed the worldwide points stay off unless `?world=1` is present, so an
 iframe already published somewhere does not suddenly start downloading them.
 The welcome screen and the start screen do not appear in an embed.
+
+Since 2.2.14 an embed has a country picker at the top left of the map. It
+lists the countries Diana has boundaries for (a new country appears there by
+itself once its data is built); picking one loads its boundaries and moves the
+map there. Settings is not reachable in an embed, so this is the visitor's
+only way to change country. The choice is not saved: the next visit opens
+with `?prog=` again, or with Belgium (ONFF) when the address has no `?prog=`.
+The WWFF website (wwff.co/directory/map) uses
+`https://diana-onff.github.io/?embed=1&world=1`; add `&prog=DLFF` (or any
+other programme) to open with another country.
 
 The Admin panel includes a small form that builds this snippet for you, see
 [ADMIN.md §Generating an embed snippet](ADMIN.md#generating-an-embed-snippet).

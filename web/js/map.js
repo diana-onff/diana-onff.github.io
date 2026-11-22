@@ -486,7 +486,40 @@ function applyEmbed(){
   if(q.get('embed')==='1'){
     document.body.classList.add('embed');
     document.body.classList.remove('has-nav');
+    setupEmbedCountry();
   }
+}
+
+/* The country picker in an embed. The bottom bar, and with it Settings, is
+   hidden in an iframe, so without this a visitor on someone else's page could
+   never leave the country the iframe opened with. It offers the countries
+   Diana has boundaries for (a new one appears here by itself once its data
+   is built), plus the opening country if ?prog= named one with points only.
+   A choice loads that country's boundaries and moves the map there. */
+function setupEmbedCountry(){
+  const sel = $('embCountry'); if(!sel) return;
+  const name = p => (wwffPrograms.find(w => w.program === p) || {}).country
+                 || (countryEntry(p) || {}).country || p;
+  const progs = (countries || []).map(c => c.program);
+  const now = homeCountry();
+  if(!progs.includes(now)) progs.push(now);
+  if(progs.length < 2){ sel.hidden = true; return; }
+  progs.sort((a,b) => name(a).localeCompare(name(b)));
+  sel.replaceChildren(...progs.map(p => {
+    const o = document.createElement('option');
+    o.value = p; o.textContent = `${p} · ${name(p)}`;
+    return o;
+  }));
+  sel.value = now;
+  sel.setAttribute('aria-label', t('set.country'));
+  sel.title = t('set.country');
+  sel.hidden = false;
+  sel.onchange = async () => {
+    const p = sel.value;
+    await setHomeCountry(p);
+    const b = countryEntry(p) && loadedPrograms.includes(p) ? dataBounds() : null;
+    if(b) map.fitBounds([[b[0],b[1]],[b[2],b[3]]], {padding:30});
+  };
 }
 
 /* On a style switch all of our own layers disappear — draw them again. */
