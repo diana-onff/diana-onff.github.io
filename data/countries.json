@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-22T09:46:58Z",
+  "generated": "2026-11-22T15:44:01Z",
   "countries": [
     {
       "program": "CTFF",
@@ -66,10 +66,10 @@
       "country": "Netherlands",
       "refs": 281,
       "points": 7,
-      "release": "2026-10-25",
-      "source_file": "PAFF_20261025.kmz",
-      "generated": "2026-11-22T09:46:46Z",
-      "bytes": 2102471,
+      "release": null,
+      "source_file": "PAFF Perimeters v261120.kmz",
+      "generated": "2026-11-22T15:44:01Z",
+      "bytes": 2102469,
       "files": {
         "zones": "zones/paff.geojson",
         "points": "zones/paff-points.geojson",
