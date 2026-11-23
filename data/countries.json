@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-23T11:01:34Z",
+  "generated": "2026-11-23T16:22:06Z",
   "countries": [
     {
       "program": "CTFF",
@@ -8,7 +8,7 @@
       "points": 101,
       "release": "2026-11-10",
       "source_file": "ctff_20261110.kmz",
-      "generated": "2026-11-23T10:45:38Z",
+      "generated": "2026-11-23T16:21:23Z",
       "bytes": 2738452,
       "files": {
         "zones": "zones/ctff.geojson",
@@ -23,7 +23,7 @@
       "points": 1,
       "release": "2026-10-26",
       "source_file": "DLFF_20261026.kmz",
-      "generated": "2026-11-23T10:45:55Z",
+      "generated": "2026-11-23T16:21:34Z",
       "bytes": 13433812,
       "files": {
         "zones": "zones/dlff.geojson",
@@ -38,8 +38,8 @@
       "points": 316,
       "release": "2026-11-23",
       "source_file": "LAFF_20261123.kmz",
-      "generated": "2026-11-23T11:01:34Z",
-      "bytes": 1548038,
+      "generated": "2026-11-23T16:21:42Z",
+      "bytes": 1549951,
       "files": {
         "zones": "zones/laff.geojson",
         "points": "zones/laff-points.geojson",
@@ -53,8 +53,8 @@
       "points": 1,
       "release": "2026-08-02",
       "source_file": "ONFF 20260802.kmz",
-      "generated": "2026-11-23T10:46:28Z",
-      "bytes": 3851961,
+      "generated": "2026-11-23T16:22:06Z",
+      "bytes": 3851982,
       "files": {
         "zones": "zones/onff.geojson",
         "points": "zones/onff-points.geojson",
@@ -68,8 +68,8 @@
       "points": 0,
       "release": "2026-10-24",
       "source_file": "OZFF_20261024.kmz",
-      "generated": "2026-11-23T10:46:03Z",
-      "bytes": 1358858,
+      "generated": "2026-11-23T16:21:47Z",
+      "bytes": 1358976,
       "files": {
         "zones": "zones/ozff.geojson",
         "points": "zones/ozff-points.geojson",
@@ -83,7 +83,7 @@
       "points": 7,
       "release": "2026-10-25",
       "source_file": "PAFF_20261025.kmz",
-      "generated": "2026-11-23T10:46:12Z",
+      "generated": "2026-11-23T16:21:53Z",
       "bytes": 2102471,
       "files": {
         "zones": "zones/paff.geojson",
