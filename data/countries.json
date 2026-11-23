@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-23T10:46:28Z",
+  "generated": "2026-11-23T11:01:34Z",
   "countries": [
     {
       "program": "CTFF",
@@ -29,6 +29,21 @@
         "zones": "zones/dlff.geojson",
         "points": "zones/dlff-points.geojson",
         "activity": "zones/dlff-activity.json"
+      }
+    },
+    {
+      "program": "LAFF",
+      "country": "Norway",
+      "refs": 356,
+      "points": 316,
+      "release": "2026-11-23",
+      "source_file": "LAFF_20261123.kmz",
+      "generated": "2026-11-23T11:01:34Z",
+      "bytes": 1548038,
+      "files": {
+        "zones": "zones/laff.geojson",
+        "points": "zones/laff-points.geojson",
+        "activity": "zones/laff-activity.json"
       }
     },
     {
