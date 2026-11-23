@@ -125,7 +125,7 @@ SKIP_FOLDERS = {"Maidenhead grid by OH2ECG"}
 # output for now; the MVP is ONFF only.
 NON_PROVINCE_FOLDERS = {"National parks", "Natura2000", "Ramsar", "Antartica"}
 
-SCRIPT_VERSION = "1.1.0"
+SCRIPT_VERSION = "1.2.0"
 
 
 # --------------------------------------------------------------------------- #
@@ -824,9 +824,10 @@ def _read_directory_rows(source: str | None) -> tuple[list[dict[str, str]], list
 def _directory_name_lookup(rows: list[dict[str, str]], program: str) -> dict[str, str]:
     """ref -> official WWFF-directory name, for one programme.
 
-    Used only to break a tie when the KMZ's own names disagree on which
-    reference something is (_resolve_ref()); the polygons themselves are never
-    sourced from here.
+    Used to break a tie when the KMZ's own names disagree on which reference
+    something is (_resolve_ref()), and as the display name of an area whose
+    KMZ placemarks carry only the reference number; the polygons themselves
+    are never sourced from here.
     """
     out: dict[str, str] = {}
     for row in rows:
@@ -1330,6 +1331,7 @@ def convert(kml_path: Path, tolerance: float, decimals: int, overrides: dict,
 
     features = []
     index = []
+    names_from_directory: list[str] = []
     for ref in sorted(polygons):
         merged = unary_union(polygons[ref])
         simplified = merged.simplify(tolerance, preserve_topology=True)
@@ -1345,6 +1347,14 @@ def convert(kml_path: Path, tolerance: float, decimals: int, overrides: dict,
         override = overrides.get(ref, {})
 
         name = override.get("name") or pick_name(entry.get("names") or Counter(), ref)
+        # Some countries' KMZ files carry only the reference number as a
+        # placemark name (Norway's LAFF file does, for every area), so
+        # pick_name() has nothing better than the number itself. The official
+        # WWFF-directory name is then a far better label than "LAFF-0001". A
+        # real name from the KMZ, or one set in overrides.json, still wins.
+        if not override.get("name") and name == ref and directory_names.get(ref):
+            name = directory_names[ref]
+            names_from_directory.append(ref)
 
         props = {
             "ref": ref,
@@ -1388,6 +1398,7 @@ def convert(kml_path: Path, tolerance: float, decimals: int, overrides: dict,
         "no_ref": skipped_no_ref,
         "foreign": dict(foreign),
         "stray_names": stray_names,
+        "names_from_directory": names_from_directory,
     }
     return geojson, index_doc, stats
 
@@ -1520,6 +1531,12 @@ def diff_report(new_index: dict, prev_path: Path, stats: dict, source_name: str)
         lines.append("")
         lines.append("Every reference appears only once: if there is a polygon in the KMZ, "
                      "that one wins and the directory row is used only to check against.")
+        from_dir = stats.get("names_from_directory") or []
+        if from_dir:
+            lines.append("")
+            lines.append(f"**{len(from_dir)} names taken from the WWFF directory** (the KMZ "
+                         "gives only the reference number for these areas). A `\"name\"` "
+                         "in `overrides.json` still overrules it.")
         if unplaced:
             lines.append("")
             lines.append("References without a position are in the list but not on the map. "

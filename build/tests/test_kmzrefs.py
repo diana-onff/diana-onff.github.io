@@ -113,5 +113,37 @@ ok(len(w_in) == 1 and "ONFF-0002" in w_in[0] and "ONFF-0001" in w_in[0],
    f"a point-only reference inside another polygon is flagged ({w_in})")
 ok(len(w_out) == 0, f"a genuinely point-only reference far away, like ONFF-0004 in Antarctica, stays quiet ({w_out})")
 
+print("\n[9] a KMZ with only reference numbers as names: the WWFF-directory name is used instead")
+# Norway's LAFF file names every placemark just "LAFF-nnnn". Without this the
+# map showed the bare number as the area's name for all of them.
+kml3 = ('<?xml version="1.0" encoding="UTF-8"?>'
+        '<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>release</name>'
+        '<Placemark><name>ONFF-0300</name><Polygon><outerBoundaryIs><LinearRing>'
+        '<coordinates>4.40,51.20,0 4.41,51.20,0 4.41,51.21,0 4.40,51.21,0 4.40,51.20,0</coordinates>'
+        '</LinearRing></outerBoundaryIs></Polygon></Placemark>'
+        '<Placemark><name>ONFF-0301</name><Polygon><outerBoundaryIs><LinearRing>'
+        '<coordinates>4.30,51.10,0 4.31,51.10,0 4.31,51.11,0 4.30,51.11,0 4.30,51.10,0</coordinates>'
+        '</LinearRing></outerBoundaryIs></Polygon></Placemark>'
+        '<Placemark><name>ONFF-0302 Eigen Naam</name><Polygon><outerBoundaryIs><LinearRing>'
+        '<coordinates>4.20,51.00,0 4.21,51.00,0 4.21,51.01,0 4.20,51.01,0 4.20,51.00,0</coordinates>'
+        '</LinearRing></outerBoundaryIs></Polygon></Placemark>'
+        '<Placemark><name>ONFF-0303</name><Polygon><outerBoundaryIs><LinearRing>'
+        '<coordinates>4.10,50.90,0 4.11,50.90,0 4.11,50.91,0 4.10,50.91,0 4.10,50.90,0</coordinates>'
+        '</LinearRing></outerBoundaryIs></Polygon></Placemark>'
+        '</Document></kml>')
+kml3_path = work / "numbers-only.kml"
+kml3_path.write_text(kml3, encoding="utf-8")
+dir3 = {"ONFF-0300": "Grote Heide", "ONFF-0302": "Naam Uit Directory", "ONFF-0303": "Wordt Overschreven"}
+ov3 = {"ONFF-0303": {"name": "Naam Uit Overrides"}}
+g3, idx3, st3 = kg.convert(kml3_path, tolerance=0.00005, decimals=5, overrides=ov3, directory_names=dir3)
+n3 = {f["properties"]["ref"]: f["properties"]["name"] for f in g3["features"]}
+ok(n3.get("ONFF-0300") == "Grote Heide", f"number-only placemark gets the directory name ({n3.get('ONFF-0300')})")
+ok(n3.get("ONFF-0301") == "ONFF-0301", f"no directory name either: the number stays ({n3.get('ONFF-0301')})")
+ok(n3.get("ONFF-0302") == "Eigen Naam", f"a real KMZ name still wins over the directory ({n3.get('ONFF-0302')})")
+ok(n3.get("ONFF-0303") == "Naam Uit Overrides", f"overrides.json still wins over everything ({n3.get('ONFF-0303')})")
+ok({r["ref"]: r["name"] for r in idx3["refs"]}.get("ONFF-0300") == "Grote Heide", "the index carries the same name")
+ok(st3.get("names_from_directory") == ["ONFF-0300"],
+   f"only ONFF-0300 is counted for the report ({st3.get('names_from_directory')})")
+
 print("\n" + ("ALL OK" if not fails else f"{len(fails)} PROBLEMS: " + " | ".join(fails)))
 sys.exit(1 if fails else 0)
