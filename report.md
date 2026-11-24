@@ -155,7 +155,7 @@ Diana puts these at a point inside the boundary instead (worldwide points, Nearb
 
 ### Cross-check against the WWFF directory
 
-**680 active references** in the directory · **356 with a boundary** from the KMZ · **316 as a point** on the map · **8 without a position** · 6 deleted (not shown)
+**680 active references** in the directory · **356 with a boundary** from the KMZ · **317 as a point** on the map · **7 without a position** · 6 deleted (not shown)
 
 Every reference appears only once: if there is a polygon in the KMZ, that one wins and the directory row is used only to check against.
 
@@ -163,17 +163,9 @@ Every reference appears only once: if there is a polygon in the KMZ, that one wi
 
 References without a position are in the list but not on the map. You can set a coordinate in `overrides.json`: `"ONFF-0123": { "point": [4.47, 50.85] }` (longitude, latitude).
 
-<details><summary>📍 1 references whose WWFF-directory position lies more than 2 km outside their own boundary</summary>
-
-Diana puts these at a point inside the boundary instead (worldwide points, Nearby > Info, agenda pins), so the dot matches the area on the map. Where the directory copies a neighbour's exact coordinates the directory is wrong and this list can go to WWFF as it is; for the others it is worth a look which of the two is wrong, the directory or the boundary in the KMZ. Coordinates are latitude, longitude.
-
-- `LAFF-0268` Langmyra: 1148.5 km outside its boundary (directory 69.0487, 18.7267, a point inside the boundary is 59.2131, 11.5576)
-
-</details>
-
 <details><summary>⚠️ 8 warnings</summary>
 
-- 8 references with no polygon and no usable position: LAFF-0036, LAFF-0037, LAFF-0038, LAFF-0039, LAFF-0040, LAFF-0041, LAFF-0045, LAFF-0046 — can be placed with "point": [lon, lat] in overrides.json
+- 7 references with no polygon and no usable position: LAFF-0036, LAFF-0037, LAFF-0038, LAFF-0039, LAFF-0040, LAFF-0041, LAFF-0045 — can be placed with "point": [lon, lat] in overrides.json
 - LAFF-0399 has no polygon of its own, but its position from the WWFF directory falls inside LAFF-0055's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
 - LAFF-0412 has no polygon of its own, but its position from the WWFF directory falls inside LAFF-0026's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
 - LAFF-0498 has no polygon of its own, but its position from the WWFF directory falls inside LAFF-0300's boundary: likely a reference mixed up somewhere in the source KMZ, worth checking
